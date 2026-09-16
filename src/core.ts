@@ -117,23 +117,14 @@ export function canWalkOn(tile: string): boolean {
   return tile === '.' || tile === 'E' || tile === 'S';
 }
 
-// Collision check for 30×20 grid
+// Collision check for 40×30 grid with pixel-perfect walkableMap
 export function canMoveTo(
   p: Point,
-  collisionMap: string[][],
-  buildings: Array<{ x: number; y: number; w: number; h: number }>
+  walkableMap: boolean[][],
+  _buildings?: unknown // Kept for API compatibility, but unused (walkableMap already includes footprints)
 ): boolean {
-  if (!isInBounds(p, 30, 20)) return false;
+  if (!isInBounds(p, 40, 30)) return false;
   
-  const tile = collisionMap[p.y][p.x];
-  if (!canWalkOn(tile)) return false;
-  
-  // Check buildings
-  for (const b of buildings) {
-    if (p.x >= b.x && p.x < b.x + b.w && p.y >= b.y && p.y < b.y + b.h) {
-      return false;
-    }
-  }
-  
-  return true;
+  // walkableMap already includes building footprints from applyBuildingFootprints()
+  return walkableMap[p.y][p.x] === true;
 }
