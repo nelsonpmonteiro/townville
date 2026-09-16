@@ -49,18 +49,18 @@ const WALK_FRAMES = {
   ],
 };
 
-// Idle frames (fallback to static sprites)
+// Idle frames (use frame 0 from walk cycles for consistency)
 const IDLE_SPRITES = {
-  front: require('../../assets/images/player/boy-front.png'),
-  back: require('../../assets/images/player/boy-back.png'),
-  left: require('../../assets/images/player/boy-left.png'),
-  right: require('../../assets/images/player/boy-right.png'),
+  front: require('../../assets/images/player/walk/boy-walk-front-0.png'),
+  back: require('../../assets/images/player/walk/boy-walk-back-0.png'),
+  left: require('../../assets/images/player/walk/boy-walk-left-0.png'),
+  right: require('../../assets/images/player/walk/boy-walk-right-0.png'),
 };
 
-// Average dimensions after trim (idle and walk frames are similar now)
+// Dimensions (all frames are the same size now)
 const NATIVE_DIMS = {
-  idle: { width: 40, height: 106 },  // Trimmed idle sprites
-  walk: { width: 40, height: 106 },  // Walk animation frames
+  width: 40,
+  height: 106,
 };
 
 const TILE_SIZE = 48;
@@ -96,10 +96,10 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving]);
   
-  // Compute render size (use same dimensions for idle and walk to prevent flashing)
+  // Compute render size
   const { width, height } = computeRenderSize(
-    NATIVE_DIMS.walk.width,
-    NATIVE_DIMS.walk.height,
+    NATIVE_DIMS.width,
+    NATIVE_DIMS.height,
     'protagonist'
   );
   
