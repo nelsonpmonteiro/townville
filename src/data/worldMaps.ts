@@ -175,32 +175,39 @@ const downtownCollisionMap: Tile[][] = [
   ['#','#','#','#','#','#','#','#','#','#','#','#','#','#','X','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#'],
 ];
 
+// World 2 buildings - using detected clearings from HERMES-pixel-perfect-placement.md §5
+const DOWNTOWN_BUILDINGS: Building[] = [
+  // Sidewalk section (rows 0-13)
+  { id: 'bakery', npcId: 'sam', sprite: 'bakery', footprintCol: 2, footprintRow: 1, footprintW: 3, footprintH: 2 },
+  { id: 'hardware', npcId: 'rosa', sprite: 'hardware', footprintCol: 10, footprintRow: 1, footprintW: 3, footprintH: 2 },
+  { id: 'town-hall', npcId: 'mayor-chen', sprite: 'town-hall', footprintCol: 16, footprintRow: 1, footprintW: 7, footprintH: 2 }, // 4×2 wide pad
+  { id: 'post-office', npcId: 'tommy', sprite: 'post-office', footprintCol: 2, footprintRow: 9, footprintW: 3, footprintH: 2 },
+  { id: 'library', npcId: 'ms-park', sprite: 'library', footprintCol: 10, footprintRow: 9, footprintW: 3, footprintH: 2 },
+  { id: 'park', npcId: 'danny', sprite: 'park', footprintCol: 16, footprintRow: 9, footprintW: 3, footprintH: 2 },
+  // Park section
+  { id: 'fountain', sprite: 'fountain', footprintCol: 12, footprintRow: 19, footprintW: 5, footprintH: 6 }, // Circular fountain area
+];
+
 export const WORLD_2_DOWNTOWN: WorldMap = {
   id: 2,
   name: 'Downtown',
-  collisionMap: downtownCollisionMap,
-  spawn: { x: 13, y: 9 },
-  exits: [{ x: 15, y: 19, toWorld: 1 }],
+  collisionMap: downtownCollisionMap, // Legacy - kept for compatibility
+  walkableMap: applyBuildingFootprints(WORLD2_WALKABLE, DOWNTOWN_BUILDINGS),
+  spawn: { x: 16, y: 1 }, // Top center (arrives from Farm)
+  exits: [{ x: 16, y: 29, toWorld: 1 }], // Bottom center (returns to Farm)
   eventPoints: [
-    { id: 'ep_sam_1', npcId: 'sam', x: 5, y: 3 },
-    { id: 'ep_rosa_1', npcId: 'rosa', x: 12, y: 3 },
-    { id: 'ep_chen_1', npcId: 'mayor-chen', x: 21, y: 3 },
-    { id: 'ep_tommy_1', npcId: 'tommy', x: 5, y: 9 },
-    { id: 'ep_park_1', npcId: 'ms-park', x: 15, y: 9 },
-    { id: 'ep_danny_1', npcId: 'danny', x: 13, y: 13 },
-    { id: 'ep_carlos_1', npcId: 'carlos', x: 7, y: 14 },
+    // Sidewalk NPCs
+    { id: 'ep_sam_1', npcId: 'sam', x: 3, y: 3 }, // Near bakery
+    { id: 'ep_rosa_1', npcId: 'rosa', x: 11, y: 3 }, // Near hardware
+    { id: 'ep_chen_1', npcId: 'mayor-chen', x: 19, y: 3 }, // Near town hall
+    { id: 'ep_tommy_1', npcId: 'tommy', x: 3, y: 11 }, // Near post office
+    { id: 'ep_park_1', npcId: 'ms-park', x: 11, y: 11 }, // Near library
+    { id: 'ep_danny_1', npcId: 'danny', x: 17, y: 11 }, // Near park marker
+    // Park NPCs
+    { id: 'ep_carlos_1', npcId: 'carlos', x: 14, y: 22 }, // Near fountain
+    { id: 'ep_pat_1', npcId: 'officer-pat', x: 14, y: 28 }, // Bottom exit path
   ],
-  buildings: [
-    // World 2 buildings - sprites available in batch2
-    { id: 'bakery', npcId: 'sam', sprite: 'bakery', footprintCol: 3, footprintRow: 2, footprintW: 2, footprintH: 2 },
-    { id: 'hardware', npcId: 'rosa', sprite: 'hardware', footprintCol: 13, footprintRow: 2, footprintW: 2, footprintH: 2 },
-    { id: 'town-hall', npcId: 'mayor-chen', sprite: 'town-hall', footprintCol: 22, footprintRow: 2, footprintW: 4, footprintH: 2 },
-    { id: 'post-office', npcId: 'tommy', sprite: 'post-office', footprintCol: 3, footprintRow: 8, footprintW: 2, footprintH: 2 },
-    { id: 'library', npcId: 'ms-park', sprite: 'library', footprintCol: 13, footprintRow: 8, footprintW: 2, footprintH: 2 },
-    { id: 'fountain', npcId: 'danny', sprite: 'fountain', footprintCol: 14, footprintRow: 13, footprintW: 2, footprintH: 2 },
-    { id: 'park', npcId: 'carlos', sprite: 'park', footprintCol: 6, footprintRow: 13, footprintW: 2, footprintH: 2 },
-    { id: 'town-gate', npcId: 'officer-pat', sprite: 'town-gate', footprintCol: 14, footprintRow: 19, footprintW: 3, footprintH: 1 },
-  ],
+  buildings: DOWNTOWN_BUILDINGS,
 };
 
 export const WORLDS = [WORLD_1_FARM, WORLD_2_DOWNTOWN];
