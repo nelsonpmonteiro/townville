@@ -57,7 +57,7 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/walk/boy-walk-right-0.png'),
 };
 
-// Dimensions (all frames are the same size now)
+// Dimensions (all frames normalized to same size)
 const NATIVE_DIMS = {
   width: 40,
   height: 106,
