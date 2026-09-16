@@ -19,7 +19,7 @@ export default function GameHeader({
   totalQuests,
 }: GameHeaderProps) {
   return (
-    <View style={s.container} accessibilityRole="banner">
+    <View style={s.container}>
       {/* Lives */}
       <View style={s.section}>
         <Text style={s.label} accessibilityLabel={`${lives} lives remaining`}>

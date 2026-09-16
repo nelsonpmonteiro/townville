@@ -15,7 +15,7 @@ const VIEWPORT_HEIGHT = Math.min(Dimensions.get('window').height - 56, 960); // 
 
 export default function WorldMapRenderer({
   world,
-  protagonist Pos,
+  protagonistPos,
   onTilePress,
 }: WorldMapRendererProps) {
   const scrollXRef = useRef<ScrollView>(null);
