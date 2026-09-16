@@ -169,21 +169,33 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
 
   // Save and export positions
   const handleSave = () => {
-    console.log('=== SAVED POSITIONS ===');
-    console.log('\nBuildings:');
-    buildings.forEach(b => {
-      console.log(
-        `{ id: '${b.id}', npcId: '${b.npcId}', sprite: '${b.sprite}', ` +
-        `footprintCol: ${b.footprintCol}, footprintRow: ${b.footprintRow}, ` +
-        `footprintW: ${b.footprintW}, footprintH: ${b.footprintH} },`
-      );
-    });
-    console.log('\nEvent Points:');
-    eventPoints.forEach(ep => {
-      console.log(`{ id: '${ep.id}', npcId: '${ep.npcId}', x: ${ep.x}, y: ${ep.y} },`);
-    });
+    const buildingsCode = buildings.map(b => 
+      `    { id: '${b.id}', npcId: '${b.npcId}', sprite: '${b.sprite}', footprintCol: ${b.footprintCol}, footprintRow: ${b.footprintRow}, footprintW: ${b.footprintW}, footprintH: ${b.footprintH} },`
+    ).join('\n');
+    
+    const eventPointsCode = eventPoints.map(ep =>
+      `    { id: '${ep.id}', npcId: '${ep.npcId}', x: ${ep.x}, y: ${ep.y} },`
+    ).join('\n');
+    
+    const fullCode = `
+// === COPIE ESTE CÓDIGO PARA worldMaps.ts ===
 
-    onSave(buildings, eventPoints);
+eventPoints: [
+${eventPointsCode}
+],
+buildings: [
+${buildingsCode}
+],
+`;
+
+    console.log('='.repeat(80));
+    console.log('POSIÇÕES SALVAS - COPIE O CÓDIGO ABAIXO:');
+    console.log('='.repeat(80));
+    console.log(fullCode);
+    console.log('='.repeat(80));
+    
+    // Show visual feedback
+    alert('✅ Código copiado para o console!\n\nAbra o console do navegador (F12) e copie o código.');
   };
 
   return (
