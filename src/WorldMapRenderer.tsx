@@ -169,24 +169,13 @@ export default function WorldMapRenderer({ world, protagonistPos, buildingStates
     });
   };
 
-  // Render protagonist (z=45)
+  // Render protagonist (z=45) - real sprite with direction
   const renderProtagonist = () => {
-    const pos = protagonistScreenPosition(protagonistPos.x, protagonistPos.y);
     return (
-      <View
-        style={[
-          styles.protagonist,
-          {
-            left: pos.x,
-            top: pos.y,
-            width: 40,
-            height: 56,
-            backgroundColor: '#3b82f6',
-            borderRadius: 20,
-            borderWidth: 2,
-            borderColor: '#fff',
-          },
-        ]}
+      <ProtagonistSprite
+        col={protagonistPos.x}
+        row={protagonistPos.y}
+        direction="front"
       />
     );
   };
