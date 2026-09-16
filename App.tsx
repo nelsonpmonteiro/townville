@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
+import MapEditor from "./src/components/MapEditor";
 import {
   fresh,
   restore,
