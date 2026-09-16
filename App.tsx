@@ -19,8 +19,11 @@ const KEY = "townville.save.v1";
 export default function App() {
   const [save, setSave] = useState<Save>(fresh());
   const [ready, setReady] = useState(false);
-  const [pos, setPos] = useState<Point>({ x: 13, y: 9 });
+  const [pos, setPos] = useState<Point>({ x: 14, y: 9 });
   const [editMode, setEditMode] = useState(false);
+  
+  // Interaction system
+  const interaction = useInteraction();
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
@@ -42,14 +45,36 @@ export default function App() {
     }
   }, [save, ready]);
 
-  const walk = (dx: number, dy: number) => {
+  const walk = (dir: [number, number]) => {
     setPos((p) => {
-      const next = { x: p.x + dx, y: p.y + dy };
+      const next = { x: p.x + dir[0], y: p.y + dir[1] };
       if (canMoveTo(next, WORLD_1_FARM.collisionMap, [])) {
+        // Check for event point collision
+        checkEventPointCollision(next);
         return next;
       }
       return p;
     });
+  };
+
+  // Check if player stepped on an event point
+  const checkEventPointCollision = (playerPos: Point) => {
+    const eventPoint = WORLD_1_FARM.eventPoints.find(
+      (ep) => ep.x === playerPos.x && ep.y === playerPos.y
+    );
+
+    if (eventPoint) {
+      handleEventPointInteraction(eventPoint.npcId);
+    }
+  };
+
+  // Handle NPC interaction based on npcId
+  const handleEventPointInteraction = (npcId: string) => {
+    // For now, only Mae Phase 1 is implemented
+    if (npcId === 'mae') {
+      interaction.startDialogue(MAE_PHASE_1);
+    }
+    // TODO: Add other NPCs as content is created
   };
 
   useEffect(() => {
@@ -84,7 +109,61 @@ export default function App() {
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []); // Empty deps - walk uses setPos callback
+  }, [editMode]);
+
+  // Handle dialogue advancement
+  const handleDialogueChoice = (nextNodeId: string, isCorrect?: boolean) => {
+    if (interaction.state.type !== 'dialogue') return;
+
+    const nextNode = interaction.state.tree.nodes[nextNodeId];
+    
+    // If this leads to quest_start, launch the quest
+    if (nextNode && nextNode.id === 'quest_start') {
+      interaction.advanceDialogue(nextNodeId);
+      // Wait a moment, then start quest
+      setTimeout(() => {
+        interaction.startQuest(MAE_PHASE_1_QUEST);
+      }, 500);
+    } else {
+      interaction.advanceDialogue(nextNodeId);
+    }
+  };
+
+  const handleDialogueNext = () => {
+    if (interaction.state.type !== 'dialogue') return;
+    
+    const currentNode = interaction.state.tree.nodes[interaction.state.currentNodeId];
+    if (currentNode && currentNode.next) {
+      handleDialogueChoice(currentNode.next);
+    }
+  };
+
+  // Handle quest answer submission
+  const handleQuestSubmit = (answer: string, isCorrect: boolean) => {
+    const success = interaction.submitQuestAnswer(answer, isCorrect);
+    
+    if (success) {
+      // Show success dialogue
+      setTimeout(() => {
+        interaction.closeInteraction();
+        interaction.startDialogue(MAE_PHASE_1);
+        interaction.advanceDialogue('success.01');
+      }, 300);
+    } else {
+      // Check if out of attempts
+      if (interaction.state.type === 'quest') {
+        const maxAttempts = interaction.state.quest.maxAttempts || 3;
+        if (interaction.state.progress.attempts >= maxAttempts) {
+          // Show failure dialogue
+          setTimeout(() => {
+            interaction.closeInteraction();
+            interaction.startDialogue(MAE_PHASE_1);
+            interaction.advanceDialogue('failure.01');
+          }, 300);
+        }
+      }
+    }
+  }; // Empty deps - walk uses setPos callback
 
   if (!ready) {
     return <View style={s.loading} />;
