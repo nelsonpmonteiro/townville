@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Townville",
+    "slug": "townville-core",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "web": { "name": "Townville", "bundler": "metro" },
+    "plugins": [
+      [
+        "expo-audio",
+        { "microphonePermission": false, "recordAudioAndroid": false }
+      ]
+    ]
+  }
+}

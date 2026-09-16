@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "visuals": {
+    "status": "original code-generated replaceable SVG placeholders, not final production illustrations",
+    "source": "src/Art.tsx",
+    "farm": {"component": "FarmArt", "size": [960, 720], "grid": [20, 15], "tileSize": 48, "upgradeInput": "0 through 3"},
+    "people": {"component": "Person", "size": [48, 48], "anchor": "tile center, bottom aligned", "variants": "color prop; placeholder shared silhouette"},
+    "objects": {"component": "ItemArt", "viewBox": [0, 0, 64, 64], "kinds": ["egg", "chick", "hay"]},
+    "replacementRule": "Keep collision geometry in src/core.ts authoritative; replace illustration internals without moving NPC/building anchors. Web/native both use react-native-svg."
+  },
+  "audio": {
+    "format": "WAV; supplied files preserved",
+    "active": ["audio/music-farm-ambient.wav", "audio/sfx-correct.wav", "audio/sfx-session-end.wav"],
+    "reserved": ["audio/music-event.wav", "audio/sfx-birds.wav", "audio/sfx-chicken.wav", "audio/sfx-drag.wav", "audio/sfx-drop.wav", "audio/sfx-hint.wav", "audio/sfx-horse.wav", "audio/sfx-tap.wav", "audio/sfx-unlock.wav", "audio/sfx-wrong.wav"],
+    "source": "src/useFarmAudio.ts",
+    "policy": "Gesture unlock only; persistent mute; pause all players hidden/background; restrained volumes."
+  }
+}
