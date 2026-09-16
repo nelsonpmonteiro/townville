@@ -57,10 +57,10 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/walk/boy-walk-right-0.png'),
 };
 
-// Dimensions (all frames normalized to same size)
+// Dimensions (trimmed frames from 128×128 GIFs)
 const NATIVE_DIMS = {
-  width: 40,
-  height: 106,
+  width: 39,
+  height: 105,
 };
 
 const TILE_SIZE = 48;
