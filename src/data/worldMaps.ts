@@ -80,7 +80,7 @@ export const WORLD_1_FARM: WorldMap = {
   id: 1,
   name: 'Farm',
   collisionMap: farmCollisionMap,
-  spawn: { x: 14, y: 9 },
+  spawn: { x: 14, y: 6 }, // Center of open area
   exits: [{ x: 15, y: 19, toWorld: 2 }],
   eventPoints: [
     { id: 'ep_mae_1', npcId: 'mae', x: 5, y: 4 },

@@ -24,7 +24,7 @@ const KEY = "townville.save.v1";
 export default function App() {
   const [save, setSave] = useState<Save>(fresh());
   const [ready, setReady] = useState(false);
-  const [pos, setPos] = useState<Point>({ x: 14, y: 9 });
+  const [pos, setPos] = useState<Point>({ x: 14, y: 6 }); // Match spawn position
   const [editMode, setEditMode] = useState(false);
   
   // Interaction system
