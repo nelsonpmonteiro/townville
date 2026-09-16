@@ -43,7 +43,7 @@ export default function App() {
   const walk = (dx: number, dy: number) => {
     setPos((p) => {
       const next = { x: p.x + dx, y: p.y + dy };
-      if (canMoveTo(next, WORLD_1_FARM.collisionMap)) {
+      if (canMoveTo(next, WORLD_1_FARM.collisionMap, [])) {
         return next;
       }
       return p;
