@@ -24,7 +24,7 @@ const KEY = "townville.save.v1";
 export default function App() {
   const [save, setSave] = useState<Save>(fresh());
   const [ready, setReady] = useState(false);
-  const [pos, setPos] = useState<Point>({ x: 14, y: 6 }); // Match spawn position
+  const [pos, setPos] = useState<Point>({ x: 20, y: 7 }); // Match spawn from WORLD_1_FARM
   const [editMode, setEditMode] = useState(false);
   
   // Interaction system
@@ -53,7 +53,8 @@ export default function App() {
   const walk = (dir: [number, number]) => {
     setPos((p) => {
       const next = { x: p.x + dir[0], y: p.y + dir[1] };
-      if (canMoveTo(next, WORLD_1_FARM.collisionMap, [])) {
+      // Use walkableMap instead of collisionMap (40×30 grid)
+      if (canMoveTo(next, WORLD_1_FARM.walkableMap, [])) {
         // Check for event point collision
         checkEventPointCollision(next);
         return next;
