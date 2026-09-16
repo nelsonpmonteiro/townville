@@ -20,6 +20,7 @@ export default function App() {
   const [save, setSave] = useState<Save>(fresh());
   const [ready, setReady] = useState(false);
   const [pos, setPos] = useState<Point>({ x: 13, y: 9 });
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
@@ -55,6 +56,14 @@ export default function App() {
     if (Platform.OS !== "web") return;
 
     const handler = (e: KeyboardEvent) => {
+      // Toggle edit mode with 'E' key
+      if (e.key === 'e' || e.key === 'E') {
+        setEditMode(prev => !prev);
+        return;
+      }
+      
+      if (editMode) return; // Disable movement in edit mode
+      
       const dirs: Record<string, [number, number]> = {
         ArrowUp: [0, -1],
         w: [0, -1],
@@ -79,6 +88,19 @@ export default function App() {
 
   if (!ready) {
     return <View style={s.loading} />;
+  }
+
+  // Show map editor
+  if (editMode) {
+    return (
+      <MapEditor
+        world={WORLD_1_FARM}
+        onSave={(buildings, eventPoints) => {
+          console.log('✅ Positions saved! Copy code from console');
+        }}
+        onClose={() => setEditMode(false)}
+      />
+    );
   }
 
   return (
