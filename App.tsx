@@ -66,7 +66,10 @@ const KEY = "townville.save.v1";
   }, [save, ready]);
 
   const walk = useCallback((dir: [number, number]) => {
-    if (isMoving) return; // Prevent movement spam
+    if (isMoving) {
+      console.log('⏸️ Already moving, ignoring input');
+      return;
+    }
     
     // Update direction based on movement
     if (dir[0] === -1) setDirection('left');
@@ -75,9 +78,14 @@ const KEY = "townville.save.v1";
     else if (dir[1] === 1) setDirection('front');
     
     const next = { x: pos.x + dir[0], y: pos.y + dir[1] };
+    console.log('🚶 Walk attempt:', { from: pos, to: next, dir });
     
     // Use walkableMap instead of collisionMap (40×30 grid)
-    if (canMoveTo(next, WORLD_1_FARM.walkableMap, [])) {
+    const canMove = canMoveTo(next, WORLD_1_FARM.walkableMap, []);
+    console.log('🔍 Can move?', canMove, 'Tile:', WORLD_1_FARM.walkableMap[next.y]?.[next.x]);
+    
+    if (canMove) {
+      console.log('✅ Moving to', next);
       setIsMoving(true);
       
       // Animate to new position
@@ -93,10 +101,13 @@ const KEY = "townville.save.v1";
           useNativeDriver: true,
         }),
       ]).start(() => {
+        console.log('✅ Animation complete, new pos:', next);
         setIsMoving(false);
         setPos(next);
         checkEventPointCollision(next);
       });
+    } else {
+      console.log('🚫 Movement blocked at', next);
     }
   }, [isMoving, pos, animatedX, animatedY]);
 
