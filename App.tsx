@@ -112,14 +112,17 @@ export default function App() {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-  },
-  viewport: {
-    flex: 1,
-    overflow: "hidden",
-    position: "relative",
     width: "100%",
     height: "100%",
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewport: {
+    width: 800,
+    height: 600,
+    position: "relative",
+    overflow: "hidden",
   },
   loading: {
     flex: 1,
