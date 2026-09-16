@@ -22,6 +22,19 @@
       #viewport {
         overflow: hidden !important;
       }
+      
+      /* Prevent antialiasing artifacts on sprites */
+      img {
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        -ms-interpolation-mode: nearest-neighbor;
+      }
+      
+      * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
     </style>
   </head>
   <body>
