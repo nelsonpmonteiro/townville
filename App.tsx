@@ -107,8 +107,7 @@ export default function App() {
 
       if (dirs[e.key]) {
         e.preventDefault();
-        const [dx, dy] = dirs[e.key];
-        walk(dx, dy);
+        walk(dirs[e.key]); // Pass array directly
       }
     };
 
