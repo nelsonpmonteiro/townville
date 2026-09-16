@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { WorldMap, Building } from './data/worldMaps';
+import CharacterSprite from './components/CharacterSprite';
+import RealBuildingSprite from './components/RealBuildingSprite';
 
 const TILE_SIZE = 48;
 const MAP_COLS = 30;
@@ -15,6 +17,7 @@ interface Point {
 interface Props {
   world: WorldMap;
   protagonistPos: Point;
+  buildingStates: Record<string, 'LOCKED' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' | 'COMPLETE'>;
   onTilePress?: (x: number, y: number) => void;
 }
 
@@ -74,7 +77,7 @@ function protagonistScreenPosition(col: number, row: number): Point {
   };
 }
 
-export default function WorldMapRenderer({ world, protagonistPos, onTilePress }: Props) {
+export default function WorldMapRenderer({ world, protagonistPos, buildingStates, onTilePress }: Props) {
   const worldKey = world.id === 1 ? 'w1' : 'w2';
   const chunks = CHUNK_IMAGES[worldKey];
 
@@ -92,13 +95,11 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
     );
   };
 
-  // Render event points (z=10)
+  // Render event points (z=10) - with real character sprites
   const renderEventPoints = () => {
     return world.eventPoints.map((ep) => {
       const x = ep.x * TILE_SIZE;
       const y = ep.y * TILE_SIZE;
-      const isCompleted = false; // TODO: check from save
-      const isLocked = false; // TODO: check requiredCompletions
 
       return (
         <View
@@ -108,16 +109,21 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
             {
               left: x,
               top: y,
-              backgroundColor: isCompleted ? '#10b981' : isLocked ? '#6b7280' : '#fbbf24',
             },
           ]}
-        />
-
+        >
+          <CharacterSprite
+            npcId={ep.npcId}
+            world={world.id as 1 | 2}
+            expression="idle"
+            size={48}
+          />
+        </View>
       );
     });
   };
 
-  // Render buildings (z=30)
+  // Render buildings (z=30) - with real building sprites and 5-state system
   const renderBuildings = () => {
     return world.buildings.map((building) => {
       // Use buildingPosition function for correct placement
@@ -129,44 +135,26 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
         96
       );
 
-      const isLocked = false; // TODO: check from save
-      const spriteKey = isLocked ? `${building.sprite}-locked` : building.sprite;
-      const sprite = BUILDING_SPRITES[spriteKey];
-
-      // If sprite not available, use placeholder
-      if (!sprite) {
-        return (
-          <View
-            key={building.id}
-            style={[
-              styles.buildingPlaceholder,
-              {
-                left: pos.x,
-                top: pos.y,
-                width: 96,
-                height: 96,
-                backgroundColor: isLocked ? '#9ca3af' : '#8b5cf6',
-              },
-            ]}
-          />
-        );
-      }
+      const state = buildingStates[building.id] || 'LOCKED';
 
       return (
-        <Image
+        <View
           key={building.id}
-          source={sprite}
           style={[
             styles.building,
             {
               left: pos.x,
               top: pos.y,
-              width: 96,
-              height: 96,
+              zIndex: state === 'LOCKED' ? 30 : 20,
             },
           ]}
-          resizeMode="contain"
-        />
+        >
+          <RealBuildingSprite
+            buildingId={building.id}
+            state={state}
+            size={96}
+          />
+        </View>
       );
     });
   };
