@@ -41,6 +41,18 @@ const CHUNK_IMAGES = {
   },
 };
 
+// Building sprites
+const BUILDING_SPRITES: Record<string, any> = {
+  'bakery': require('../assets/images/buildings/building-bakery.png'),
+  'bakery-locked': require('../assets/images/buildings/building-bakery-locked.png'),
+  'hardware': require('../assets/images/buildings/building-hardware.png'),
+  'hardware-locked': require('../assets/images/buildings/building-hardware-locked.png'),
+  'town-hall': require('../assets/images/buildings/building-town-hall.png'),
+  'town-hall-locked': require('../assets/images/buildings/building-town-hall-locked.png'),
+  'library': require('../assets/images/buildings/building-library.png'),
+  'library-locked': require('../assets/images/buildings/building-library-locked.png'),
+  'fountain': require('../assets/images/buildings/building-fountain.png'),
+};
 
 function buildingPosition(
   footprintCol: number,
