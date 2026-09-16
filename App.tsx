@@ -269,6 +269,7 @@ const KEY = "townville.save.v1";
             protagonistAnimatedX={animatedX}
             protagonistAnimatedY={animatedY}
             protagonistDirection={direction}
+            protagonistIsMoving={isMoving}
             buildingStates={{}}
           />
         </Animated.View>

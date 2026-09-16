@@ -1,47 +1,120 @@
-// ProtagonistSprite - Real protagonist with directional sprites
-import React from 'react';
+// ProtagonistSprite - Real protagonist with walk animation
+import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
-import { getSpritePosition, computeRenderSize } from '../utils/spriteScale';
+import { computeRenderSize } from '../utils/spriteScale';
 
 type Direction = 'front' | 'back' | 'left' | 'right';
 
-const PROTAGONIST_SPRITES = {
+// Walk animation frames (8 frames per direction)
+const WALK_FRAMES = {
+  front: [
+    require('../../assets/images/player/walk/boy-walk-front-0.png'),
+    require('../../assets/images/player/walk/boy-walk-front-1.png'),
+    require('../../assets/images/player/walk/boy-walk-front-2.png'),
+    require('../../assets/images/player/walk/boy-walk-front-3.png'),
+    require('../../assets/images/player/walk/boy-walk-front-4.png'),
+    require('../../assets/images/player/walk/boy-walk-front-5.png'),
+    require('../../assets/images/player/walk/boy-walk-front-6.png'),
+    require('../../assets/images/player/walk/boy-walk-front-7.png'),
+  ],
+  back: [
+    require('../../assets/images/player/walk/boy-walk-back-0.png'),
+    require('../../assets/images/player/walk/boy-walk-back-1.png'),
+    require('../../assets/images/player/walk/boy-walk-back-2.png'),
+    require('../../assets/images/player/walk/boy-walk-back-3.png'),
+    require('../../assets/images/player/walk/boy-walk-back-4.png'),
+    require('../../assets/images/player/walk/boy-walk-back-5.png'),
+    require('../../assets/images/player/walk/boy-walk-back-6.png'),
+    require('../../assets/images/player/walk/boy-walk-back-7.png'),
+  ],
+  left: [
+    require('../../assets/images/player/walk/boy-walk-left-0.png'),
+    require('../../assets/images/player/walk/boy-walk-left-1.png'),
+    require('../../assets/images/player/walk/boy-walk-left-2.png'),
+    require('../../assets/images/player/walk/boy-walk-left-3.png'),
+    require('../../assets/images/player/walk/boy-walk-left-4.png'),
+    require('../../assets/images/player/walk/boy-walk-left-5.png'),
+    require('../../assets/images/player/walk/boy-walk-left-6.png'),
+    require('../../assets/images/player/walk/boy-walk-left-7.png'),
+  ],
+  right: [
+    require('../../assets/images/player/walk/boy-walk-right-0.png'),
+    require('../../assets/images/player/walk/boy-walk-right-1.png'),
+    require('../../assets/images/player/walk/boy-walk-right-2.png'),
+    require('../../assets/images/player/walk/boy-walk-right-3.png'),
+    require('../../assets/images/player/walk/boy-walk-right-4.png'),
+    require('../../assets/images/player/walk/boy-walk-right-5.png'),
+    require('../../assets/images/player/walk/boy-walk-right-6.png'),
+    require('../../assets/images/player/walk/boy-walk-right-7.png'),
+  ],
+};
+
+// Idle frames (fallback to static sprites)
+const IDLE_SPRITES = {
   front: require('../../assets/images/player/boy-front.png'),
   back: require('../../assets/images/player/boy-back.png'),
   left: require('../../assets/images/player/boy-left.png'),
   right: require('../../assets/images/player/boy-right.png'),
 };
 
-// Native dimensions after trim (measured from trimmed files)
+// Average dimensions after trim
 const NATIVE_DIMS = {
-  width: 400,
-  height: 1061,
+  width: 40,
+  height: 106,
 };
 
 const TILE_SIZE = 48;
+const FRAME_DURATION = 100; // ms per frame (200ms movement / 8 frames = 25ms, but 100ms looks better)
 
 interface Props {
-  animatedX: Animated.Value; // Animated position in pixels
+  animatedX: Animated.Value;
   animatedY: Animated.Value;
   direction?: Direction;
+  isMoving?: boolean; // Whether protagonist is currently moving
 }
 
-export default function ProtagonistSprite({ animatedX, animatedY, direction = 'front' }: Props) {
-  // Compute render size using sprite scale system
+export default function ProtagonistSprite({ 
+  animatedX, 
+  animatedY, 
+  direction = 'front',
+  isMoving = false 
+}: Props) {
+  const [currentFrame, setCurrentFrame] = useState(0);
+  
+  // Animate frames when moving
+  useEffect(() => {
+    if (!isMoving) {
+      setCurrentFrame(0); // Reset to idle frame
+      return;
+    }
+    
+    // Cycle through 8 frames
+    const interval = setInterval(() => {
+      setCurrentFrame(prev => (prev + 1) % 8);
+    }, FRAME_DURATION);
+    
+    return () => clearInterval(interval);
+  }, [isMoving]);
+  
+  // Compute render size
   const { width, height } = computeRenderSize(
     NATIVE_DIMS.width,
     NATIVE_DIMS.height,
     'protagonist'
   );
   
-  // Position anchored at bottom-center (footprint 1×1)
-  // Offset to center horizontally and anchor at bottom
+  // Position offsets (center horizontally, bottom-aligned)
   const offsetX = (TILE_SIZE - width) / 2;
   const offsetY = TILE_SIZE - height;
   
+  // Select sprite source
+  const spriteSource = isMoving 
+    ? WALK_FRAMES[direction][currentFrame]
+    : IDLE_SPRITES[direction];
+  
   return (
     <Animated.Image
-      source={PROTAGONIST_SPRITES[direction]}
+      source={spriteSource}
       style={[
         styles.sprite,
         {
@@ -60,6 +133,6 @@ export default function ProtagonistSprite({ animatedX, animatedY, direction = 'f
 const styles = StyleSheet.create({
   sprite: {
     position: 'absolute',
-    zIndex: 45, // Between buildings (30) and event points (50)
+    zIndex: 45,
   },
 });
