@@ -90,15 +90,18 @@ export const WORLD_1_FARM: WorldMap = {
     { id: 'ep_joe_1', npcId: 'farmer-joe', x: 5, y: 9 },
     { id: 'ep_vera_1', npcId: 'vera', x: 15, y: 9 },
     { id: 'ep_rose_1', npcId: 'grandma-rose', x: 22, y: 9 },
-    { id: 'ep_billy_1', npcId: 'billy', x: 14, y: 12 },
+    { id: 'ep_billy_1', npcId: 'billy', x: 15, y: 12 },
   ],
   buildings: [
-    // World 1 buildings - all pending assets, using placeholders
-    // Per HERMES-rendering-spec.md §3.2
+    // Top row - henhouse, stable, barn
     { id: 'henhouse', npcId: 'mae', sprite: 'henhouse', footprintCol: 3, footprintRow: 2, footprintW: 2, footprintH: 2 },
     { id: 'stable', npcId: 'chester', sprite: 'stable', footprintCol: 13, footprintRow: 2, footprintW: 2, footprintH: 2 },
     { id: 'barn', npcId: 'farmer-joe', sprite: 'barn', footprintCol: 23, footprintRow: 2, footprintW: 2, footprintH: 2 },
+    // Middle row - coop, clinic, garden
     { id: 'coop', npcId: 'lily', sprite: 'coop', footprintCol: 3, footprintRow: 8, footprintW: 2, footprintH: 2 },
+    { id: 'clinic', npcId: 'vera', sprite: 'clinic', footprintCol: 13, footprintRow: 8, footprintW: 2, footprintH: 2 },
+    { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 23, footprintRow: 8, footprintW: 2, footprintH: 2 },
+  ],
     { id: 'animal-clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 13, footprintRow: 8, footprintW: 2, footprintH: 2 },
     { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 23, footprintRow: 8, footprintW: 2, footprintH: 2 },
     { id: 'farm-gate', npcId: 'old-mac', sprite: 'farm-gate', footprintCol: 14, footprintRow: 19, footprintW: 3, footprintH: 1 },
