@@ -16,10 +16,13 @@ import {
 import WorldMapRenderer from "./src/WorldMapRenderer";
 import GameHeader from "./src/GameHeader";
 import { useInteraction } from "./src/hooks/useInteraction";
+import { useViewportSize } from "./src/hooks/useViewportSize";
 import { MAE_PHASE_1 } from "./src/data/dialogues/mae-phase1";
 import { MAE_PHASE_1_QUEST } from "./src/data/quests/mae-phase1";
 
-const KEY = "townville.save.v1";
+const TILE_SIZE = 48;
+const MAP_WIDTH = 40 * TILE_SIZE; // 1920px (40 cols)
+const MAP_HEIGHT = 30 * TILE_SIZE; // 1440px (30 rows)
 
 export default function App() {
   const [save, setSave] = useState<Save>(fresh());
@@ -27,8 +30,13 @@ export default function App() {
   const [pos, setPos] = useState<Point>({ x: 20, y: 7 }); // Match spawn from WORLD_1_FARM
   const [editMode, setEditMode] = useState(false);
   
+  // Responsive viewport size
+  const viewport = useViewportSize();
+  
   // Interaction system
   const interaction = useInteraction();
+
+const KEY = "townville.save.v1";
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
@@ -197,12 +205,12 @@ export default function App() {
         sessionProgress={save.sessionEvents}
         totalQuests={5}
       />
-      <View style={s.viewport} nativeID="viewport">
+      <View style={[s.viewport, { width: viewport.width, height: viewport.height }]} nativeID="viewport">
         <View
           style={{
             transform: [
-              { translateX: -Math.max(0, Math.min(pos.x * 48 - 600, 1920 - 1200)) },
-              { translateY: -Math.max(0, Math.min(pos.y * 48 - 400, 1440 - 800)) },
+              { translateX: -Math.max(0, Math.min(pos.x * TILE_SIZE - viewport.width / 2, MAP_WIDTH - viewport.width)) },
+              { translateY: -Math.max(0, Math.min(pos.y * TILE_SIZE - viewport.height / 2, MAP_HEIGHT - viewport.height)) },
             ],
           }}
         >
@@ -248,8 +256,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   viewport: {
-    width: 1200,
-    height: 800,
+    // Width/height set dynamically from useViewportSize
     position: "relative",
     overflow: "hidden",
   },
