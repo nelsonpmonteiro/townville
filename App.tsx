@@ -28,6 +28,7 @@ export default function App() {
   const [save, setSave] = useState<Save>(fresh());
   const [ready, setReady] = useState(false);
   const [pos, setPos] = useState<Point>({ x: 20, y: 7 }); // Match spawn from WORLD_1_FARM
+  const [direction, setDirection] = useState<'front' | 'back' | 'left' | 'right'>('front');
   const [editMode, setEditMode] = useState(false);
   
   // Responsive viewport size
@@ -59,6 +60,12 @@ const KEY = "townville.save.v1";
   }, [save, ready]);
 
   const walk = (dir: [number, number]) => {
+    // Update direction based on movement
+    if (dir[0] === -1) setDirection('left');
+    else if (dir[0] === 1) setDirection('right');
+    else if (dir[1] === -1) setDirection('back');
+    else if (dir[1] === 1) setDirection('front');
+    
     setPos((p) => {
       const next = { x: p.x + dir[0], y: p.y + dir[1] };
       // Use walkableMap instead of collisionMap (40×30 grid)
@@ -217,6 +224,7 @@ const KEY = "townville.save.v1";
           <WorldMapRenderer
             world={WORLD_1_FARM}
             protagonistPos={pos}
+            protagonistDirection={direction}
             buildingStates={{}}
           />
         </View>
