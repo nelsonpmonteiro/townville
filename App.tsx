@@ -94,8 +94,8 @@ export default function App() {
         <View
           style={{
             transform: [
-              { translateX: -Math.max(0, Math.min(pos.x * 48 - 400, 1440 - 800)) },
-              { translateY: -Math.max(0, Math.min(pos.y * 48 - 300, 960 - 600)) },
+              { translateX: -Math.max(0, Math.min(pos.x * 48 - 600, 1440 - 1200)) },
+              { translateY: -Math.max(0, Math.min(pos.y * 48 - 400, 960 - 800)) },
             ],
           }}
         >
@@ -119,8 +119,8 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   viewport: {
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     position: "relative",
     overflow: "hidden",
   },
