@@ -40,6 +40,16 @@ export default function App() {
     }
   }, [save, ready]);
 
+  const walk = (dx: number, dy: number) => {
+    setPos((p) => {
+      const next = { x: p.x + dx, y: p.y + dy };
+      if (canMoveTo(next, WORLD_1_FARM.collisionMap)) {
+        return next;
+      }
+      return p;
+    });
+  };
+
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
@@ -64,17 +74,7 @@ export default function App() {
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [pos]);
-
-  const walk = (dx: number, dy: number) => {
-    setPos((p) => {
-      const next = { x: p.x + dx, y: p.y + dy };
-      if (canMoveTo(next, WORLD_1_FARM.collisionMap)) {
-        return next;
-      }
-      return p;
-    });
-  };
+  }, []); // Empty deps - walk uses setPos callback
 
   if (!ready) {
     return <View style={s.loading} />;
