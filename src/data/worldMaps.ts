@@ -102,10 +102,6 @@ export const WORLD_1_FARM: WorldMap = {
     { id: 'clinic', npcId: 'vera', sprite: 'clinic', footprintCol: 13, footprintRow: 8, footprintW: 2, footprintH: 2 },
     { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 23, footprintRow: 8, footprintW: 2, footprintH: 2 },
   ],
-    { id: 'animal-clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 13, footprintRow: 8, footprintW: 2, footprintH: 2 },
-    { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 23, footprintRow: 8, footprintW: 2, footprintH: 2 },
-    { id: 'farm-gate', npcId: 'old-mac', sprite: 'farm-gate', footprintCol: 14, footprintRow: 19, footprintW: 3, footprintH: 1 },
-  ],
 };
 
 // World 2 - Downtown (30×20)
