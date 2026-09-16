@@ -5,8 +5,8 @@ import CharacterSprite from './components/CharacterSprite';
 import RealBuildingSprite from './components/RealBuildingSprite';
 
 const TILE_SIZE = 48;
-const MAP_COLS = 30;
-const MAP_ROWS = 20;
+const MAP_COLS = 40; // Updated from 30 to 40
+const MAP_ROWS = 30; // Updated from 20 to 30
 const CHUNK_SIZE = 480; // Display size (native files are 512px but must render at 480)
 
 interface Point {
