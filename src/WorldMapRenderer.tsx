@@ -129,6 +129,7 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
   // Render buildings (z=30)
   const renderBuildings = () => {
     return world.buildings.map((building) => {
+      // Use buildingPosition function for correct placement
       const pos = buildingPosition(
         building.footprintCol,
         building.footprintRow,

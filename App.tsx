@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import { View, StyleSheet, Platform, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
 import {
@@ -90,10 +90,21 @@ export default function App() {
         sessionProgress={save.sessionEvents}
         totalQuests={5}
       />
-      <WorldMapRenderer
-        world={WORLD_1_FARM}
-        protagonistPos={pos}
-      />
+      <ScrollView
+        horizontal
+        contentContainerStyle={{ width: 1440, height: 960 }}
+        scrollEnabled={false}
+        style={{ flex: 1 }}
+        contentOffset={{
+          x: Math.max(0, Math.min(pos.x * 48 - 400, 1440 - 800)),
+          y: Math.max(0, Math.min(pos.y * 48 - 300, 960 - 600)),
+        }}
+      >
+        <WorldMapRenderer
+          world={WORLD_1_FARM}
+          protagonistPos={pos}
+        />
+      </ScrollView>
     </View>
   );
 }
