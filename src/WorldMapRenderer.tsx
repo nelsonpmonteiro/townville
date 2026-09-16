@@ -185,8 +185,7 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
   const renderProtagonist = () => {
     const pos = protagonistScreenPosition(protagonistPos.x, protagonistPos.y);
     return (
-      <Image
-        source={require('../assets/images/protagonist/_reference-only/frontal-pose-reference.png')}
+      <View
         style={[
           styles.protagonist,
           {
@@ -194,9 +193,12 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
             top: pos.y,
             width: 40,
             height: 56,
+            backgroundColor: '#3b82f6',
+            borderRadius: 20,
+            borderWidth: 2,
+            borderColor: '#fff',
           },
         ]}
-        resizeMode="contain"
       />
     );
   };
