@@ -90,7 +90,7 @@ export default function App() {
         sessionProgress={save.sessionEvents}
         totalQuests={5}
       />
-      <View style={s.viewport}>
+      <View style={s.viewport} nativeID="viewport">
         <View
           style={{
             transform: [
