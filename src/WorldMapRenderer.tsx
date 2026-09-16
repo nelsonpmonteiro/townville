@@ -18,16 +18,38 @@ interface Props {
   onTilePress?: (x: number, y: number) => void;
 }
 
-// Chunk images - TEMPORARILY DISABLED until correct assets arrive
-// const CHUNK_IMAGES = {
-//   w1: {
-//     a1: require('../assets/images/maps/map-w1-a1.png'),
-//     ...
-//   },
-// };
+// Chunk images - static requires for Metro bundler
+const CHUNK_IMAGES = {
+  w1: {
+    a1: require('../assets/images/maps/map-w1-a1.png'),
+    b1: require('../assets/images/maps/map-w1-b1.png'),
+    c1: require('../assets/images/maps/map-w1-c1.png'),
+    a2: require('../assets/images/maps/map-w1-a2.png'),
+    b2: require('../assets/images/maps/map-w1-b2.png'),
+    c2: require('../assets/images/maps/map-w1-c2.png'),
+  },
+  w2: {
+    a1: require('../assets/images/maps/map-w2-a1.png'),
+    b1: require('../assets/images/maps/map-w2-b1.png'),
+    c1: require('../assets/images/maps/map-w2-c1.png'),
+    a2: require('../assets/images/maps/map-w2-a2.png'),
+    b2: require('../assets/images/maps/map-w2-b2.png'),
+    c2: require('../assets/images/maps/map-w2-c2.png'),
+  },
+};
 
-// Building sprites - TEMPORARILY DISABLED
-// const BUILDING_SPRITES: Record<string, any> = { ... };
+// Building sprites
+const BUILDING_SPRITES: Record<string, any> = {
+  'bakery': require('../assets/images/buildings/building-bakery.png'),
+  'bakery-locked': require('../assets/images/buildings/building-bakery-locked.png'),
+  'hardware': require('../assets/images/buildings/building-hardware.png'),
+  'hardware-locked': require('../assets/images/buildings/building-hardware-locked.png'),
+  'town-hall': require('../assets/images/buildings/building-town-hall.png'),
+  'town-hall-locked': require('../assets/images/buildings/building-town-hall-locked.png'),
+  'library': require('../assets/images/buildings/building-library.png'),
+  'library-locked': require('../assets/images/buildings/building-library-locked.png'),
+  'fountain': require('../assets/images/buildings/building-fountain.png'),
+};
 
 function buildingPosition(
   footprintCol: number,
@@ -53,25 +75,27 @@ function protagonistScreenPosition(col: number, row: number): Point {
 }
 
 export default function WorldMapRenderer({ world, protagonistPos, onTilePress }: Props) {
-  // TEMP: removed chunk/building image loading until correct assets arrive
+  const worldKey = world.id === 1 ? 'w1' : 'w2';
+  const chunks = CHUNK_IMAGES[worldKey];
 
-  // Render terrain chunks (z=0) - PLACEHOLDER COLORS until assets arrive
+  // Render terrain chunks (z=0)
   const renderChunks = () => {
-    const colors = ['#2d5016', '#3a6622', '#1e3a0f', '#4a7c35', '#2a4d1a', '#1a3310'];
-    return colors.map((color, idx) => {
+    const chunkNames: Array<keyof typeof chunks> = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'];
+    return chunkNames.map((name, idx) => {
       const col = idx % 3;
       const row = Math.floor(idx / 3);
       return (
-        <View
-          key={idx}
+        <Image
+          key={name}
+          source={chunks[name]}
           style={[
             styles.chunk,
             {
               left: col * CHUNK_SIZE,
               top: row * CHUNK_SIZE,
-              backgroundColor: color,
             },
           ]}
+          resizeMode="stretch"
         />
       );
     });
@@ -114,20 +138,42 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
       );
 
       const isLocked = false; // TODO: check from save
-      // TEMP: all buildings as placeholders until assets arrive
+      const spriteKey = isLocked ? `${building.sprite}-locked` : building.sprite;
+      const sprite = BUILDING_SPRITES[spriteKey];
+
+      // If sprite not available, use placeholder
+      if (!sprite) {
+        return (
+          <View
+            key={building.id}
+            style={[
+              styles.buildingPlaceholder,
+              {
+                left: pos.x,
+                top: pos.y,
+                width: 96,
+                height: 96,
+                backgroundColor: isLocked ? '#9ca3af' : '#8b5cf6',
+              },
+            ]}
+          />
+        );
+      }
+
       return (
-        <View
+        <Image
           key={building.id}
+          source={sprite}
           style={[
-            styles.buildingPlaceholder,
+            styles.building,
             {
               left: pos.x,
               top: pos.y,
               width: 96,
               height: 96,
-              backgroundColor: isLocked ? '#9ca3af' : '#8b5cf6',
             },
           ]}
+          resizeMode="contain"
         />
       );
     });
