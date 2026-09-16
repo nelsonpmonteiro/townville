@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Image } from 'react-native';
 import { WorldMap } from './data/worldMaps';
 import { Point } from './core';
 
@@ -116,26 +116,28 @@ export default function WorldMapRenderer({
 function renderChunks(world: WorldMap) {
   // 3×2 grid of 480×480px chunks (10×10 tiles each)
   const chunks = [];
-  const chunkColors = [
-    ['#7EC850', '#6AB83F', '#5BA835'], // Top row - greens
-    ['#8BD860', '#7AC84F', '#69B73E'], // Bottom row - lighter greens
-  ];
-
+  const worldPrefix = world.id === 1 ? 'w1' : 'w2';
+  const chunkNames = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'];
+  
+  let idx = 0;
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 3; col++) {
+      const chunkName = chunkNames[idx];
       chunks.push(
-        <View
+        <Image
           key={`chunk-${row}-${col}`}
+          source={require(`../assets/images/maps/map-${worldPrefix}-${chunkName}.png`)}
           style={[
             s.chunk,
             {
               left: col * 10 * TILE_SIZE,
               top: row * 10 * TILE_SIZE,
-              backgroundColor: chunkColors[row][col],
             },
           ]}
+          resizeMode="cover"
         />
       );
+      idx++;
     }
   }
   
