@@ -1,9 +1,30 @@
 // Map Editor - drag assets to correct positions
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { WorldMap, Building, EventPoint } from '../data/worldMaps';
 
 const TILE_SIZE = 48;
+const CHUNK_SIZE = 480;
+
+// Chunk images - same as WorldMapRenderer
+const CHUNK_IMAGES = {
+  w1: {
+    a1: require('../../assets/images/maps/map-w1-a1.png'),
+    b1: require('../../assets/images/maps/map-w1-b1.png'),
+    c1: require('../../assets/images/maps/map-w1-c1.png'),
+    a2: require('../../assets/images/maps/map-w1-a2.png'),
+    b2: require('../../assets/images/maps/map-w1-b2.png'),
+    c2: require('../../assets/images/maps/map-w1-c2.png'),
+  },
+  w2: {
+    a1: require('../../assets/images/maps/map-w2-a1.png'),
+    b1: require('../../assets/images/maps/map-w2-b1.png'),
+    c1: require('../../assets/images/maps/map-w2-c1.png'),
+    a2: require('../../assets/images/maps/map-w2-a2.png'),
+    b2: require('../../assets/images/maps/map-w2-b2.png'),
+    c2: require('../../assets/images/maps/map-w2-c2.png'),
+  },
+};
 
 interface Props {
   world: WorldMap;
@@ -92,8 +113,8 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
     if (!showGrid) return null;
 
     const lines = [];
-    // Vertical lines
-    for (let col = 0; col <= 30; col++) {
+    // Vertical lines every 5 tiles
+    for (let col = 0; col <= 30; col += 5) {
       lines.push(
         <View
           key={`v${col}`}
@@ -101,15 +122,16 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
             position: 'absolute',
             left: col * TILE_SIZE,
             top: 0,
-            width: 1,
+            width: col % 10 === 0 ? 2 : 1,
             height: 960,
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: col % 10 === 0 ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 255, 0.2)',
+            zIndex: 1,
           }}
         />
       );
     }
-    // Horizontal lines
-    for (let row = 0; row <= 20; row++) {
+    // Horizontal lines every 5 tiles
+    for (let row = 0; row <= 20; row += 5) {
       lines.push(
         <View
           key={`h${row}`}
@@ -118,13 +140,31 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
             left: 0,
             top: row * TILE_SIZE,
             width: 1440,
-            height: 1,
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            height: row % 10 === 0 ? 2 : 1,
+            backgroundColor: row % 10 === 0 ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 255, 0.2)',
+            zIndex: 1,
           }}
         />
       );
     }
     return lines;
+  };
+
+  // Render map chunks as background
+  const renderMapBackground = () => {
+    const worldKey = world.id === 1 ? 'w1' : 'w2';
+    const chunks = CHUNK_IMAGES[worldKey];
+
+    return (
+      <>
+        <Image source={chunks.a1} style={[styles.chunk, { left: 0, top: 0 }]} />
+        <Image source={chunks.b1} style={[styles.chunk, { left: 480, top: 0 }]} />
+        <Image source={chunks.c1} style={[styles.chunk, { left: 960, top: 0 }]} />
+        <Image source={chunks.a2} style={[styles.chunk, { left: 0, top: 480 }]} />
+        <Image source={chunks.b2} style={[styles.chunk, { left: 480, top: 480 }]} />
+        <Image source={chunks.c2} style={[styles.chunk, { left: 960, top: 480 }]} />
+      </>
+    );
   };
 
   // Save and export positions
@@ -172,6 +212,9 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        {/* Map background (chunks) */}
+        {renderMapBackground()}
+        
         {/* Grid */}
         {renderGrid()}
 
@@ -288,7 +331,16 @@ const styles = StyleSheet.create({
   canvas: {
     flex: 1,
     position: 'relative',
-    overflow: 'auto',
+    backgroundColor: '#000',
+    width: 1440,
+    height: 960,
+    margin: 'auto',
+  },
+  chunk: {
+    position: 'absolute',
+    width: CHUNK_SIZE,
+    height: CHUNK_SIZE,
+    zIndex: 0,
   },
   building: {
     position: 'absolute',
