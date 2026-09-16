@@ -23,6 +23,7 @@ const WORLD1_BUILDINGS = {
   'clinic': require('../../assets/images/buildings/world1/building-animal-clinic.png'),
   'clinic-locked': require('../../assets/images/buildings/world1/building-animal-clinic-locked.png'),
   'garden': require('../../assets/images/buildings/world1/building-garden.png'),
+  'garden-locked': require('../../assets/images/buildings/world1/building-garden-locked.png'),
   'fence': require('../../assets/images/buildings/world1/building-fence.png'),
   'farm-gate-open': require('../../assets/images/buildings/world1/building-farm-gate-open.png'),
   'farm-gate-closed': require('../../assets/images/buildings/world1/building-farm-gate-closed.png'),
