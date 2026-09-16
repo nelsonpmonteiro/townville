@@ -5,6 +5,8 @@ export type Save = {
   streak: number;
   upgrade: number;
   muted: boolean;
+  lives: number;
+  errors: Record<string, number>; // quest id -> error count
 };
 export const QUESTS = [
   { id: "q1", npc: "Mae", kind: "egg", target: "basket", count: 3 },
@@ -20,10 +22,26 @@ export const fresh = (): Save => ({
   streak: 0,
   upgrade: 0,
   muted: false,
+  lives: 3,
+  errors: {},
 });
 export const sessionDone = (s: Save) => s.completed.length === 5;
+export const gameOver = (s: Save) => s.lives <= 0;
 export const available = (s: Save, npc: string) =>
   QUESTS[s.completed.length]?.npc === npc;
+export function recordError(s: Save, questId: string): Save {
+  const errorCount = (s.errors[questId] || 0) + 1;
+  const newErrors = { ...s.errors, [questId]: errorCount };
+  
+  // Lose a life on 3rd error for this quest
+  const lives = errorCount % 3 === 0 ? s.lives - 1 : s.lives;
+  
+  return {
+    ...s,
+    errors: newErrors,
+    lives,
+  };
+}
 export function complete(s: Save, id: string, count: number): Save {
   const q = QUESTS[s.completed.length];
   if (!q || q.id !== id || q.count !== count) return s;
@@ -52,7 +70,12 @@ export function restore(raw: string | null): Save {
       const q = QUESTS[s.completed.length];
       s = complete(s, id, q.count);
     }
-    return { ...s, muted: v.muted === true };
+    return { 
+      ...s, 
+      muted: v.muted === true,
+      lives: typeof v.lives === 'number' && v.lives >= 0 ? v.lives : 3,
+      errors: typeof v.errors === 'object' && v.errors !== null ? v.errors : {},
+    };
   } catch {
     return fresh();
   }
