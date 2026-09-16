@@ -113,20 +113,40 @@ export default function WorldMapRenderer({
   );
 }
 
+// Chunk images - must use static requires for Metro bundler
+const CHUNK_IMAGES = {
+  w1: {
+    a1: require('../assets/images/maps/map-w1-a1.png'),
+    b1: require('../assets/images/maps/map-w1-b1.png'),
+    c1: require('../assets/images/maps/map-w1-c1.png'),
+    a2: require('../assets/images/maps/map-w1-a2.png'),
+    b2: require('../assets/images/maps/map-w1-b2.png'),
+    c2: require('../assets/images/maps/map-w1-c2.png'),
+  },
+  w2: {
+    a1: require('../assets/images/maps/map-w2-a1.png'),
+    b1: require('../assets/images/maps/map-w2-b1.png'),
+    c1: require('../assets/images/maps/map-w2-c1.png'),
+    a2: require('../assets/images/maps/map-w2-a2.png'),
+    b2: require('../assets/images/maps/map-w2-b2.png'),
+    c2: require('../assets/images/maps/map-w2-c2.png'),
+  },
+};
+
 function renderChunks(world: WorldMap) {
   // 3×2 grid of 480×480px chunks (10×10 tiles each)
   const chunks = [];
-  const worldPrefix = world.id === 1 ? 'w1' : 'w2';
-  const chunkNames = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'];
+  const worldKey = world.id === 1 ? 'w1' : 'w2';
+  const chunkKeys = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'] as const;
   
   let idx = 0;
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 3; col++) {
-      const chunkName = chunkNames[idx];
+      const chunkKey = chunkKeys[idx];
       chunks.push(
         <Image
           key={`chunk-${row}-${col}`}
-          source={require(`../assets/images/maps/map-${worldPrefix}-${chunkName}.png`)}
+          source={CHUNK_IMAGES[worldKey][chunkKey]}
           style={[
             s.chunk,
             {
