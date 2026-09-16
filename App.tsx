@@ -3,6 +3,8 @@ import { View, StyleSheet, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
 import MapEditor from "./src/components/MapEditor";
+import DialogueBox from "./src/components/DialogueBox";
+import QuestUI from "./src/components/QuestUI";
 import {
   fresh,
   restore,
@@ -13,6 +15,9 @@ import {
 } from "./src/core";
 import WorldMapRenderer from "./src/WorldMapRenderer";
 import GameHeader from "./src/GameHeader";
+import { useInteraction } from "./src/hooks/useInteraction";
+import { MAE_PHASE_1 } from "./src/data/dialogues/mae-phase1";
+import { MAE_PHASE_1_QUEST } from "./src/data/quests/mae-phase1";
 
 const KEY = "townville.save.v1";
 
@@ -204,9 +209,31 @@ export default function App() {
           <WorldMapRenderer
             world={WORLD_1_FARM}
             protagonistPos={pos}
+            buildingStates={{}}
           />
         </View>
       </View>
+
+      {/* Dialogue System */}
+      {interaction.state.type === 'dialogue' && (
+        <DialogueBox
+          node={interaction.state.tree.nodes[interaction.state.currentNodeId]}
+          onChoice={handleDialogueChoice}
+          onNext={handleDialogueNext}
+          onSkip={() => interaction.closeInteraction()}
+        />
+      )}
+
+      {/* Quest System */}
+      {interaction.state.type === 'quest' && (
+        <QuestUI
+          quest={interaction.state.quest}
+          onSubmit={handleQuestSubmit}
+          onCancel={() => interaction.closeInteraction()}
+          attempts={interaction.state.progress.attempts}
+          maxAttempts={interaction.state.quest.maxAttempts || 3}
+        />
+      )}
     </View>
   );
 }
