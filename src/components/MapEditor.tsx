@@ -42,8 +42,14 @@ interface DragState {
 export default function MapEditor({ world, onSave, onClose }: Props) {
   const [buildings, setBuildings] = useState([...world.buildings]);
   const [eventPoints, setEventPoints] = useState([...world.eventPoints]);
+  const [collisionMap, setCollisionMap] = useState<string[][]>(
+    world.collisionMap.map(row => [...row])
+  );
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [showGrid, setShowGrid] = useState(true);
+  const [editMode, setEditMode] = useState<'assets' | 'collision'>('assets');
+  const [paintMode, setPaintMode] = useState<'.' | '#'>('#'); // What to paint
+  const [isPainting, setIsPainting] = useState(false);
 
   // Convert mouse/touch position to tile coordinates
   const pixelToTile = (px: number, py: number) => {
@@ -74,8 +80,31 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
     });
   };
 
+  // Handle mouse down on tile (for collision editing)
+  const handleTileMouseDown = (col: number, row: number) => {
+    if (editMode !== 'collision') return;
+    setIsPainting(true);
+    toggleTile(col, row);
+  };
+
+  // Handle mouse enter on tile (for painting)
+  const handleTileMouseEnter = (col: number, row: number) => {
+    if (editMode !== 'collision' || !isPainting) return;
+    toggleTile(col, row);
+  };
+
+  // Toggle tile between walkable and blocked
+  const toggleTile = (col: number, row: number) => {
+    setCollisionMap(prev => {
+      const next = prev.map(r => [...r]);
+      next[row][col] = paintMode;
+      return next;
+    });
+  };
+
   // Handle drag move
   const handleMouseMove = (e: any) => {
+    if (editMode === 'collision') return; // No dragging in collision mode
     if (!dragging) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -106,6 +135,7 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
   // Handle drag end
   const handleMouseUp = () => {
     setDragging(null);
+    setIsPainting(false);
   };
 
   // Render grid overlay
@@ -150,6 +180,37 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
     return lines;
   };
 
+  // Render collision overlay
+  const renderCollisionOverlay = () => {
+    if (editMode !== 'collision') return null;
+
+    const tiles = [];
+    for (let row = 0; row < 20; row++) {
+      for (let col = 0; col < 30; col++) {
+        const isBlocked = collisionMap[row][col] === '#';
+        tiles.push(
+          <View
+            key={`tile-${col}-${row}`}
+            style={{
+              position: 'absolute',
+              left: col * TILE_SIZE,
+              top: row * TILE_SIZE,
+              width: TILE_SIZE,
+              height: TILE_SIZE,
+              backgroundColor: isBlocked ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 255, 0, 0.2)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              zIndex: 2,
+            }}
+            onMouseDown={() => handleTileMouseDown(col, row)}
+            onMouseEnter={() => handleTileMouseEnter(col, row)}
+          />
+        );
+      }
+    }
+    return tiles;
+  };
+
   // Render map chunks as background
   const renderMapBackground = () => {
     const worldKey = world.id === 1 ? 'w1' : 'w2';
@@ -177,8 +238,16 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
       `    { id: '${ep.id}', npcId: '${ep.npcId}', x: ${ep.x}, y: ${ep.y} },`
     ).join('\n');
     
+    const collisionMapCode = collisionMap.map((row, i) =>
+      `  // Row ${i}\n  [${row.map(c => `'${c}'`).join(',')}],`
+    ).join('\n');
+    
     const fullCode = `
 // === COPIE ESTE CÓDIGO PARA worldMaps.ts ===
+
+const farmCollisionMap: Tile[][] = [
+${collisionMapCode}
+];
 
 eventPoints: [
 ${eventPointsCode}
@@ -189,7 +258,7 @@ ${buildingsCode}
 `;
 
     console.log('='.repeat(80));
-    console.log('POSIÇÕES SALVAS - COPIE O CÓDIGO ABAIXO:');
+    console.log('POSIÇÕES E COLISÕES SALVAS - COPIE O CÓDIGO ABAIXO:');
     console.log('='.repeat(80));
     console.log(fullCode);
     console.log('='.repeat(80));
@@ -202,7 +271,42 @@ ${buildingsCode}
     <View style={styles.container}>
       {/* Toolbar */}
       <View style={styles.toolbar}>
-        <Text style={styles.title}>Map Editor - Arraste os assets</Text>
+        <Text style={styles.title}>Map Editor</Text>
+        
+        {/* Mode toggle */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            style={[styles.button, editMode === 'assets' && styles.activeButton]}
+            onPress={() => setEditMode('assets')}
+          >
+            <Text style={styles.buttonText}>🏠 Assets</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.button, editMode === 'collision' && styles.activeButton]}
+            onPress={() => setEditMode('collision')}
+          >
+            <Text style={styles.buttonText}>🚧 Colisão</Text>
+          </Pressable>
+        </View>
+
+        {/* Collision paint mode */}
+        {editMode === 'collision' && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable
+              style={[styles.button, paintMode === '#' && styles.activeButton]}
+              onPress={() => setPaintMode('#')}
+            >
+              <Text style={styles.buttonText}>🚫 Bloquear</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.button, paintMode === '.' && styles.activeButton]}
+              onPress={() => setPaintMode('.')}
+            >
+              <Text style={styles.buttonText}>✅ Liberar</Text>
+            </Pressable>
+          </View>
+        )}
+        
         <Pressable
           style={[styles.button, { backgroundColor: showGrid ? '#10b981' : '#6b7280' }]}
           onPress={() => setShowGrid(!showGrid)}
@@ -210,7 +314,7 @@ ${buildingsCode}
           <Text style={styles.buttonText}>Grid: {showGrid ? 'ON' : 'OFF'}</Text>
         </Pressable>
         <Pressable style={[styles.button, styles.saveButton]} onPress={handleSave}>
-          <Text style={styles.buttonText}>💾 Salvar (veja console)</Text>
+          <Text style={styles.buttonText}>💾 Salvar</Text>
         </Pressable>
         <Pressable style={[styles.button, styles.closeButton]} onPress={onClose}>
           <Text style={styles.buttonText}>✕ Fechar</Text>
@@ -227,11 +331,14 @@ ${buildingsCode}
         {/* Map background (chunks) */}
         {renderMapBackground()}
         
+        {/* Collision overlay */}
+        {renderCollisionOverlay()}
+        
         {/* Grid */}
         {renderGrid()}
 
-        {/* Buildings */}
-        {buildings.map((building) => {
+        {/* Buildings - only show in assets mode */}
+        {editMode === 'assets' && buildings.map((building) => {
           const x = building.footprintCol * TILE_SIZE + (building.footprintW * TILE_SIZE - 96) / 2;
           const y = building.footprintRow * TILE_SIZE + building.footprintH * TILE_SIZE - 96;
 
@@ -257,8 +364,8 @@ ${buildingsCode}
           );
         })}
 
-        {/* Event Points */}
-        {eventPoints.map((ep) => {
+        {/* Event Points - only show in assets mode */}
+        {editMode === 'assets' && eventPoints.map((ep) => {
           const x = ep.x * TILE_SIZE;
           const y = ep.y * TILE_SIZE;
 
@@ -286,15 +393,28 @@ ${buildingsCode}
 
       {/* Instructions */}
       <View style={styles.instructions}>
-        <Text style={styles.instructionText}>
-          🖱️ Arraste prédios roxos e event points dourados para alinhar com o mapa
-        </Text>
-        <Text style={styles.instructionText}>
-          📍 As coordenadas (col, row) aparecem em cada asset
-        </Text>
-        <Text style={styles.instructionText}>
-          💾 Clique em "Salvar" e copie o código do console para worldMaps.ts
-        </Text>
+        {editMode === 'assets' ? (
+          <>
+            <Text style={styles.instructionText}>
+              🏠 MODO ASSETS: Arraste prédios roxos e event points dourados
+            </Text>
+            <Text style={styles.instructionText}>
+              💾 Clique em "Salvar" e copie o código do console
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.instructionText}>
+              🚧 MODO COLISÃO: Clique e arraste para pintar tiles
+            </Text>
+            <Text style={styles.instructionText}>
+              🚫 VERMELHO = Bloqueado (#) | ✅ VERDE = Andável (.)
+            </Text>
+            <Text style={styles.instructionText}>
+              💾 Clique em "Salvar" para exportar a matriz de colisão
+            </Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -332,8 +452,8 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: '#10b981',
   },
-  closeButton: {
-    backgroundColor: '#ef4444',
+  activeButton: {
+    backgroundColor: '#3b82f6',
   },
   buttonText: {
     color: '#fff',
