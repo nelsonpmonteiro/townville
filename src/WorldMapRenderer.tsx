@@ -21,23 +21,35 @@ interface Props {
   onTilePress?: (x: number, y: number) => void;
 }
 
-// Chunk images - static requires for Metro bundler (refreshed)
+// Chunk images - static requires for Metro bundler (4×3 grid)
 const CHUNK_IMAGES = {
   w1: {
     a1: require('../assets/images/maps/map-w1-a1.png'),
     b1: require('../assets/images/maps/map-w1-b1.png'),
     c1: require('../assets/images/maps/map-w1-c1.png'),
+    d1: require('../assets/images/maps/map-w1-d1.png'),
     a2: require('../assets/images/maps/map-w1-a2.png'),
     b2: require('../assets/images/maps/map-w1-b2.png'),
     c2: require('../assets/images/maps/map-w1-c2.png'),
+    d2: require('../assets/images/maps/map-w1-d2.png'),
+    a3: require('../assets/images/maps/map-w1-a3.png'),
+    b3: require('../assets/images/maps/map-w1-b3.png'),
+    c3: require('../assets/images/maps/map-w1-c3.png'),
+    d3: require('../assets/images/maps/map-w1-d3.png'),
   },
   w2: {
     a1: require('../assets/images/maps/map-w2-a1.png'),
     b1: require('../assets/images/maps/map-w2-b1.png'),
     c1: require('../assets/images/maps/map-w2-c1.png'),
+    d1: require('../assets/images/maps/map-w2-d1.png'),
     a2: require('../assets/images/maps/map-w2-a2.png'),
     b2: require('../assets/images/maps/map-w2-b2.png'),
     c2: require('../assets/images/maps/map-w2-c2.png'),
+    d2: require('../assets/images/maps/map-w2-d2.png'),
+    a3: require('../assets/images/maps/map-w2-a3.png'),
+    b3: require('../assets/images/maps/map-w2-b3.png'),
+    c3: require('../assets/images/maps/map-w2-c3.png'),
+    d3: require('../assets/images/maps/map-w2-d3.png'),
   },
 };
 
@@ -69,16 +81,25 @@ export default function WorldMapRenderer({ world, protagonistPos, buildingStates
   const worldKey = world.id === 1 ? 'w1' : 'w2';
   const chunks = CHUNK_IMAGES[worldKey];
 
-  // Render terrain chunks (z=0)
+  // Render terrain chunks (z=0) - 4×3 grid (1920×1440px)
   const renderChunks = () => {
     return (
       <>
+        {/* Row 1 */}
         <Image source={chunks.a1} style={[styles.chunk, { left: 0, top: 0 }]} />
         <Image source={chunks.b1} style={[styles.chunk, { left: 480, top: 0 }]} />
         <Image source={chunks.c1} style={[styles.chunk, { left: 960, top: 0 }]} />
+        <Image source={chunks.d1} style={[styles.chunk, { left: 1440, top: 0 }]} />
+        {/* Row 2 */}
         <Image source={chunks.a2} style={[styles.chunk, { left: 0, top: 480 }]} />
         <Image source={chunks.b2} style={[styles.chunk, { left: 480, top: 480 }]} />
         <Image source={chunks.c2} style={[styles.chunk, { left: 960, top: 480 }]} />
+        <Image source={chunks.d2} style={[styles.chunk, { left: 1440, top: 480 }]} />
+        {/* Row 3 */}
+        <Image source={chunks.a3} style={[styles.chunk, { left: 0, top: 960 }]} />
+        <Image source={chunks.b3} style={[styles.chunk, { left: 480, top: 960 }]} />
+        <Image source={chunks.c3} style={[styles.chunk, { left: 960, top: 960 }]} />
+        <Image source={chunks.d3} style={[styles.chunk, { left: 1440, top: 960 }]} />
       </>
     );
   };
