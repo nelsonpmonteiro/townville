@@ -80,25 +80,16 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
 
   // Render terrain chunks (z=0)
   const renderChunks = () => {
-    const chunkNames: Array<keyof typeof chunks> = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'];
-    return chunkNames.map((name, idx) => {
-      const col = idx % 3;
-      const row = Math.floor(idx / 3);
-      return (
-        <Image
-          key={name}
-          source={chunks[name]}
-          style={[
-            styles.chunk,
-            {
-              left: col * CHUNK_SIZE,
-              top: row * CHUNK_SIZE,
-            },
-          ]}
-          resizeMode="stretch"
-        />
-      );
-    });
+    return (
+      <>
+        <Image source={chunks.a1} style={[styles.chunk, { left: 0, top: 0 }]} />
+        <Image source={chunks.b1} style={[styles.chunk, { left: 480, top: 0 }]} />
+        <Image source={chunks.c1} style={[styles.chunk, { left: 960, top: 0 }]} />
+        <Image source={chunks.a2} style={[styles.chunk, { left: 0, top: 480 }]} />
+        <Image source={chunks.b2} style={[styles.chunk, { left: 480, top: 480 }]} />
+        <Image source={chunks.c2} style={[styles.chunk, { left: 960, top: 480 }]} />
+      </>
+    );
   };
 
   // Render event points (z=10)
