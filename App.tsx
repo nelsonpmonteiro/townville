@@ -117,6 +117,9 @@ const s = StyleSheet.create({
   viewport: {
     flex: 1,
     overflow: "hidden",
+    position: "relative",
+    width: "100%",
+    height: "100%",
   },
   loading: {
     flex: 1,
