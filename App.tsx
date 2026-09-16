@@ -239,18 +239,16 @@ const KEY = "townville.save.v1";
           style={{
             transform: [
               { 
-                translateX: animatedX.interpolate({
-                  inputRange: [0, MAP_WIDTH],
-                  outputRange: [0, -(MAP_WIDTH - viewport.width)],
-                  extrapolate: 'clamp',
-                })
+                translateX: Animated.subtract(
+                  viewport.width / 2,
+                  animatedX
+                )
               },
               { 
-                translateY: animatedY.interpolate({
-                  inputRange: [0, MAP_HEIGHT],
-                  outputRange: [0, -(MAP_HEIGHT - viewport.height)],
-                  extrapolate: 'clamp',
-                })
+                translateY: Animated.subtract(
+                  viewport.height / 2,
+                  animatedY
+                )
               },
             ],
           }}
