@@ -176,8 +176,8 @@ const s = StyleSheet.create({
   },
   chunk: {
     position: 'absolute',
-    width: 10 * TILE_SIZE,
-    height: 10 * TILE_SIZE,
+    width: 480, // Force exact size - chunks are 512px native but must render at 480px
+    height: 480,
   },
   building: {
     position: 'absolute',
