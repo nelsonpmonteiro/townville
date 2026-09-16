@@ -266,7 +266,8 @@ const KEY = "townville.save.v1";
         >
           <WorldMapRenderer
             world={WORLD_1_FARM}
-            protagonistPos={pos}
+            protagonistAnimatedX={animatedX}
+            protagonistAnimatedY={animatedY}
             protagonistDirection={direction}
             buildingStates={{}}
           />

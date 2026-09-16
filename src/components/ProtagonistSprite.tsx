@@ -1,6 +1,6 @@
 // ProtagonistSprite - Real protagonist with directional sprites
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { getSpritePosition, computeRenderSize } from '../utils/spriteScale';
 
 type Direction = 'front' | 'back' | 'left' | 'right';
@@ -18,13 +18,15 @@ const NATIVE_DIMS = {
   height: 1061,
 };
 
+const TILE_SIZE = 48;
+
 interface Props {
-  col: number; // Grid position
-  row: number;
+  animatedX: Animated.Value; // Animated position in pixels
+  animatedY: Animated.Value;
   direction?: Direction;
 }
 
-export default function ProtagonistSprite({ col, row, direction = 'front' }: Props) {
+export default function ProtagonistSprite({ animatedX, animatedY, direction = 'front' }: Props) {
   // Compute render size using sprite scale system
   const { width, height } = computeRenderSize(
     NATIVE_DIMS.width,
@@ -32,19 +34,23 @@ export default function ProtagonistSprite({ col, row, direction = 'front' }: Pro
     'protagonist'
   );
   
-  // Get position anchored at bottom-center (footprint 1×1)
-  const { x, y } = getSpritePosition(col, row, 1, 1, width, height);
+  // Position anchored at bottom-center (footprint 1×1)
+  // Offset to center horizontally and anchor at bottom
+  const offsetX = (TILE_SIZE - width) / 2;
+  const offsetY = TILE_SIZE - height;
   
   return (
-    <Image
+    <Animated.Image
       source={PROTAGONIST_SPRITES[direction]}
       style={[
         styles.sprite,
         {
-          left: x,
-          top: y,
           width,
           height,
+          transform: [
+            { translateX: Animated.add(animatedX, offsetX) },
+            { translateY: Animated.add(animatedY, offsetY) },
+          ],
         },
       ]}
     />

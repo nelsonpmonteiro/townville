@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, Animated } from 'react-native';
 import { WorldMap, Building } from './data/worldMaps';
 import CharacterSprite from './components/CharacterSprite';
 import RealBuildingSprite from './components/RealBuildingSprite';
@@ -17,7 +17,8 @@ interface Point {
 
 interface Props {
   world: WorldMap;
-  protagonistPos: Point;
+  protagonistAnimatedX: Animated.Value;
+  protagonistAnimatedY: Animated.Value;
   protagonistDirection?: 'front' | 'back' | 'left' | 'right';
   buildingStates: Record<string, 'LOCKED' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' | 'COMPLETE'>;
   onTilePress?: (x: number, y: number) => void;
@@ -79,7 +80,7 @@ function protagonistScreenPosition(col: number, row: number): Point {
   };
 }
 
-export default function WorldMapRenderer({ world, protagonistPos, protagonistDirection = 'front', buildingStates, onTilePress }: Props) {
+export default function WorldMapRenderer({ world, protagonistAnimatedX, protagonistAnimatedY, protagonistDirection = 'front', buildingStates, onTilePress }: Props) {
   const worldKey = world.id === 1 ? 'w1' : 'w2';
   const chunks = CHUNK_IMAGES[worldKey];
 
@@ -170,12 +171,12 @@ export default function WorldMapRenderer({ world, protagonistPos, protagonistDir
     });
   };
 
-  // Render protagonist (z=45) - real sprite with direction
+  // Render protagonist (z=45) - real sprite with animated position
   const renderProtagonist = () => {
     return (
       <ProtagonistSprite
-        col={protagonistPos.x}
-        row={protagonistPos.y}
+        animatedX={protagonistAnimatedX}
+        animatedY={protagonistAnimatedY}
         direction={protagonistDirection}
       />
     );
