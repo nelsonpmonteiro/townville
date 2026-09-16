@@ -248,18 +248,28 @@ const KEY = "townville.save.v1";
       <View style={[s.viewport, { width: viewport.width, height: viewport.height }]} nativeID="viewport">
         <Animated.View
           style={{
+            width: MAP_WIDTH,
+            height: MAP_HEIGHT,
             transform: [
               { 
                 translateX: Animated.subtract(
                   viewport.width / 2,
-                  animatedX
-                )
+                  Animated.add(animatedX, TILE_SIZE / 2)
+                ).interpolate({
+                  inputRange: [-(MAP_WIDTH - viewport.width), 0],
+                  outputRange: [-(MAP_WIDTH - viewport.width), 0],
+                  extrapolate: 'clamp',
+                })
               },
               { 
                 translateY: Animated.subtract(
                   viewport.height / 2,
-                  animatedY
-                )
+                  Animated.add(animatedY, TILE_SIZE / 2)
+                ).interpolate({
+                  inputRange: [-(MAP_HEIGHT - viewport.height), 0],
+                  outputRange: [-(MAP_HEIGHT - viewport.height), 0],
+                  extrapolate: 'clamp',
+                })
               },
             ],
           }}

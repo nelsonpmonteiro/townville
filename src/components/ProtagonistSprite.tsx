@@ -126,6 +126,7 @@ export default function ProtagonistSprite({
           ],
         },
       ]}
+      resizeMode="contain"
     />
   );
 }
