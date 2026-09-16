@@ -57,10 +57,10 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/boy-right.png'),
 };
 
-// Average dimensions after trim
+// Average dimensions after trim (idle and walk frames are similar now)
 const NATIVE_DIMS = {
-  width: 40,
-  height: 106,
+  idle: { width: 40, height: 106 },  // Trimmed idle sprites
+  walk: { width: 40, height: 106 },  // Walk animation frames
 };
 
 const TILE_SIZE = 48;
@@ -96,10 +96,10 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving]);
   
-  // Compute render size
+  // Compute render size (use same dimensions for idle and walk to prevent flashing)
   const { width, height } = computeRenderSize(
-    NATIVE_DIMS.width,
-    NATIVE_DIMS.height,
+    NATIVE_DIMS.walk.width,
+    NATIVE_DIMS.walk.height,
     'protagonist'
   );
   
