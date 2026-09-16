@@ -88,13 +88,16 @@ export default function ProtagonistSprite({
       return;
     }
     
+    // Start immediately on first frame
+    setCurrentFrame(0);
+    
     // Cycle through 8 frames
     const interval = setInterval(() => {
       setCurrentFrame(prev => (prev + 1) % 8);
     }, FRAME_DURATION);
     
     return () => clearInterval(interval);
-  }, [isMoving]);
+  }, [isMoving, direction]); // Re-sync when direction changes
   
   // Compute render size
   const { width, height } = computeRenderSize(
