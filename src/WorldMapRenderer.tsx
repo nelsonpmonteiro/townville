@@ -122,11 +122,8 @@ export default function WorldMapRenderer({ world, protagonistPos, onTilePress }:
               backgroundColor: isCompleted ? '#10b981' : isLocked ? '#6b7280' : '#fbbf24',
             },
           ]}
-        >
-          <View style={styles.eventPointInner}>
-            {isCompleted ? '✓' : '⭐'}
-          </View>
-        </View>
+        />
+
       );
     });
   };
