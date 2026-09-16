@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { View, StyleSheet, Platform, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
@@ -65,7 +65,7 @@ const KEY = "townville.save.v1";
     }
   }, [save, ready]);
 
-  const walk = (dir: [number, number]) => {
+  const walk = useCallback((dir: [number, number]) => {
     if (isMoving) return; // Prevent movement spam
     
     // Update direction based on movement
@@ -98,7 +98,7 @@ const KEY = "townville.save.v1";
         checkEventPointCollision(next);
       });
     }
-  };
+  }, [isMoving, pos, animatedX, animatedY]);
 
   // Check if player stepped on an event point
   const checkEventPointCollision = (playerPos: Point) => {
@@ -151,7 +151,7 @@ const KEY = "townville.save.v1";
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editMode]);
+  }, [editMode, walk]); // walk is now stable with useCallback
 
   // Handle dialogue advancement
   const handleDialogueChoice = (nextNodeId: string, isCorrect?: boolean) => {
