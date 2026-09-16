@@ -3,6 +3,7 @@ import { View, Image, StyleSheet } from 'react-native';
 import { WorldMap, Building } from './data/worldMaps';
 import CharacterSprite from './components/CharacterSprite';
 import RealBuildingSprite from './components/RealBuildingSprite';
+import ProtagonistSprite from './components/ProtagonistSprite';
 
 const TILE_SIZE = 48;
 const MAP_COLS = 40; // Updated from 30 to 40
