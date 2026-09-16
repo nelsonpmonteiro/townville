@@ -18,7 +18,7 @@ interface Props {
   onTilePress?: (x: number, y: number) => void;
 }
 
-// Chunk images - static requires for Metro bundler
+// Chunk images - static requires for Metro bundler (refreshed)
 const CHUNK_IMAGES = {
   w1: {
     a1: require('../assets/images/maps/map-w1-a1.png'),
