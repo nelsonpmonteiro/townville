@@ -93,12 +93,12 @@ const KEY = "townville.save.v1";
         Animated.timing(animatedX, {
           toValue: next.x * TILE_SIZE,
           duration: MOVEMENT_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: false, // Web doesn't support native driver
         }),
         Animated.timing(animatedY, {
           toValue: next.y * TILE_SIZE,
           duration: MOVEMENT_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: false, // Web doesn't support native driver
         }),
       ]).start(() => {
         console.log('✅ Animation complete, new pos:', next);
