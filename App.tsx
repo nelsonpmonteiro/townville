@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, StyleSheet, Platform, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
 import MapEditor from "./src/components/MapEditor";
@@ -23,6 +23,7 @@ import { MAE_PHASE_1_QUEST } from "./src/data/quests/mae-phase1";
 const TILE_SIZE = 48;
 const MAP_WIDTH = 40 * TILE_SIZE; // 1920px (40 cols)
 const MAP_HEIGHT = 30 * TILE_SIZE; // 1440px (30 rows)
+const MOVEMENT_DURATION = 200; // ms for smooth tile-to-tile movement
 
 export default function App() {
   const [save, setSave] = useState<Save>(fresh());
@@ -30,6 +31,11 @@ export default function App() {
   const [pos, setPos] = useState<Point>({ x: 20, y: 7 }); // Match spawn from WORLD_1_FARM
   const [direction, setDirection] = useState<'front' | 'back' | 'left' | 'right'>('front');
   const [editMode, setEditMode] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  
+  // Animated position for smooth movement
+  const animatedX = useRef(new Animated.Value(20 * TILE_SIZE)).current;
+  const animatedY = useRef(new Animated.Value(7 * TILE_SIZE)).current;
   
   // Responsive viewport size
   const viewport = useViewportSize();
@@ -60,22 +66,38 @@ const KEY = "townville.save.v1";
   }, [save, ready]);
 
   const walk = (dir: [number, number]) => {
+    if (isMoving) return; // Prevent movement spam
+    
     // Update direction based on movement
     if (dir[0] === -1) setDirection('left');
     else if (dir[0] === 1) setDirection('right');
     else if (dir[1] === -1) setDirection('back');
     else if (dir[1] === 1) setDirection('front');
     
-    setPos((p) => {
-      const next = { x: p.x + dir[0], y: p.y + dir[1] };
-      // Use walkableMap instead of collisionMap (40×30 grid)
-      if (canMoveTo(next, WORLD_1_FARM.walkableMap, [])) {
-        // Check for event point collision
+    const next = { x: pos.x + dir[0], y: pos.y + dir[1] };
+    
+    // Use walkableMap instead of collisionMap (40×30 grid)
+    if (canMoveTo(next, WORLD_1_FARM.walkableMap, [])) {
+      setIsMoving(true);
+      
+      // Animate to new position
+      Animated.parallel([
+        Animated.timing(animatedX, {
+          toValue: next.x * TILE_SIZE,
+          duration: MOVEMENT_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedY, {
+          toValue: next.y * TILE_SIZE,
+          duration: MOVEMENT_DURATION,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsMoving(false);
+        setPos(next);
         checkEventPointCollision(next);
-        return next;
-      }
-      return p;
-    });
+      });
+    }
   };
 
   // Check if player stepped on an event point
@@ -213,11 +235,23 @@ const KEY = "townville.save.v1";
         totalQuests={5}
       />
       <View style={[s.viewport, { width: viewport.width, height: viewport.height }]} nativeID="viewport">
-        <View
+        <Animated.View
           style={{
             transform: [
-              { translateX: -Math.max(0, Math.min(pos.x * TILE_SIZE - viewport.width / 2, MAP_WIDTH - viewport.width)) },
-              { translateY: -Math.max(0, Math.min(pos.y * TILE_SIZE - viewport.height / 2, MAP_HEIGHT - viewport.height)) },
+              { 
+                translateX: animatedX.interpolate({
+                  inputRange: [0, MAP_WIDTH],
+                  outputRange: [0, -(MAP_WIDTH - viewport.width)],
+                  extrapolate: 'clamp',
+                })
+              },
+              { 
+                translateY: animatedY.interpolate({
+                  inputRange: [0, MAP_HEIGHT],
+                  outputRange: [0, -(MAP_HEIGHT - viewport.height)],
+                  extrapolate: 'clamp',
+                })
+              },
             ],
           }}
         >
@@ -227,7 +261,7 @@ const KEY = "townville.save.v1";
             protagonistDirection={direction}
             buildingStates={{}}
           />
-        </View>
+        </Animated.View>
       </View>
 
       {/* Dialogue System */}
