@@ -455,6 +455,9 @@ const styles = StyleSheet.create({
   activeButton: {
     backgroundColor: '#3b82f6',
   },
+  closeButton: {
+    backgroundColor: '#ef4444',
+  },
   buttonText: {
     color: '#fff',
     fontSize: 14,
