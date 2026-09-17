@@ -23,11 +23,10 @@ func build_world() -> void:
 	world = WorldDataScript.new()
 
 	var map = MapRendererScript.new()
-	map.name = "Compact32x24Map"
+	map.name = "CompactMap"
 	map.setup(world)
 	add_child(map)
 
-	add_buildings()
 	add_npcs()
 	player = PlayerScript.new()
 	player.name = "Player"
@@ -36,53 +35,9 @@ func build_world() -> void:
 	player.setup(world)
 	add_hud()
 
-func add_buildings() -> void:
-	for b in world.BUILDINGS:
-		# Anchored shadow (art brief §5): larger scale for buildings so the blob
-		# reads under the whole footprint instead of floating.
-		var shadow := Sprite2D.new()
-		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
-		var fp_center: Vector2 = Vector2(b.footprintCol + b.footprintW / 2.0, b.footprintRow + b.footprintH / 2.0) * world.TILE_SIZE
-		if shadow.texture != null:
-			shadow.position = fp_center + Vector2(6, b.footprintH * world.TILE_SIZE * 0.32)
-			shadow.scale = Vector2(b.footprintW, b.footprintH) * 1.1
-			shadow.z_index = 4
-			shadow.modulate.a = 0.4
-			add_child(shadow)
-
-		var sprite := Sprite2D.new()
-		sprite.name = "Building_" + b.id
-		sprite.texture = load(b.sprite)
-		# Center building in footprint
-		sprite.position = fp_center
-		sprite.position.y -= 12
-		sprite.z_index = 5
-		add_child(sprite)
-		# Building label
-		var label := Label.new()
-		label.text = b.label
-		label.position = sprite.position + Vector2(-30, -50)
-		label.add_theme_font_size_override("font_size", 12)
-		label.add_theme_color_override("font_color", Color.WHITE)
-		label.add_theme_color_override("font_shadow_color", Color.BLACK)
-		label.add_theme_constant_override("shadow_offset_x", 1)
-		label.add_theme_constant_override("shadow_offset_y", 1)
-		label.z_index = 6
-		add_child(label)
-
 func add_npcs() -> void:
 	for npc in world.NPCS:
 		var npc_pos: Vector2 = Vector2(npc.tile * world.TILE_SIZE) + Vector2.ONE * world.TILE_SIZE * 0.5
-
-		# Anchored shadow (art brief §5) so NPCs read as standing on the ground.
-		var shadow := Sprite2D.new()
-		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
-		if shadow.texture != null:
-			shadow.position = npc_pos + Vector2(4, 14)
-			shadow.scale = Vector2.ONE * 1.2
-			shadow.z_index = 14
-			shadow.modulate.a = 0.4
-			add_child(shadow)
 
 		var sprite := Sprite2D.new()
 		sprite.name = "NPC_" + npc.id

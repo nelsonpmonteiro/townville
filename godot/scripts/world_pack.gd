@@ -5,8 +5,8 @@ const ACTIVE_MANIFEST := "manifest.json"
 const CONTRACT_VERSION := 1
 const WORLD_ID := "world1"
 const TILE_SIZE := 48
-const COLS := 40
-const ROWS := 30
+const COLS := 30
+const ROWS := 20
 const WIDTH_PX := COLS * TILE_SIZE
 const HEIGHT_PX := ROWS * TILE_SIZE
 
@@ -51,11 +51,11 @@ static func load_from_directory(directory: String) -> Dictionary:
 	if not manifest.version is String or manifest.version.strip_edges().is_empty():
 		return failure("version must be a non-empty string")
 	if manifest.tile_size != TILE_SIZE or manifest.cols != COLS or manifest.rows != ROWS:
-		return failure("logical dimensions must be 40x30 tiles at 48 pixels")
+		return failure("logical dimensions must be 30x20 tiles at 48 pixels")
 	if manifest.width_px != manifest.cols * manifest.tile_size or manifest.height_px != manifest.rows * manifest.tile_size:
 		return failure("pixel dimensions do not match tile dimensions")
 	if manifest.width_px != WIDTH_PX or manifest.height_px != HEIGHT_PX:
-		return failure("world pixel dimensions must be 1920x1440")
+		return failure("world pixel dimensions must be 1440x960")
 	if not manifest.art is Dictionary or not manifest.collision is Dictionary or not manifest.anchors is Dictionary:
 		return failure("art, collision, and anchors must be objects")
 
@@ -69,7 +69,7 @@ static func load_from_directory(directory: String) -> Dictionary:
 	if image.load(art_file.path) != OK:
 		return failure("art file is not a readable image")
 	if image.get_width() != WIDTH_PX or image.get_height() != HEIGHT_PX:
-		return failure("single image dimensions must be 1920x1440")
+		return failure("single image dimensions must be 1440x960")
 	art["resolved_file"] = art_file.path
 
 	var collision_file := safe_file(directory, manifest.collision.get("file"))
