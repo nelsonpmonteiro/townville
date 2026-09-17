@@ -101,9 +101,9 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving, direction]); // Re-sync when direction changes
   
-  // Use FIXED size matching NPCs (48×48px = 1 tile)
-  const width = 48;
-  const height = 48;
+  // Use FIXED size - sprites are now 64×64px from GIFs
+  const width = 64;
+  const height = 64;
   
   // const { width, height } = computeRenderSize(
   //   NATIVE_DIMS.width,
