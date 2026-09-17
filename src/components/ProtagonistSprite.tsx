@@ -1,11 +1,22 @@
-// ProtagonistSprite - Real protagonist with walk animation
+// ProtagonistSprite - protagonist with continuous walk animation.
+//
+// SIZING CONTRACT (do not break):
+// - All player PNGs are TRIMMED (canvas == visible content). If you
+//   replace assets, trim them (scripts or PIL bbox crop) or the
+//   character will visibly shrink/grow between idle and walk.
+// - Render size is computed from the STATIC dimension table below —
+//   never from Image.getSize (async → one-frame flicker at 48×48).
+// - Height is fixed at CHARACTER_TARGET_HEIGHT for every frame and
+//   direction; width follows each source's aspect ratio.
+// - Anchor: bottom-center of the logical tile.
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
-import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
-
-const TILE_SIZE = 48;
-const PROTAGONIST_TARGET_HEIGHT = 67; // 1.4 tiles
-const FRAME_DURATION = 100; // ms per frame
+import {
+  TILE_SIZE,
+  CHARACTER_TARGET_HEIGHT,
+  WALK_FRAME_COUNT,
+  WALK_FRAME_DURATION_MS,
+} from '../config';
 
 type Direction = 'front' | 'back' | 'left' | 'right';
 
@@ -53,7 +64,7 @@ const WALK_FRAMES = {
   ],
 };
 
-// Idle frames (use ORIGINAL static sprites, not GIF frames)
+// Idle sprites (trimmed static poses)
 const IDLE_SPRITES = {
   front: require('../../assets/images/player/boy-front.png'),
   back: require('../../assets/images/player/boy-back.png'),
@@ -61,61 +72,72 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/boy-right.png'),
 };
 
-// Dimensions removed (using useAspectScaledSize now)
+// STATIC native dimensions of the trimmed assets (measured, checked by
+// tests/sprites.test.ts). Update ONLY when replacing the asset files.
+const NATIVE_DIMS = {
+  walk: { width: 40, height: 106 }, // all 32 walk frames share this canvas
+  idle: {
+    front: { width: 25, height: 58 },
+    back: { width: 24, height: 59 },
+    left: { width: 25, height: 59 },
+    right: { width: 25, height: 59 },
+  },
+} as const;
+
+/** Deterministic render size: fixed target height, aspect-true width. */
+function renderSize(isMoving: boolean, direction: Direction) {
+  const dims = isMoving ? NATIVE_DIMS.walk : NATIVE_DIMS.idle[direction];
+  const scale = CHARACTER_TARGET_HEIGHT / dims.height;
+  return { width: dims.width * scale, height: CHARACTER_TARGET_HEIGHT };
+}
 
 interface Props {
   animatedX: Animated.Value;
   animatedY: Animated.Value;
   direction?: Direction;
-  isMoving?: boolean; // Whether protagonist is currently moving
+  isMoving?: boolean;
 }
 
-export default function ProtagonistSprite({ 
-  animatedX, 
-  animatedY, 
+export default function ProtagonistSprite({
+  animatedX,
+  animatedY,
   direction = 'front',
-  isMoving = false 
+  isMoving = false,
 }: Props) {
-  const [currentFrame, setCurrentFrame] = useState(0);
-  
-  // Animate frames when moving
+  const [frame, setFrame] = useState(0);
+
+  // Continuous walk clock: frame derives from wall time, so the cycle
+  // NEVER restarts between tiles (tile hops briefly toggle isMoving).
+  // Direction changes swap the frame source but keep the gait phase.
   useEffect(() => {
-    if (!isMoving) {
-      setCurrentFrame(0); // Reset to idle frame
-      return;
-    }
-    
-    // Start immediately on first frame
-    setCurrentFrame(0);
-    
-    // Cycle through 8 frames
-    const interval = setInterval(() => {
-      setCurrentFrame(prev => (prev + 1) % 8);
-    }, FRAME_DURATION);
-    
+    if (!isMoving) return; // keep last frame; idle sprite is shown anyway
+
+    const tick = () =>
+      setFrame(Math.floor(Date.now() / WALK_FRAME_DURATION_MS) % WALK_FRAME_COUNT);
+
+    tick(); // sync immediately
+    const interval = setInterval(tick, WALK_FRAME_DURATION_MS);
     return () => clearInterval(interval);
-  }, [isMoving, direction]); // Re-sync when direction changes
-  
-  // Select sprite source FIRST (before using in hook)
-  const spriteSource = isMoving 
-    ? WALK_FRAMES[direction][currentFrame]
+  }, [isMoving]);
+
+  const spriteSource = isMoving
+    ? WALK_FRAMES[direction][frame]
     : IDLE_SPRITES[direction];
-  
-  // Use aspect-scaled size (respects native proportions)
-  const scaledSize = useAspectScaledSize(spriteSource, PROTAGONIST_TARGET_HEIGHT);
-  
-  // Position offsets (center horizontally, bottom-aligned)
-  const offsetX = (TILE_SIZE - scaledSize.width) / 2;
-  const offsetY = TILE_SIZE - scaledSize.height;
-  
+
+  const size = renderSize(isMoving, direction);
+
+  // Anchor: bottom-center of the tile (feet planted on tile base)
+  const offsetX = (TILE_SIZE - size.width) / 2;
+  const offsetY = TILE_SIZE - size.height;
+
   return (
     <Animated.Image
       source={spriteSource}
       style={[
         styles.sprite,
         {
-          width: scaledSize.width,
-          height: scaledSize.height,
+          width: size.width,
+          height: size.height,
           transform: [
             { translateX: Animated.add(animatedX, offsetX) },
             { translateY: Animated.add(animatedY, offsetY) },
@@ -123,6 +145,7 @@ export default function ProtagonistSprite({
         },
       ]}
       resizeMode="contain"
+      fadeDuration={0}
     />
   );
 }

@@ -2,9 +2,7 @@
 import React from 'react';
 import { Image, View, StyleSheet } from 'react-native';
 import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
-
-const TILE_SIZE = 48;
-const NPC_TARGET_HEIGHT = 67; // 1.4 tiles
+import { CHARACTER_TARGET_HEIGHT } from '../config';
 
 type Expression = 'idle' | 'happy' | 'sad';
 
@@ -12,7 +10,8 @@ interface Props {
   npcId: string;
   world: 1 | 2;
   expression?: Expression;
-  size?: number; // Size in pixels (default: 48 for map icons, 96 for full sprites)
+  /** Rendered height in px; width follows aspect ratio. Default: map scale (1.4 tiles). */
+  size?: number;
 }
 
 // Map NPC IDs to their file names
@@ -93,30 +92,32 @@ const WORLD2_SPRITES = {
 };
 
 export default function CharacterSprite({ npcId, world, expression = 'idle', size }: Props) {
+  const targetHeight = size || CHARACTER_TARGET_HEIGHT;
   const filename = NPC_FILENAMES[npcId];
+
+  const spriteKey = `${filename}-${expression}`;
+  const sprites: Record<string, any> = world === 1 ? WORLD1_SPRITES : WORLD2_SPRITES;
+  const sprite = filename ? sprites[spriteKey] : null;
+
+  // Hook must run unconditionally (React rules); safe with null sprite
+  const scaledSize = useAspectScaledSize(sprite, targetHeight);
+
   if (!filename) {
     console.warn(`CharacterSprite: Unknown npcId "${npcId}"`);
-    return <View style={[styles.placeholder, { width: size || NPC_TARGET_HEIGHT, height: size || NPC_TARGET_HEIGHT }]} />;
+    return <View style={[styles.placeholder, { width: targetHeight, height: targetHeight }]} />;
   }
-
-  const spriteKey = `${filename}-${expression}` as keyof typeof WORLD1_SPRITES;
-  const sprites = world === 1 ? WORLD1_SPRITES : WORLD2_SPRITES;
-  const sprite = sprites[spriteKey];
 
   if (!sprite) {
     console.warn(`CharacterSprite: Missing sprite for ${spriteKey} in world ${world}`);
-    return <View style={[styles.placeholder, { width: size || NPC_TARGET_HEIGHT, height: size || NPC_TARGET_HEIGHT }]} />;
+    return <View style={[styles.placeholder, { width: targetHeight, height: targetHeight }]} />;
   }
-
-  // Use aspect-scaled size (respects native proportions)
-  const targetHeight = size || NPC_TARGET_HEIGHT;
-  const scaledSize = useAspectScaledSize(sprite, targetHeight);
 
   return (
     <Image
       source={sprite}
       style={{ width: scaledSize.width, height: scaledSize.height }}
       resizeMode="contain"
+      fadeDuration={0}
     />
   );
 }

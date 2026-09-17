@@ -1,7 +1,7 @@
 // NPC unlock conditions per HERMES-implementation-instruction.md §5
 // Direct copy from townville_mvp_narrative_worlds_1_2.md §28-29
 
-import { Progress } from '../types/progress';
+import { Progress } from '../../types/progress';
 
 type UnlockCondition = (p: Progress) => boolean;
 

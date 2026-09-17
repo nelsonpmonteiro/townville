@@ -1,14 +1,19 @@
-// RealBuildingSprite - Renders building with locked/unlocked state
+// RealBuildingSprite - Renders building with locked/unlocked state.
+// Scales by CONTENT height (targetHeight) preserving aspect ratio —
+// building PNGs are trimmed, so canvas == content.
 import React from 'react';
 import { Image, View, StyleSheet } from 'react-native';
 import { crossShadow } from '../utils/shadow';
+import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
+import { BUILDING_TARGET_HEIGHT } from '../config';
 
 type BuildingState = 'LOCKED' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' | 'COMPLETE';
 
 interface Props {
   buildingId: string;
   state: BuildingState;
-  size?: number; // Default: 96px
+  /** Rendered height in px; width follows the sprite's aspect ratio. */
+  targetHeight?: number;
 }
 
 // Static requires for Metro bundler
@@ -50,7 +55,7 @@ const WORLD2_BUILDINGS = {
 
 const ALL_BUILDINGS = { ...WORLD1_BUILDINGS, ...WORLD2_BUILDINGS };
 
-export default function RealBuildingSprite({ buildingId, state, size = 96 }: Props) {
+export default function RealBuildingSprite({ buildingId, state, targetHeight = BUILDING_TARGET_HEIGHT }: Props) {
   // Determine sprite key
   let spriteKey = buildingId;
   
@@ -62,31 +67,35 @@ export default function RealBuildingSprite({ buildingId, state, size = 96 }: Pro
   }
   
   const sprite = ALL_BUILDINGS[spriteKey as keyof typeof ALL_BUILDINGS];
-  
+
+  // Hook must run unconditionally (React rules); safe with null sprite
+  const scaled = useAspectScaledSize(sprite, targetHeight);
+
   if (!sprite) {
     console.warn(`RealBuildingSprite: Missing sprite for ${spriteKey}`);
     return (
-      <View style={[styles.placeholder, { width: size, height: size }]}>
+      <View style={[styles.placeholder, { width: targetHeight, height: targetHeight }]}>
         <View style={styles.placeholderInner} />
       </View>
     );
   }
 
-  // Render base sprite
+  // Render base sprite (aspect-true: width follows source proportions)
   const baseImage = (
     <Image
       source={sprite}
-      style={{ width: size, height: size }}
+      style={{ width: scaled.width, height: scaled.height }}
       resizeMode="contain"
+      fadeDuration={0}
     />
   );
 
   // Apply overlay for intermediate stages (STAGE_1, STAGE_2, STAGE_3)
   if (state === 'STAGE_1' || state === 'STAGE_2' || state === 'STAGE_3') {
     return (
-      <View style={{ width: size, height: size }}>
+      <View style={{ width: scaled.width, height: scaled.height }}>
         {baseImage}
-        {renderStageOverlay(state, size)}
+        {renderStageOverlay(state, scaled.height)}
       </View>
     );
   }
@@ -94,10 +103,10 @@ export default function RealBuildingSprite({ buildingId, state, size = 96 }: Pro
   // For garden/fountain without -locked sprites, apply grayscale overlay
   if (state === 'LOCKED' && (buildingId === 'garden' || buildingId === 'fountain')) {
     return (
-      <View style={{ width: size, height: size }}>
+      <View style={{ width: scaled.width, height: scaled.height }}>
         <Image
           source={sprite}
-          style={{ width: size, height: size, opacity: 0.4 }}
+          style={{ width: scaled.width, height: scaled.height, opacity: 0.4 }}
           resizeMode="contain"
         />
         <View style={styles.lockedOverlay}>

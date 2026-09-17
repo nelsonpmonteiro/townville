@@ -1,57 +1,64 @@
-// useAspectScaledSize - Scale sprites preserving aspect ratio
-import { useState, useEffect } from 'react';
+// useAspectScaledSize - Scale sprites preserving aspect ratio.
+//
+// Resolution order (no flicker on web):
+// 1. source.width/height (Metro web injects them into require()) → SYNC
+// 2. Native resolveAssetSource → SYNC
+// 3. Image.getSize(uri) → async fallback (remote uris only)
+import { useState, useEffect, useMemo } from 'react';
 import { Image } from 'react-native';
 
+function syncDims(source: any): { width: number; height: number } | null {
+  // Web (Metro): require() returns { uri, width, height }
+  if (source && typeof source === 'object' && source.width && source.height) {
+    return { width: source.width, height: source.height };
+  }
+  // Native: resolveAssetSource is synchronous
+  const resolve = (Image as any).resolveAssetSource;
+  if (typeof resolve === 'function') {
+    try {
+      const r = resolve(source);
+      if (r?.width && r?.height) return { width: r.width, height: r.height };
+    } catch { /* fall through */ }
+  }
+  return null;
+}
+
 export function useAspectScaledSize(source: any, targetHeight: number) {
-  const [size, setSize] = useState({ width: targetHeight, height: targetHeight });
-  
+  // Synchronous path: correct size on the very first render (no flicker)
+  const initial = useMemo(() => {
+    const dims = syncDims(source);
+    if (dims) {
+      const scale = targetHeight / dims.height;
+      return { width: dims.width * scale, height: targetHeight };
+    }
+    return { width: targetHeight, height: targetHeight }; // square fallback
+  }, [source, targetHeight]);
+
+  const [size, setSize] = useState(initial);
+
   useEffect(() => {
-    // If source is already an object with uri/width/height (from require())
-    if (typeof source === 'object' && source.uri) {
-      // React Native Web includes dimensions in the require() result
-      if (source.width && source.height) {
-        const scale = targetHeight / source.height;
-        setSize({ width: source.width * scale, height: targetHeight });
-        return;
-      }
-      
-      // Fallback: try Image.getSize with the uri directly
-      Image.getSize(
-        source.uri,
-        (nativeW, nativeH) => {
-          const scale = targetHeight / nativeH;
-          setSize({ width: nativeW * scale, height: targetHeight });
-        },
-        (error) => {
-          console.warn('useAspectScaledSize: getSize failed', error);
-        }
-      );
+    // Keep in sync when source/target changes (sync path)
+    const dims = syncDims(source);
+    if (dims) {
+      const scale = targetHeight / dims.height;
+      setSize({ width: dims.width * scale, height: targetHeight });
       return;
     }
-    
-    // Native: try resolveAssetSource (only exists on native platforms)
-    try {
-      const resolveAssetSource = (Image as any).resolveAssetSource;
-      if (typeof resolveAssetSource === 'function') {
-        const resolved = resolveAssetSource(source);
-        if (resolved) {
-          Image.getSize(
-            resolved.uri,
-            (nativeW, nativeH) => {
-              const scale = targetHeight / nativeH;
-              setSize({ width: nativeW * scale, height: targetHeight });
-            },
-            (error) => {
-              console.warn('useAspectScaledSize: getSize failed', error);
-            }
-          );
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn('useAspectScaledSize: Error resolving asset', error);
+    // Async fallback: remote uri without embedded dimensions
+    if (source && typeof source === 'object' && source.uri) {
+      let cancelled = false;
+      Image.getSize(
+        source.uri,
+        (w, h) => {
+          if (cancelled) return;
+          const scale = targetHeight / h;
+          setSize({ width: w * scale, height: targetHeight });
+        },
+        () => { /* keep fallback size */ }
+      );
+      return () => { cancelled = true; };
     }
   }, [source, targetHeight]);
-  
+
   return size;
 }

@@ -4,11 +4,16 @@ import { WorldMap, Building } from './data/worldMaps';
 import CharacterSprite from './components/CharacterSprite';
 import RealBuildingSprite from './components/RealBuildingSprite';
 import ProtagonistSprite from './components/ProtagonistSprite';
+import {
+  TILE_SIZE,
+  GRID_COLS,
+  GRID_ROWS,
+  CHUNK_SIZE,
+  BUILDING_TARGET_HEIGHT,
+} from './config';
 
-const TILE_SIZE = 48;
-const MAP_COLS = 40; // Updated from 30 to 40
-const MAP_ROWS = 30; // Updated from 20 to 30
-const CHUNK_SIZE = 480; // Display size (native files are 512px but must render at 480)
+const MAP_COLS = GRID_COLS;
+const MAP_ROWS = GRID_ROWS;
 
 interface Point {
   x: number;
@@ -58,28 +63,8 @@ const CHUNK_IMAGES = {
 };
 
 
-function buildingPosition(
-  footprintCol: number,
-  footprintRow: number,
-  footprintW: number,
-  footprintH: number,
-  spriteSize = 96
-): Point {
-  const footprintPxW = footprintW * TILE_SIZE;
-  const footprintPxH = footprintH * TILE_SIZE;
-  const x = footprintCol * TILE_SIZE + (footprintPxW - spriteSize) / 2;
-  const y = footprintRow * TILE_SIZE + footprintPxH - spriteSize;
-  return { x, y };
-}
-
-function protagonistScreenPosition(col: number, row: number): Point {
-  const spriteW = 40;
-  const spriteH = 56;
-  return {
-    x: col * TILE_SIZE + (TILE_SIZE - spriteW) / 2,
-    y: row * TILE_SIZE + TILE_SIZE - spriteH,
-  };
-}
+// (Positioning helpers removed — containers are the footprint/tile rects;
+// sprites anchor bottom-center via flexbox inside them.)
 
 export default function WorldMapRenderer({ world, protagonistAnimatedX, protagonistAnimatedY, protagonistDirection = 'front', protagonistIsMoving = false, buildingStates, onTilePress }: Props) {
   const worldKey = world.id === 1 ? 'w1' : 'w2';
@@ -108,7 +93,8 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
     );
   };
 
-  // Render event points (z=10) - with real character sprites
+  // Render event points (z=10) — NPC anchored bottom-center on its tile.
+  // Container = the 48px tile; sprite may overflow upward (1.4 tiles tall).
   const renderEventPoints = () => {
     return world.eventPoints.map((ep) => {
       const x = ep.x * TILE_SIZE;
@@ -129,25 +115,16 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
             npcId={ep.npcId}
             world={world.id as 1 | 2}
             expression="idle"
-            size={48}
           />
         </View>
       );
     });
   };
 
-  // Render buildings (z=30) - with real building sprites and 5-state system
+  // Render buildings (z=30) — container IS the footprint rect; the sprite
+  // scales to BUILDING_TARGET_HEIGHT and anchors bottom-center automatically.
   const renderBuildings = () => {
     return world.buildings.map((building) => {
-      // Use buildingPosition function for correct placement
-      const pos = buildingPosition(
-        building.footprintCol,
-        building.footprintRow,
-        building.footprintW,
-        building.footprintH,
-        96
-      );
-
       const state = buildingStates[building.id] || 'LOCKED';
 
       return (
@@ -156,8 +133,10 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
           style={[
             styles.building,
             {
-              left: pos.x,
-              top: pos.y,
+              left: building.footprintCol * TILE_SIZE,
+              top: building.footprintRow * TILE_SIZE,
+              width: building.footprintW * TILE_SIZE,
+              height: building.footprintH * TILE_SIZE,
               zIndex: state === 'LOCKED' ? 30 : 20,
             },
           ]}
@@ -165,7 +144,7 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
           <RealBuildingSprite
             buildingId={building.id}
             state={state}
-            size={96}
+            targetHeight={BUILDING_TARGET_HEIGHT}
           />
         </View>
       );
@@ -210,9 +189,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: TILE_SIZE,
     height: TILE_SIZE,
-    borderRadius: TILE_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', // horizontal center
+    justifyContent: 'flex-end', // feet planted on tile base
     zIndex: 10,
   },
   eventPointInner: {
@@ -220,6 +198,8 @@ const styles = StyleSheet.create({
   },
   building: {
     position: 'absolute',
+    alignItems: 'center', // horizontal center on footprint
+    justifyContent: 'flex-end', // base sits on footprint bottom
     zIndex: 30,
   },
   buildingPlaceholder: {
