@@ -24,6 +24,7 @@ var prop_images = {}
 @onready var tile_container: Node2D = get_node_or_null("TileContainer")
 @onready var grid_lines: Node2D = get_node_or_null("GridLines")
 @onready var entity_layer: Node2D = get_node_or_null("EntityLayer")
+var collision_layer: Node2D
 
 var tool_buttons = {}
 var npc_buttons = {}
@@ -47,6 +48,11 @@ func _ready() -> void:
 		entity_layer.name = "EntityLayer"
 		add_child(entity_layer)
 		entity_layer.z_index = 10
+	collision_layer = Node2D.new()
+	collision_layer.name = "CollisionLayer"
+	collision_layer.z_index = 12
+	collision_layer.visible = false
+	add_child(collision_layer)
 	for npc in ["mae","chester","farmer-joe","vera","lily","grandma-rose","billy","old-mac"]:
 		npc_images[npc] = load("res://assets/characters/world1/%s-idle.png" % npc)
 	for b in ["henhouse","stable","barn","coop","animal-clinic","garden"]:
@@ -197,6 +203,34 @@ func _paint_real_ground(tile: Vector2i, as_path: bool) -> void:
 		map_renderer.rebuild_tilemap()
 	_redraw_tiles()
 
+# Toggles a tile's walkability directly in the REAL collision data
+# (world.walkable), independent of ground texture (world.path_mask).
+# This lets you mark a grass tile as blocked (e.g. decorative obstacle)
+# or a dirt tile as walkable without repainting the ground underneath.
+func _toggle_collision(tile: Vector2i) -> void:
+	if world == null:
+		return
+	if tile.y < 0 or tile.y >= world.ROWS or tile.x < 0 or tile.x >= world.COLS:
+		return
+	world.walkable[tile.y][tile.x] = not world.walkable[tile.y][tile.x]
+	print("COLLISION at ", tile, " -> walkable=", world.walkable[tile.y][tile.x])
+	_redraw_collision_overlay()
+
+func _redraw_collision_overlay() -> void:
+	if collision_layer == null:
+		return
+	for child in collision_layer.get_children():
+		child.queue_free()
+	if world == null or world.walkable.is_empty():
+		return
+	for y in range(ROWS):
+		for x in range(COLS):
+			var cr = ColorRect.new()
+			cr.size = Vector2.ONE * TILE_SIZE
+			cr.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
+			cr.color = Color(0, 1, 0, 0.28) if world.walkable[y][x] else Color(1, 0, 0, 0.32)
+			collision_layer.add_child(cr)
+
 func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 	print("MAP CLICKED at tile: ", tile, " world_pos: ", world_pos, " tool=", tool)
 	if tool == "select":
@@ -216,6 +250,8 @@ func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 		grid[tile.y][tile.x] = 0
 		_paint_real_ground(tile, false)
 		_remove_entity_at(tile)
+	elif tool == "collision":
+		_toggle_collision(tile)
 	elif tool == "npc":
 		print("PLACING NPC: ", active_npc, " at ", tile)
 		_add_entity("npc", active_npc, tile)
@@ -313,7 +349,7 @@ var panel_ref: PanelContainer
 var panel_open: bool = true
 var ui_layer: CanvasLayer
 var ground_swatch_row: HBoxContainer
-const PANEL_WIDTH := 300.0
+const PANEL_WIDTH := 340.0
 
 func _build_ui() -> void:
 	ui_layer = CanvasLayer.new()
@@ -324,7 +360,7 @@ func _build_ui() -> void:
 
 	var toggle_btn = Button.new()
 	toggle_btn.text = "<"
-	toggle_btn.position = Vector2(PANEL_WIDTH, 10)
+	toggle_btn.position = Vector2(PANEL_WIDTH + 4, 10)
 	toggle_btn.custom_minimum_size = Vector2(24, 24)
 	toggle_btn.pressed.connect(func(): _toggle_panel(toggle_btn))
 	layer.add_child(toggle_btn)
@@ -353,11 +389,12 @@ func _build_ui() -> void:
 	vbox.add_child(title)
 
 	var tool_hbox = HFlowContainer.new()
+	tool_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(tool_hbox)
-	for t in ["select", "paint", "erase", "npc", "building", "prop"]:
+	for t in ["select", "paint", "erase", "collision", "npc", "building", "prop"]:
 		var btn = Button.new()
 		btn.text = t.capitalize()
-		btn.custom_minimum_size = Vector2(60, 24)
+		btn.custom_minimum_size = Vector2(52, 24)
 		btn.pressed.connect(func(): _set_tool(t))
 		tool_hbox.add_child(btn)
 		tool_buttons[t] = btn
@@ -415,6 +452,7 @@ func _build_item_panel(parent: Node, title: String, ids: Array, images: Dictiona
 	sep.add_theme_color_override("font_color", Color("#888"))
 	parent.add_child(sep)
 	var flow = HFlowContainer.new()
+	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	flow.add_theme_constant_override("h_separation", 3)
 	flow.add_theme_constant_override("v_separation", 3)
 	parent.add_child(flow)
@@ -435,6 +473,10 @@ func _set_tool(t: String) -> void:
 	_update_tool_highlight()
 	if ground_swatch_row:
 		ground_swatch_row.visible = (t == "paint")
+	if collision_layer:
+		collision_layer.visible = (t == "collision")
+		if t == "collision":
+			_redraw_collision_overlay()
 
 func _select_thumbnail(buttons: Dictionary, active_id: String) -> void:
 	print("ITEM SELECTED: ", active_id)
@@ -516,7 +558,7 @@ func clear_map() -> void:
 func _toggle_panel(toggle_btn: Button) -> void:
 	panel_open = not panel_open
 	panel_ref.visible = panel_open
-	toggle_btn.position.x = PANEL_WIDTH if panel_open else 0
+	toggle_btn.position.x = (PANEL_WIDTH + 4) if panel_open else 0
 	toggle_btn.text = "<" if panel_open else ">"
 
 func export_map_download() -> void:

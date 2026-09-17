@@ -13,6 +13,7 @@ var fps_label: Label
 var built := false
 var map_editor: Node2D
 var map_renderer_node: Node2D
+var hud_layer: CanvasLayer
 
 # Quest UI
 var quest_panel: PanelContainer
@@ -160,6 +161,7 @@ func add_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "HUD"
 	add_child(layer)
+	hud_layer = layer
 	var instructions := Label.new()
 	instructions.position = Vector2(18, 16)
 	instructions.text = "Move: WASD / Arrows  •  Interact: E or Space"
@@ -284,6 +286,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.pressed and not event.echo and event.keycode == KEY_F1:
 		if map_editor:
 			map_editor.toggle()
+			if hud_layer:
+				hud_layer.visible = not map_editor.visible
 		get_viewport().set_input_as_handled()
 		return
 	if map_editor and map_editor.visible:
