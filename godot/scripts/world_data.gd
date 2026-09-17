@@ -79,17 +79,23 @@ const BUILDINGS := [
 ]
 
 var walkable: Array[Array] = []
+var path_mask: Array[Array] = []
 
 func _init() -> void:
 	_build_walkable_matrix()
 
 func _build_walkable_matrix() -> void:
 	walkable.clear()
+	path_mask.clear()
 	for y in ROWS:
 		var row: Array[bool] = []
 		row.resize(COLS)
 		row.fill(false)
 		walkable.append(row)
+		var prow: Array[bool] = []
+		prow.resize(COLS)
+		prow.fill(false)
+		path_mask.append(prow)
 
 	# Main horizontal through the farm
 	_paint_walkable(Rect2i(4, 7, 24, 2))
@@ -107,26 +113,37 @@ func _build_walkable_matrix() -> void:
 	_paint_walkable(Rect2i(8, 19, 8, 2))
 	_paint_walkable(Rect2i(14, 21, 3, 3))
 
-	# NPC tiles are solid
+	# Visual path mask mirrors the walkable network before entities carve holes in it,
+	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
+	for y in ROWS:
+		for x in COLS:
+			path_mask[y][x] = walkable[y][x]
+
+	# NPC tiles are solid but stand on the path visually
 	for npc in NPCS:
 		var t: Vector2i = npc.tile
 		if _in_bounds(t):
 			walkable[t.y][t.x] = false
+			path_mask[t.y][t.x] = true
 
-	# Building footprints block movement
+	# Building footprints block movement; their footprint reads as packed dirt/yard
 	for b in BUILDINGS:
 		for r in range(b.footprintRow, b.footprintRow + b.footprintH):
 			for c in range(b.footprintCol, b.footprintCol + b.footprintW):
 				if _in_bounds(Vector2i(c, r)):
 					walkable[r][c] = false
+					path_mask[r][c] = true
 
 	# Solid decorative props block movement (fountain, well, tree, stone, bench, mailbox, gate, fence)
 	const SOLID_PROP_IDS := ["fountain", "well", "tree", "stone", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
+	# Only wayside props (not trees/stones planted in open grass) mark the ground as path
+	const PATHSIDE_PROP_IDS := ["fountain", "well", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
 	for prop in WORLD1_PROPS:
-		if prop.id in SOLID_PROP_IDS:
-			var pt: Vector2i = prop.get("tile", Vector2i(-1, -1))
-			if _in_bounds(pt):
-				walkable[pt.y][pt.x] = false
+		var pt: Vector2i = prop.get("tile", Vector2i(-1, -1))
+		if prop.id in SOLID_PROP_IDS and _in_bounds(pt):
+			walkable[pt.y][pt.x] = false
+		if prop.id in PATHSIDE_PROP_IDS and _in_bounds(pt):
+			path_mask[pt.y][pt.x] = true
 
 func _paint_walkable(rect: Rect2i) -> void:
 	for y in range(rect.position.y, rect.end.y):

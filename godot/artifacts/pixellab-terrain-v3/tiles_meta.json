@@ -1,0 +1,178 @@
+[
+  {
+    "id": "13",
+    "name": "wang_13",
+    "corners": {
+      "NW": "upper",
+      "NE": "upper",
+      "SW": "lower",
+      "SE": "upper"
+    },
+    "file": "tile_13.png"
+  },
+  {
+    "id": "10",
+    "name": "wang_10",
+    "corners": {
+      "NW": "upper",
+      "NE": "lower",
+      "SW": "upper",
+      "SE": "lower"
+    },
+    "file": "tile_10.png"
+  },
+  {
+    "id": "4",
+    "name": "wang_4",
+    "corners": {
+      "NW": "lower",
+      "NE": "upper",
+      "SW": "lower",
+      "SE": "lower"
+    },
+    "file": "tile_4.png"
+  },
+  {
+    "id": "12",
+    "name": "wang_12",
+    "corners": {
+      "NW": "upper",
+      "NE": "upper",
+      "SW": "lower",
+      "SE": "lower"
+    },
+    "file": "tile_12.png"
+  },
+  {
+    "id": "6",
+    "name": "wang_6",
+    "corners": {
+      "NW": "lower",
+      "NE": "upper",
+      "SW": "upper",
+      "SE": "lower"
+    },
+    "file": "tile_6.png"
+  },
+  {
+    "id": "8",
+    "name": "wang_8",
+    "corners": {
+      "NW": "upper",
+      "NE": "lower",
+      "SW": "lower",
+      "SE": "lower"
+    },
+    "file": "tile_8.png"
+  },
+  {
+    "id": "cfeabfa9-0197-410b-ae5d-6c13932fc252",
+    "name": "wang_0",
+    "corners": {
+      "NW": "lower",
+      "NE": "lower",
+      "SW": "lower",
+      "SE": "lower"
+    },
+    "file": "tile_cfeabfa9-0197-410b-ae5d-6c13932fc252.png"
+  },
+  {
+    "id": "1",
+    "name": "wang_1",
+    "corners": {
+      "NW": "lower",
+      "NE": "lower",
+      "SW": "lower",
+      "SE": "upper"
+    },
+    "file": "tile_1.png"
+  },
+  {
+    "id": "11",
+    "name": "wang_11",
+    "corners": {
+      "NW": "upper",
+      "NE": "lower",
+      "SW": "upper",
+      "SE": "upper"
+    },
+    "file": "tile_11.png"
+  },
+  {
+    "id": "3",
+    "name": "wang_3",
+    "corners": {
+      "NW": "lower",
+      "NE": "lower",
+      "SW": "upper",
+      "SE": "upper"
+    },
+    "file": "tile_3.png"
+  },
+  {
+    "id": "2",
+    "name": "wang_2",
+    "corners": {
+      "NW": "lower",
+      "NE": "lower",
+      "SW": "upper",
+      "SE": "lower"
+    },
+    "file": "tile_2.png"
+  },
+  {
+    "id": "5",
+    "name": "wang_5",
+    "corners": {
+      "NW": "lower",
+      "NE": "upper",
+      "SW": "lower",
+      "SE": "upper"
+    },
+    "file": "tile_5.png"
+  },
+  {
+    "id": "66ad112c-86c6-4c41-a0d1-3af61268434c",
+    "name": "wang_15",
+    "corners": {
+      "NW": "upper",
+      "NE": "upper",
+      "SW": "upper",
+      "SE": "upper"
+    },
+    "file": "tile_66ad112c-86c6-4c41-a0d1-3af61268434c.png"
+  },
+  {
+    "id": "14",
+    "name": "wang_14",
+    "corners": {
+      "NW": "upper",
+      "NE": "upper",
+      "SW": "upper",
+      "SE": "lower"
+    },
+    "file": "tile_14.png"
+  },
+  {
+    "id": "9",
+    "name": "wang_9",
+    "corners": {
+      "NW": "upper",
+      "NE": "lower",
+      "SW": "lower",
+      "SE": "upper"
+    },
+    "file": "tile_9.png"
+  },
+  {
+    "id": "7",
+    "name": "wang_7",
+    "corners": {
+      "NW": "lower",
+      "NE": "upper",
+      "SW": "upper",
+      "SE": "upper"
+    },
+    "file": "tile_7.png"
+  }
+]
