@@ -15,18 +15,23 @@ This is the actual implemented local prototype, not the unavailable historical C
   - `src/core.ts` — pure save/scoring/collision rules. No React, no I/O.
   - `src/engine/gameFlow.ts` — pure interaction state machine (idle→dialogue→quest→result). No React, no I/O. ALL interaction transitions go through `reduce()`.
   - `src/content/registry.ts` — the ONLY wiring point for NPC dialogues/quests. Adding content = 1 import + 1 CONTENT entry; App.tsx never imports dialogue/quest files directly.
+  - `src/state/buildingStates.ts` — building visuals derive from the save (`computeBuildingStates`); gates COMPLETE only when ALL world NPCs finish. Never hardcode states.
+  - `src/engine/collision.ts` — `effectiveWalkableMap(world, save)` = base map + closed-gate footprint + Billy's fence. The ONLY save-dependent collision; gate footprints are skipped in the static pass.
+  - `src/engine/fence.ts` — Billy's fence gap tiles (14,26)/(17,26): 0 phases open, 1-2 → 1 decorative post, 3+ → both tiles blocked.
   - `App.tsx` — thin shell: rendering, keyboard, animation, persistence. Dispatches FlowEvents; never implements game rules inline.
-- 40×30 grid, 48px tiles (`src/config.ts`). Movement blocks via `walkableMap` (includes building footprints). Camera follows player with clamped interpolation.
+- 40×30 grid, 48px tiles (`src/config.ts`). Movement blocks via `effectiveWalkableMap` (base walkableMap includes building footprints; gates/fence resolved at runtime). Camera follows player with clamped interpolation.
+- Sprite scale contract: ALL sprite PNGs trimmed (canvas == content); characters 1.4 tiles, buildings 2.6, gates 2.2; ProtagonistSprite uses a static NATIVE_DIMS table (checked by tests/sprites.test.ts) — update it when replacing player art. Walk clock derives frame from wall time (continuous gait).
+- Map NPCs use dedicated `characters/map-icons/*-map.png` (CharacterSprite variant='map'); dialogue portraits use world1/world2 sets.
 - Scoring: exactly 100 once per `npcId:phase`; errors NEVER deduct score/streak; 3rd error on a point costs 1 life; session = 5 events; maxAttempts=3 then failure dialogue → retry with fresh attempts.
 - Save key `townville.save.v1`, schema `version:1`. Do not silently change the schema. Unknown/malformed saves recover safely.
 - Audio must remain gesture-gated, mute-persistent and background-paused. No microphone permission is requested.
 - Do not add timers, pressure mechanics, monetization, child identity collection or invented integration claims.
 - Existing WAVs and IDEA.md must remain intact. See `assets/manifest.json` for asset replacement points.
 - React Native Web: use `crossShadow()` from `src/utils/shadow.ts` (never raw `shadow*` props), `Animated` for animations (never CSS `animation`), and never `Image.resolveAssetSource` (web-safe fallback in `useAspectScaledSize`).
-- **Before committing mechanics changes: `npm test` must stay green (25 tests lock core rules, flow transitions, and content integrity).**
+- **Before committing mechanics changes: `npm test` must stay green (34 tests lock core rules, flow transitions, content integrity, sprite dimensions, building states/collision).**
 
 ## Files
-`src/core.ts` domain + save codec; `src/Art.tsx` vector placeholders; `src/Collection{,.web}.tsx` gestures; `src/drop.ts` geometry; `src/sound.ts` policy; `src/useFarmAudio.ts` Expo integration; `App.tsx` shell/game orchestration; `tests/` pure tests; `e2e/` complete journeys.
+`src/core.ts` domain + save codec; `src/engine/` gameFlow + collision + fence + audio; `src/state/buildingStates.ts` save→visual derivation; `src/content/registry.ts` content wiring; `src/config.ts` constants; `App.tsx` shell/orchestration; `tests/` contract tests; `e2e/smoke.spec.ts` boot + movement (legacy prototype specs parked in `e2e/legacy/`).
 
 ## Follow-up priorities
 1. Replace placeholder art without changing collision anchors. Obtain final NPC/curriculum specification before broadening content.
