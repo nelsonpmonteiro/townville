@@ -101,10 +101,9 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving, direction]); // Re-sync when direction changes
   
-  // Use FIXED render size instead of computing from native dims
-  // (idle sprites are 128-1254px, walk frames are 40×106px - very inconsistent)
-  const width = 67;   // 1.4 tiles × 48px
-  const height = 67;
+  // Use FIXED size matching NPCs (48×48px = 1 tile)
+  const width = 48;
+  const height = 48;
   
   // const { width, height } = computeRenderSize(
   //   NATIVE_DIMS.width,
