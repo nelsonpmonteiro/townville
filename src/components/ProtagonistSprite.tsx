@@ -49,12 +49,12 @@ const WALK_FRAMES = {
   ],
 };
 
-// Idle frames (use frame 0 from walk cycles for consistency)
+// Idle frames (use ORIGINAL static sprites, not GIF frames)
 const IDLE_SPRITES = {
-  front: require('../../assets/images/player/walk/boy-walk-front-0.png'),
-  back: require('../../assets/images/player/walk/boy-walk-back-0.png'),
-  left: require('../../assets/images/player/walk/boy-walk-left-0.png'),
-  right: require('../../assets/images/player/walk/boy-walk-right-0.png'),
+  front: require('../../assets/images/player/boy-front.png'),
+  back: require('../../assets/images/player/boy-back.png'),
+  left: require('../../assets/images/player/boy-left.png'),
+  right: require('../../assets/images/player/boy-right.png'),
 };
 
 // Dimensions (all frames normalized to 40×106)
