@@ -94,7 +94,7 @@ func _initialize() -> void:
 	expect(not world.is_walkable(Vector2i(30, 8)), "right world boundary blocks movement")
 	expect(not world.is_walkable(Vector2i(0, 0)), "blocked matrix tile rejects movement")
 	expect(world.camera_limits() == Rect2i(0, 0, 1440, 960), "camera limits match compact world")
-	expect(world.NPCS.size() == 6, "all 6 World 1 NPCs configured")
+	expect(world.NPCS.size() == 8, "all 8 World 1 NPCs configured")
 	expect(not world.is_walkable(world.NPCS[0].tile), "NPC tile blocks movement")
 	var adjacent_npc = world.get_adjacent_npc(world.NPCS[0].tile + Vector2i(1, 0))
 	expect(adjacent_npc.size() > 0, "NPC adjacent detection works")

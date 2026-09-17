@@ -8,51 +8,81 @@ const SPAWN := Vector2i(15, 6)
 
 var id: String = "world1"
 
-# 6 World 1 NPCs — layout follows the latest user-provided spec (30x20 grid,
-# exact standing tiles), sprites unchanged (current PixelLab pixel art).
-# Billy and Old Mac intentionally excluded — out of scope for this delivery.
+# 8 World 1 NPCs — full script per NPC-teaching-plan.md spec.
+# Positions follow the 30x20 grid, each NPC on a reachable tile.
+# Sprites: current PixelLab pixel art for all 8 characters.
 const NPCS := [
 	{
 		"id": "mae",
 		"display_name": "Mae",
 		"sprite_path": "res://assets/characters/world1/mae-idle.png",
 		"tile": Vector2i(4, 4),
-		"dialogue": "Mae: Os ovos estão prontos! Quer ajudar a contar?"
+		"ccss": "K.CC.B.4",
+		"skill": "Counting 1:1",
+		"dialogue": "Oh! So glad you arrived! The storm messed everything up. I need to know how many eggs I collected today, but I lost count. Can you help me?"
 	},
 	{
 		"id": "chester",
 		"display_name": "Chester",
 		"sprite_path": "res://assets/characters/world1/chester-idle.png",
 		"tile": Vector2i(14, 4),
-		"dialogue": "Chester: Neigh! Estábulos limpos e quentinhos."
+		"ccss": "K.CC.C.6",
+		"skill": "Compare groups",
+		"dialogue": "*Neigh!* I have two piles of hay here. Which has MORE for me to eat first? I don't want to end up with the smaller one!"
 	},
 	{
 		"id": "farmer-joe",
-		"display_name": "Fazendeiro Joe",
+		"display_name": "Farmer Joe",
 		"sprite_path": "res://assets/characters/world1/farmer-joe-idle.png",
 		"tile": Vector2i(24, 4),
-		"dialogue": "Joe: O celeiro precisa de reparos. Madeira?"
+		"ccss": "K.OA.A.2",
+		"skill": "Add & subtract",
+		"dialogue": "Hey there! I'm Farmer Joe. I'm building a new barn and I need help with calculations. I have 3 hay bales and received 4 more. How many do I have now?"
 	},
 	{
 		"id": "lily",
 		"display_name": "Lily",
 		"sprite_path": "res://assets/characters/world1/lily-idle.png",
 		"tile": Vector2i(4, 7),
-		"dialogue": "Lily: As galinhas botaram muito hoje!"
+		"ccss": "K.OA.A.2",
+		"skill": "Add & subtract",
+		"dialogue": "Hi! I'm Lily. The chicks are always running off! There were 3 in the pen and 2 more came running. How many chicks do I have now?"
 	},
 	{
 		"id": "vera",
-		"display_name": "Dra. Vera",
+		"display_name": "Dr. Vera",
 		"sprite_path": "res://assets/characters/world1/vera-idle.png",
 		"tile": Vector2i(24, 7),
-		"dialogue": "Dra. Vera: A clínica cuida dos animais da fazenda!"
+		"ccss": "K.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Welcome to the clinic! 4 kittens are sleeping and 3 more just hopped in. How many kittens are there now?"
 	},
 	{
 		"id": "grandma-rose",
-		"display_name": "Vovó Rose",
+		"display_name": "Grandma Rose",
 		"sprite_path": "res://assets/characters/world1/grandma-rose-idle.png",
 		"tile": Vector2i(25, 14),
-		"dialogue": "Rose: As flores do jardim estão lindas."
+		"ccss": "K.MD.A.1",
+		"skill": "Compare lengths",
+		"dialogue": "Well hello, dear! Look at the sunflower and the carrot. Which one is taller?"
+	},
+	{
+		"id": "billy",
+		"display_name": "Billy",
+		"sprite_path": "res://assets/characters/world1/billy-idle.png",
+		"tile": Vector2i(15, 10),
+		"ccss": "K.CC.A.1",
+		"skill": "Number sequence",
+		"dialogue": "Hey! I'm Billy. I'm numbering the fence posts. We counted 1,2,3... up to 10. What number comes next?"
+	},
+	{
+		"id": "old-mac",
+		"display_name": "Old Mac",
+		"sprite_path": "res://assets/characters/world1/old-mac-idle.png",
+		"tile": Vector2i(15, 19),
+		"ccss": "K review",
+		"skill": "Gatekeeper",
+		"dialogue": "Hmm. You know how to count, compare, add and subtract. But let me warn you — out there the numbers get BIGGER. Think you can handle that?"
 	}
 ]
 
