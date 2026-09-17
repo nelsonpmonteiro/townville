@@ -25,10 +25,10 @@ function pngSize(path: string): { width: number; height: number } {
 const EXPECTED = {
   walk: { width: 40, height: 106 },
   idle: {
-    front: { width: 25, height: 58 },
-    back: { width: 24, height: 59 },
-    left: { width: 25, height: 59 },
-    right: { width: 25, height: 59 },
+    front: { width: 40, height: 106 },
+    back: { width: 38, height: 106 },
+    left: { width: 40, height: 106 },
+    right: { width: 40, height: 106 },
   },
 };
 

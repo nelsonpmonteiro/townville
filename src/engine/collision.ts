@@ -11,6 +11,7 @@
 import { Save } from '../core';
 import { WorldMap } from '../data/worldMaps';
 import { applyFenceCollision } from './fence';
+import { applyPropCollision, WORLD1_PROPS } from '../data/worldProps';
 import { allNpcsComplete, FARM_NPCS, DOWNTOWN_NPCS } from '../state/buildingStates';
 
 function blockRect(
@@ -38,9 +39,10 @@ export function effectiveWalkableMap(world: WorldMap, save: Save): boolean[][] {
     }
   }
 
-  // Billy's fence (World 1 only)
+  // Billy's fence (World 1 only) + blocking scenery props
   if (world.id === 1) {
     map = applyFenceCollision(map, save);
+    map = applyPropCollision(map, WORLD1_PROPS);
   }
 
   return map;

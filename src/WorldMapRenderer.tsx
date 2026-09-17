@@ -6,6 +6,8 @@ import RealBuildingSprite from './components/RealBuildingSprite';
 import ProtagonistSprite from './components/ProtagonistSprite';
 import { Save, Point as CorePoint } from './core';
 import { fencePosts } from './engine/fence';
+import SceneryProp from './components/SceneryProp';
+import { WORLD1_PROPS } from './data/worldProps';
 import {
   TILE_SIZE,
   GRID_COLS,
@@ -156,6 +158,14 @@ export default function WorldMapRenderer({ world, save, protagonistAnimatedX, pr
     });
   };
 
+  // Scenery props (z=15) — decorative; collision via engine/collision.ts
+  const renderScenery = () => {
+    if (world.id !== 1) return null;
+    return WORLD1_PROPS.map((prop, i) => (
+      <SceneryProp key={`prop-${prop.type}-${i}`} prop={prop} />
+    ));
+  };
+
   // Billy's fence posts (z=25) — drawn over the painted fence gap.
   // Code-drawn wood posts; collision handled by engine/collision.ts.
   const renderFencePosts = () => {
@@ -189,6 +199,7 @@ export default function WorldMapRenderer({ world, save, protagonistAnimatedX, pr
   return (
     <View style={styles.mapContainer}>
       {renderChunks()}
+      {renderScenery()}
       {renderEventPoints()}
       {renderBuildings()}
       {renderFencePosts()}

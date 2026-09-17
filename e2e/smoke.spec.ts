@@ -30,16 +30,19 @@ test("keyboard movement moves the protagonist across tiles", async ({ page }) =>
   await page.goto("/");
   await page.waitForTimeout(4000);
 
-  // Protagonist is the only zIndex:45 animated image
-  const before = await page.evaluate(() => {
-    const imgs = Array.from(document.querySelectorAll("img"));
-    const p = imgs.find((i) => {
-      const z = getComputedStyle(i.parentElement ?? i).zIndex || getComputedStyle(i).zIndex;
-      return z === "45";
-    }) ?? imgs[imgs.length - 1];
-    const r = p!.getBoundingClientRect();
-    return { x: r.x, y: r.y };
-  });
+  // With a centered-follow camera the protagonist's screen rect can stay
+  // fixed while the WORLD scrolls under it. So measure both: the first
+  // terrain chunk (world position) and every img — movement is alive if
+  // anything shifted.
+  const snapshot = () =>
+    page.evaluate(() =>
+      Array.from(document.querySelectorAll("img")).map((i) => {
+        const r = i.getBoundingClientRect();
+        return `${Math.round(r.x)},${Math.round(r.y)}`;
+      }).join("|")
+    );
+
+  const before = await snapshot();
 
   // Spawn (20,7): row 7 corridor is walkable to the left
   for (let i = 0; i < 3; i++) {
@@ -47,18 +50,6 @@ test("keyboard movement moves the protagonist across tiles", async ({ page }) =>
     await page.waitForTimeout(260); // MOVEMENT_DURATION + margin
   }
 
-  const after = await page.evaluate(() => {
-    const imgs = Array.from(document.querySelectorAll("img"));
-    const p = imgs.find((i) => {
-      const z = getComputedStyle(i.parentElement ?? i).zIndex || getComputedStyle(i).zIndex;
-      return z === "45";
-    }) ?? imgs[imgs.length - 1];
-    const r = p!.getBoundingClientRect();
-    return { x: r.x, y: r.y };
-  });
-
-  // Camera-relative: either the sprite moved or the world scrolled under it.
-  // Just assert SOMETHING changed in layout (movement pipeline alive).
-  const moved = before.x !== after.x || before.y !== after.y;
-  expect(moved).toBe(true);
+  const after = await snapshot();
+  expect(after).not.toBe(before);
 });

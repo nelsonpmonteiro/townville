@@ -74,13 +74,15 @@ const IDLE_SPRITES = {
 
 // STATIC native dimensions of the trimmed assets (measured, checked by
 // tests/sprites.test.ts). Update ONLY when replacing the asset files.
+// Idle set: hi-res source (townville-protagonist-complete.zip) trimmed
+// and downscaled to walk-frame scale — same 106px height, same aspect.
 const NATIVE_DIMS = {
   walk: { width: 40, height: 106 }, // all 32 walk frames share this canvas
   idle: {
-    front: { width: 25, height: 58 },
-    back: { width: 24, height: 59 },
-    left: { width: 25, height: 59 },
-    right: { width: 25, height: 59 },
+    front: { width: 40, height: 106 },
+    back: { width: 38, height: 106 },
+    left: { width: 40, height: 106 },
+    right: { width: 40, height: 106 },
   },
 } as const;
 
