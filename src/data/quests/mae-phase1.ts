@@ -10,17 +10,17 @@ export const MAE_PHASE_1_QUEST: QuestDefinition = {
   phase: 1,
   
   problem: {
-    text: 'Quantas galinhas você vê no galinheiro?',
-    context: 'Mae precisa saber o total de galinhas para alimentá-las corretamente.',
+    text: 'How many chickens do you see in the coop?',
+    context: 'Mae needs to know the total number of chickens to feed them correctly.',
     image: 'chickens-counting.png', // Optional visual aid
   },
   
   correctAnswer: 7,
   
   hints: [
-    'Tente contar uma de cada vez, apontando com o dedo.',
-    'Comece de um lado e vá para o outro, sem pular nenhuma.',
-    'Lembre-se: 1, 2, 3, 4, 5, 6, 7...',
+    'Try counting one at a time, pointing with your finger.',
+    'Start from one side and go to the other, without skipping any.',
+    'Remember: 1, 2, 3, 4, 5, 6, 7...',
   ],
   
   successDialogue: 'success.01',

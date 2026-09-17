@@ -1,0 +1,16 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/editor/map_editor.gd" id="1_map_editor"]
+[ext_resource type="Script" path="res://scripts/editor/wang_tiler.gd" id="2_wang_tiler"]
+[ext_resource type="Script" path="res://scripts/editor/palette.gd" id="3_palette"]
+[ext_resource type="Script" path="res://scripts/editor/editor_camera.gd" id="4_editor_camera"]
+
+[node name="MapEditor" type="Node2D"]
+script = ExtResource("1_map_editor")
+
+[node name="BackgroundColor" type="ColorRect" parent="."]
+color = Color(0.13, 0.13, 0.13, 1.0)
+offset_right = 1536.0
+offset_bottom = 1152.0
+
+[node name="GridOverlay" type="Node2D" parent="."]

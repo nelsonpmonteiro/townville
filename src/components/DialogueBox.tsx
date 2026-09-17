@@ -82,7 +82,7 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
         <View style={styles.header}>
           <Text style={styles.speaker}>{node.speaker}</Text>
           <Pressable onPress={onSkip} style={styles.skipButton}>
-            <Text style={styles.skipText}>Pular ✕</Text>
+            <Text style={styles.skipText}>Skip ✕</Text>
           </Pressable>
         </View>
 

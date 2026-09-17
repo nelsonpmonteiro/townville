@@ -108,7 +108,7 @@ const FARM_BUILDINGS: Building[] = [
   { id: 'coop', npcId: 'lily', sprite: 'coop', footprintCol: 4, footprintRow: 11, footprintW: 3, footprintH: 3 },
   { id: 'clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 18, footprintRow: 9, footprintW: 3, footprintH: 2 },
   { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 25, footprintRow: 13, footprintW: 2, footprintH: 2 },
-  { id: 'farm-gate', sprite: 'farm-gate', footprintCol: 14, footprintRow: 22, footprintW: 3, footprintH: 2 },
+  { id: 'farm-gate', sprite: 'farm-gate', footprintCol: 14, footprintRow: 21, footprintW: 3, footprintH: 2 },
 ];
 
 export const WORLD_1_FARM: WorldMap = {
@@ -128,6 +128,7 @@ export const WORLD_1_FARM: WorldMap = {
     { id: 'ep_lily_1', npcId: 'lily', x: 8, y: 15 },
     { id: 'ep_rose_1', npcId: 'grandma-rose', x: 27, y: 17 },
     { id: 'ep_billy_1', npcId: 'billy', x: 13, y: 19 },
+    { id: 'ep_old_mac_1', npcId: 'old-mac', x: 17, y: 19 },
   ],
   buildings: FARM_BUILDINGS,
 };

@@ -243,7 +243,7 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
     ).join('\n');
     
     const fullCode = `
-// === COPIE ESTE CÓDIGO PARA worldMaps.ts ===
+// === COPY THIS CODE TO worldMaps.ts ===
 
 const farmCollisionMap: Tile[][] = [
 ${collisionMapCode}

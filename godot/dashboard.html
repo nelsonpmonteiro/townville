@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Townville — Godot 4 POC Dashboard</title>
+<style>
+:root {
+  --bg: #1a1f2e;
+  --card: #242b3d;
+  --text: #e8eaed;
+  --muted: #9aa0b4;
+  --accent: #4ade80;
+  --accent2: #60a5fa;
+  --border: #3a4155;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 2rem;
+  line-height: 1.6;
+}
+h1 { color: var(--accent); margin-bottom: 0.5rem; font-size: 2rem; }
+h2 { color: var(--accent2); margin: 1.5rem 0 0.75rem; font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+.subtitle { color: var(--muted); margin-bottom: 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+}
+.card h3 { color: var(--accent); margin-bottom: 0.75rem; font-size: 1rem; }
+.stat { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.stat:last-child { border-bottom: none; }
+.stat-label { color: var(--muted); }
+.stat-value { color: var(--text); font-weight: 600; }
+.stat-value.good { color: var(--accent); }
+.tag { display: inline-block; background: var(--accent); color: #000; padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+.preview-img { width: 100%; border-radius: 8px; border: 1px solid var(--border); margin-top: 0.75rem; }
+.log { background: #0d1117; border-radius: 8px; padding: 1rem; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.8rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; color: var(--accent); }
+.file-list { list-style: none; }
+.file-list li { padding: 0.25rem 0; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--muted); }
+.file-list li::before { content: '📄 '; }
+</style>
+</head>
+<body>
+
+<h1>🐴 Townville Godot 4 POC</h1>
+<p class="subtitle">Dashboard de status do projeto de migração — Map Editor & Texturas de Terreno</p>
+
+<div class="grid">
+  <div class="card">
+    <h3>Build & Testes <span class="tag">PASSANDO</span></h3>
+    <div class="stat"><span class="stat-label">Testes</span><span class="stat-value good">22/22 PASS</span></div>
+    <div class="stat"><span class="stat-label">Build Web</span><span class="stat-value good">OK</span></div>
+    <div class="stat"><span class="stat-label">Headless Boot</span><span class="stat-value good">OK</span></div>
+    <div class="stat"><span class="stat-label">Warnings</span><span class="stat-value good">0</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Assets PixelLab</h3>
+    <div class="stat"><span class="stat-label">NPCs (8)</span><span class="stat-value">✓ Importados</span></div>
+    <div class="stat"><span class="stat-label">Prédios (6)</span><span class="stat-value">✓ Importados</span></div>
+    <div class="stat"><span class="stat-label">Tilesets Wang</span><span class="stat-value">grass-dirt, water-grass</span></div>
+    <div class="stat"><span class="stat-label">Mapa completo</span><span class="stat-value">1536×1152 px</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Mundo</h3>
+    <div class="stat"><span class="stat-label">Grid</span><span class="stat-value">32×24 tiles</span></div>
+    <div class="stat"><span class="stat-label">Total</span><span class="stat-value">1536×1152 px</span></div>
+    <div class="stat"><span class="stat-label">Tile Size</span><span class="stat-value">48px (16px × 3)</span></div>
+    <div class="stat"><span class="stat-label">Colisão</span><span class="stat-value good">Matriz única</span></div>
+  </div>
+</div>
+
+<h2>📸 Screenshot da POC</h2>
+<img class="preview-img" src="artifacts/townville-godot-poc.png" alt="POC Screenshot" onerror="this.style.display='none'">
+
+<h2>📂 Arquivos do Map Editor</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Editor Scripts</h3>
+    <ul class="file-list">
+      <li>scripts/editor/map_editor.gd</li>
+      <li>scripts/editor/palette.gd</li>
+      <li>scripts/editor/wang_tiler.gd</li>
+      <li>scripts/editor/editor_camera.gd</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Texturas de Terreno</h3>
+    <ul class="file-list">
+      <li>assets/terrain/tileset-grass-dirt.png</li>
+      <li>assets/terrain/tileset-water-grass.png</li>
+      <li>assets/terrain/wang_tile_mapping.json</li>
+      <li>assets/world1/placements.json</li>
+    </ul>
+  </div>
+</div>
+
+<h2>📝 Git Log</h2>
+<div class="log">
+7cad570 Add Godot 4 playable migration POC
+249f2d7 Integrate PixelLab v2 assets: NPCs, buildings, terrain
+8c29b02 Integrate PixelLab Wang tilesets via TileMap
+b79808f Fix crash: camera clamp inputRange inverted
+</div>
+
+<h2>🎮 Próximos Passos</h2>
+<div class="card">
+  <div class="stat"><span class="stat-label">1</span><span>Map Editor com pintura de tiles Wang</span></div>
+  <div class="stat"><span class="stat-label">2</span><span>Paleta de NPCs/prédios/props</span></div>
+  <div class="stat"><span class="stat-label">3</span><span>Save/Load de mapas em JSON</span></div>
+  <div class="stat"><span class="stat-label">4</span><span>Auto-tiling Wang nas bordas</span></div>
+</div>
+
+</body>
+</html>

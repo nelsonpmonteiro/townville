@@ -39,7 +39,7 @@ export default function QuestUI({ quest, onSubmit, onCancel, attempts, maxAttemp
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>🎯 Atividade de Matemática</Text>
+          <Text style={styles.title}>🎯 Math Activity</Text>
           <Pressable onPress={onCancel} style={styles.closeButton}>
             <Text style={styles.closeText}>✕</Text>
           </Pressable>
@@ -60,19 +60,19 @@ export default function QuestUI({ quest, onSubmit, onCancel, attempts, maxAttemp
         {/* Hint (if available) */}
         {showHint && quest.hints && quest.hints[hintIndex] && (
           <View style={styles.hintBox}>
-            <Text style={styles.hintLabel}>💡 Dica:</Text>
+            <Text style={styles.hintLabel}>💡 Hint:</Text>
             <Text style={styles.hintText}>{quest.hints[hintIndex]}</Text>
           </View>
         )}
 
         {/* Answer input */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Sua resposta:</Text>
+          <Text style={styles.inputLabel}>Your answer:</Text>
           <TextInput
             style={styles.input}
             value={answer}
             onChangeText={setAnswer}
-            placeholder="Digite aqui..."
+            placeholder="Type your answer..."
             placeholderTextColor="#999"
             keyboardType="numeric"
             autoFocus
@@ -83,10 +83,10 @@ export default function QuestUI({ quest, onSubmit, onCancel, attempts, maxAttemp
         {/* Attempts remaining */}
         <View style={styles.attemptsBox}>
           <Text style={styles.attemptsText}>
-            Tentativas restantes: {remainingAttempts} / {maxAttempts}
+            Attempts remaining: {remainingAttempts} / {maxAttempts}
           </Text>
           {remainingAttempts <= 1 && (
-            <Text style={styles.warningText}>⚠️ Última tentativa!</Text>
+            <Text style={styles.warningText}>⚠️ Last attempt!</Text>
           )}
         </View>
 
@@ -97,14 +97,14 @@ export default function QuestUI({ quest, onSubmit, onCancel, attempts, maxAttemp
               style={[styles.button, styles.hintButton]}
               onPress={() => setShowHint(true)}
             >
-              <Text style={styles.buttonText}>💡 Ver Dica</Text>
+              <Text style={styles.buttonText}>💡 See Hint</Text>
             </Pressable>
           )}
           <Pressable
             style={[styles.button, styles.submitButton]}
             onPress={handleSubmit}
           >
-            <Text style={styles.buttonText}>✓ Enviar</Text>
+            <Text style={styles.buttonText}>✓ Submit</Text>
           </Pressable>
         </View>
       </View>
