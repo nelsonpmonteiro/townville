@@ -395,12 +395,33 @@ func _make_sprite(type: String, id: String) -> Sprite2D:
 	s.texture = load(path)
 	s.centered = true
 	if type == "building":
-		s.scale = Vector2.ONE * 2.0
+		# Match the SAME per-building scale/flip already used by the real
+		# map (world.BUILDINGS) — using a flat 2.0x with no flip made a
+		# Garden/Henhouse/etc. placed via the editor render bigger and/or
+		# mirrored wrong compared to the identical building already on
+		# the map.
+		var b_scale := _building_scale_for(id)
+		var b_flip := _building_flip_for(id)
+		s.scale = Vector2(b_scale * (-1.0 if b_flip else 1.0), b_scale)
 	elif type == "prop":
 		s.scale = Vector2.ONE * 1.2
 	else:
 		s.scale = Vector2.ONE * 1.4
 	return s
+
+func _building_scale_for(id: String) -> float:
+	if world:
+		for b in world.BUILDINGS:
+			if b.id == id:
+				return b.get("scale", 1.0)
+	return 1.0
+
+func _building_flip_for(id: String) -> bool:
+	if world:
+		for b in world.BUILDINGS:
+			if b.id == id:
+				return b.get("flip_h", false)
+	return false
 
 func _remove_entity_at(tile: Vector2i) -> void:
 	for i in range(entities.size() - 1, -1, -1):
