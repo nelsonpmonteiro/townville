@@ -68,7 +68,8 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
   const handleContinue = () => {
     if (!isComplete) {
       handleSkipTypewriter();
-    } else if (node.next) {
+    } else if (!node.choices) {
+      // Advance both 'text' nodes (has next) and 'end' nodes (flow decides)
       onNext();
     }
   };
