@@ -5,6 +5,7 @@ import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
 
 const TILE_SIZE = 48;
 const PROTAGONIST_TARGET_HEIGHT = 67; // 1.4 tiles
+const FRAME_DURATION = 100; // ms per frame
 
 type Direction = 'front' | 'back' | 'left' | 'right';
 
@@ -60,16 +61,7 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/boy-right.png'),
 };
 
-// Dimensions of ORIGINAL verified sprites (not trimmed/normalized)
-const NATIVE_DIMS = {
-  // boy-front/back/left are 1254×1254, boy-right is 128×128
-  // We'll use a fixed render size instead of scaling from native
-  width: 67,  // 1.4 tiles × 48px = 67px height
-  height: 67,
-};
-
-const TILE_SIZE = 48;
-const FRAME_DURATION = 100; // ms per frame (200ms movement / 8 frames = 25ms, but 100ms looks better)
+// Dimensions removed (using useAspectScaledSize now)
 
 interface Props {
   animatedX: Animated.Value;
