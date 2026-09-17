@@ -3,6 +3,7 @@ extends Node2D
 const WorldDataScript = preload("res://scripts/world_data.gd")
 const MapRendererScript = preload("res://scripts/map_renderer.gd")
 const PlayerScript = preload("res://scripts/player.gd")
+const MapEditorScript = preload("res://scripts/editor/simple_map_editor.gd")
 
 var world
 var player
@@ -10,6 +11,7 @@ var prompt_label: Label
 var dialogue_label: Label
 var fps_label: Label
 var built := false
+var map_editor: Node2D
 
 # Quest UI
 var quest_panel: PanelContainer
@@ -54,6 +56,16 @@ func build_world() -> void:
 	player.setup(world)
 	add_hud()
 	add_quest_ui()
+	add_map_editor()
+
+func add_map_editor() -> void:
+	map_editor = MapEditorScript.new()
+	map_editor.name = "MapEditor"
+	map_editor.z_index = 50
+	add_child(map_editor)
+
+func is_map_editor_active() -> bool:
+	return map_editor != null and map_editor.visible
 
 func add_buildings() -> void:
 	for b in world.BUILDINGS:
@@ -149,8 +161,8 @@ func add_hud() -> void:
 	prompt_label.add_theme_constant_override("shadow_offset_y", 2)
 	layer.add_child(prompt_label)
 	dialogue_label = Label.new()
-	dialogue_label.position = Vector2(130, 395)
-	dialogue_label.size = Vector2(700, 64)
+	dialogue_label.position = Vector2(320, 420)
+	dialogue_label.size = Vector2(640, 64)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dialogue_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -248,6 +260,13 @@ func _process(_delta: float) -> void:
 			dialogue_label.visible = false
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if event.pressed and not event.echo and event.keycode == KEY_F1:
+		if map_editor:
+			map_editor.toggle()
+		get_viewport().set_input_as_handled()
+		return
+	if map_editor and map_editor.visible:
+		return
 	if event.pressed and not event.echo and (event.keycode == KEY_E or event.keycode == KEY_SPACE):
 		if quest_state == "quest_active" or quest_state == "success":
 			return
@@ -275,6 +294,7 @@ func _start_quest() -> void:
 
 	attempt_count = 0
 	quest_state = "quest_active"
+	dialogue_label.visible = false
 	quest_panel.visible = true
 	quest_title.text = active_npc.display_name + "  —  " + active_npc.get("skill", "")
 	quest_problem.text = active_quest.get("problem", "")
