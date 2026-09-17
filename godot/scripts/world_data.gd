@@ -199,6 +199,52 @@ const WORLD1_PROPS := [
 	{"id": "fence-right", "display_name": "Cerca", "sprite_path": "res://assets/buildings/world1/building-fence.png", "tile": Vector2i(16, 19)}
 ]
 
+# Fine-detail clutter (Fase 2, PixelLab map-objects) — purely decorative, no collision.
+# Grass-only clutter: tufts, wildflowers, mushrooms, stumps scattered in open grass
+# to break up large flat green areas (art brief §3).
+const WORLD1_GRASS_CLUTTER := [
+	{"id": "grass-tuft-a", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-a.png", "tile": Vector2i(1, 3), "scale": 1.0},
+	{"id": "grass-tuft-a", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-a.png", "tile": Vector2i(30, 3), "scale": 1.0},
+	{"id": "grass-tuft-b", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-b.png", "tile": Vector2i(1, 10), "scale": 1.0},
+	{"id": "grass-tuft-b", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-b.png", "tile": Vector2i(30, 17), "scale": 1.0},
+	{"id": "grass-tuft-a", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-a.png", "tile": Vector2i(2, 20), "scale": 1.0},
+	{"id": "grass-tuft-b", "sprite_path": "res://assets/scenery/world1/clutter/grass-tuft-b.png", "tile": Vector2i(29, 10), "scale": 1.0},
+	{"id": "wildflower-white", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-white.png", "tile": Vector2i(2, 2), "scale": 0.9},
+	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(22, 2), "scale": 0.9},
+	{"id": "wildflower-white", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-white.png", "tile": Vector2i(8, 2), "scale": 0.9},
+	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(23, 21), "scale": 0.9},
+	{"id": "wildflower-white", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-white.png", "tile": Vector2i(5, 21), "scale": 0.9},
+	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(29, 20), "scale": 0.9},
+	{"id": "mushroom-cluster", "sprite_path": "res://assets/scenery/world1/clutter/mushroom-cluster.png", "tile": Vector2i(2, 16), "scale": 1.0},
+	{"id": "mushroom-cluster", "sprite_path": "res://assets/scenery/world1/clutter/mushroom-cluster.png", "tile": Vector2i(29, 14), "scale": 1.0},
+	{"id": "tree-stump", "sprite_path": "res://assets/scenery/world1/clutter/tree-stump.png", "tile": Vector2i(28, 20), "scale": 1.0},
+	{"id": "tree-stump", "sprite_path": "res://assets/scenery/world1/clutter/tree-stump.png", "tile": Vector2i(1, 17), "scale": 1.0},
+]
+
+# Farmyard clutter: hay bales, crates, barrel, signpost near buildings/paths
+# (art brief §4). Non-blocking — small enough to walk around visually.
+const WORLD1_FARM_CLUTTER := [
+	{"id": "hay-bale", "sprite_path": "res://assets/scenery/world1/clutter/hay-bale.png", "tile": Vector2i(23, 6), "scale": 1.1},
+	{"id": "hay-bale", "sprite_path": "res://assets/scenery/world1/clutter/hay-bale.png", "tile": Vector2i(11, 9), "scale": 1.1},
+	{"id": "wood-crate", "sprite_path": "res://assets/scenery/world1/clutter/wood-crate.png", "tile": Vector2i(5, 2), "scale": 1.0},
+	{"id": "wood-crate", "sprite_path": "res://assets/scenery/world1/clutter/wood-crate.png", "tile": Vector2i(28, 3), "scale": 1.0},
+	{"id": "barrel", "sprite_path": "res://assets/scenery/world1/clutter/barrel.png", "tile": Vector2i(28, 6), "scale": 1.0},
+	{"id": "signpost", "sprite_path": "res://assets/scenery/world1/clutter/signpost.png", "tile": Vector2i(17, 12), "scale": 1.1},
+]
+
+# Ground decals painted directly on the path (cart tracks, footprints, puddles) —
+# purely flat, rendered just above the tilemap, never affects collision (art brief §4).
+const WORLD1_PATH_DECALS := [
+	{"id": "cart-tracks", "sprite_path": "res://assets/scenery/world1/clutter/cart-tracks.png", "tile": Vector2i(10, 8)},
+	{"id": "cart-tracks", "sprite_path": "res://assets/scenery/world1/clutter/cart-tracks.png", "tile": Vector2i(25, 7)},
+	{"id": "footprints", "sprite_path": "res://assets/scenery/world1/clutter/footprints.png", "tile": Vector2i(19, 13)},
+	{"id": "footprints", "sprite_path": "res://assets/scenery/world1/clutter/footprints.png", "tile": Vector2i(9, 7)},
+	{"id": "mud-puddle", "sprite_path": "res://assets/scenery/world1/clutter/mud-puddle.png", "tile": Vector2i(9, 10)},
+	{"id": "mud-puddle", "sprite_path": "res://assets/scenery/world1/clutter/mud-puddle.png", "tile": Vector2i(16, 11)},
+]
+
+const SHADOW_BLOB_SPRITE := "res://assets/scenery/world1/clutter/shadow-blob.png"
+
 const WORLD2_PROPS := [
 	{"id": "anchor-rusty", "display_name": "Âncora", "sprite_path": "res://assets/scenery/world2/scenery-anchor-rusty.png"},
 	{"id": "barrel", "display_name": "Barril", "sprite_path": "res://assets/scenery/world2/scenery-barrel.png"},

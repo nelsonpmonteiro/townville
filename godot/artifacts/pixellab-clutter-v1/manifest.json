@@ -1,0 +1,72 @@
+{
+  "grass-tuft-a": {
+    "file": "grass-tuft-a.png",
+    "object_id": "1634001a-136a-45de-9c0c-9a30d611ba0a",
+    "zip_entry": "small_tuft_of_tall_wild_grass.png"
+  },
+  "grass-tuft-b": {
+    "file": "grass-tuft-b.png",
+    "object_id": "f16c33de-a2a4-438a-9542-d2073f099acd",
+    "zip_entry": "small_clump_of_wild_meadow_gra.png"
+  },
+  "wildflower-white": {
+    "file": "wildflower-white.png",
+    "object_id": "94586dbc-a840-49d4-8438-46c922fdc469",
+    "zip_entry": "tiny_cluster_of_small_white_wi.png"
+  },
+  "wildflower-purple": {
+    "file": "wildflower-purple.png",
+    "object_id": "c0964df4-ddc1-41be-b03c-fcc782ccfcfe",
+    "zip_entry": "tiny_cluster_of_small_purple_w.png"
+  },
+  "mushroom-cluster": {
+    "file": "mushroom-cluster.png",
+    "object_id": "51a45403-a083-44b8-828a-bb23202b2252",
+    "zip_entry": "small_cluster_of_3_tiny_brown.png"
+  },
+  "tree-stump": {
+    "file": "tree-stump.png",
+    "object_id": "ae58aff4-ae80-4482-a02e-6e8cbdaeca04",
+    "zip_entry": "old_wooden_tree_stump_with_vis.png"
+  },
+  "hay-bale": {
+    "file": "hay-bale.png",
+    "object_id": "8d0bf6c3-3930-4175-abb8-c40eec83b09c",
+    "zip_entry": "round_rolled_hay_bale_golden.png"
+  },
+  "wood-crate": {
+    "file": "wood-crate.png",
+    "object_id": "1aa233b3-1da1-4bfc-ab08-78c282a8587c",
+    "zip_entry": "small_wooden_storage_crate_wit.png"
+  },
+  "cart-tracks": {
+    "file": "cart-tracks.png",
+    "object_id": "2294a845-c018-466c-9798-f6a64c7ee258",
+    "zip_entry": "faint_parallel_wagon_wheel_tra.png"
+  },
+  "footprints": {
+    "file": "footprints.png",
+    "object_id": "fff1547f-e6fc-4324-b45b-24f3048a9b71",
+    "zip_entry": "small_pair_of_faint_boot_footp.png"
+  },
+  "barrel": {
+    "file": "barrel.png",
+    "object_id": "b23d5e9f-effb-45dc-a7c4-c0f497f41d31",
+    "zip_entry": "wooden_barrel_with_metal_hoops.png"
+  },
+  "signpost": {
+    "file": "signpost.png",
+    "object_id": "7d92e389-5955-484d-bb00-e620bf551826",
+    "zip_entry": "small_wooden_directional_signp.png"
+  },
+  "mud-puddle": {
+    "file": "mud-puddle.png",
+    "object_id": "a01a1374-bdae-497b-8bb9-40b9cc162092",
+    "zip_entry": "small_shallow_mud_puddle_decal.png"
+  },
+  "shadow-blob": {
+    "file": "shadow-blob.png",
+    "object_id": "36619298-0c8d-4c0e-98ae-82bd7a4deceb",
+    "zip_entry": "soft_elliptical_blurry_dark_sh.png"
+  }
+}

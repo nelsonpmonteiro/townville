@@ -9,6 +9,68 @@ const TERRAIN_TEXTURE := "res://assets/terrain/tileset-grass-dirt-v3.png"
 
 func _ready() -> void:
 	render_props()
+	render_decals()
+	render_clutter()
+
+func render_decals() -> void:
+	# Flat ground decals (cart tracks, footprints, puddles) sit just above the
+	# tilemap, below every other layer — they read as marks pressed into the dirt.
+	if world == null:
+		return
+	var decals_layer := Node2D.new()
+	decals_layer.name = "PathDecals"
+	decals_layer.z_index = 1
+	add_child(decals_layer)
+	for decal in world.WORLD1_PATH_DECALS:
+		var sprite := Sprite2D.new()
+		sprite.name = "Decal_" + decal.id
+		sprite.texture = load(decal.sprite_path) as Texture2D
+		if sprite.texture == null:
+			print("ERROR: Decal texture not found: " + decal.sprite_path)
+			sprite.queue_free()
+			continue
+		var tile: Vector2i = decal.tile
+		sprite.position = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
+		sprite.z_index = 1
+		decals_layer.add_child(sprite)
+
+func render_clutter() -> void:
+	# Grass and farmyard clutter (art brief §3-4): purely decorative, non-blocking,
+	# each item gets an anchored shadow blob drawn first for grounding (art brief §5).
+	if world == null:
+		return
+	var clutter_layer := Node2D.new()
+	clutter_layer.name = "Clutter"
+	add_child(clutter_layer)
+	var all_clutter: Array = []
+	all_clutter.append_array(world.WORLD1_GRASS_CLUTTER)
+	all_clutter.append_array(world.WORLD1_FARM_CLUTTER)
+	for item in all_clutter:
+		var tile: Vector2i = item.tile
+		var base_pos: Vector2 = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
+		var item_scale: float = item.get("scale", 1.0)
+
+		var shadow := Sprite2D.new()
+		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
+		if shadow.texture != null:
+			shadow.position = base_pos + Vector2(3, 10) * item_scale
+			shadow.scale = Vector2.ONE * item_scale * 0.8
+			shadow.z_index = 3
+			shadow.modulate.a = 0.45
+			clutter_layer.add_child(shadow)
+
+		var sprite := Sprite2D.new()
+		sprite.name = "Clutter_" + item.id
+		sprite.texture = load(item.sprite_path) as Texture2D
+		if sprite.texture == null:
+			print("ERROR: Clutter texture not found: " + item.sprite_path)
+			sprite.queue_free()
+			continue
+		sprite.position = base_pos
+		sprite.position.y -= 6
+		sprite.scale = Vector2.ONE * item_scale
+		sprite.z_index = 4
+		clutter_layer.add_child(sprite)
 
 func render_props() -> void:
 	if world == null:
@@ -21,9 +83,28 @@ func render_props() -> void:
 		# Clear existing props
 		for child in props_layer.get_children():
 			child.queue_free()
-	
+
 	var prop_list = world.get_world_props(world.id)
 	for prop in prop_list:
+		var tile: Vector2i = prop.get("tile", Vector2i(-1, -1))
+		var base_pos: Vector2
+		if tile.x >= 0:
+			base_pos = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
+		else:
+			base_pos = Vector2(randf() * 1536, randf() * 1152)
+
+		# Anchored shadow (art brief §5) for every vertical prop except flat ground
+		# decorations that already read as flush with the ground (flower pots).
+		if prop.id != "flower-pot":
+			var shadow := Sprite2D.new()
+			shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
+			if shadow.texture != null:
+				shadow.position = base_pos + Vector2(4, 12)
+				shadow.scale = Vector2.ONE * 1.3
+				shadow.z_index = 2
+				shadow.modulate.a = 0.4
+				props_layer.add_child(shadow)
+
 		var sprite := Sprite2D.new()
 		sprite.name = "Prop_" + prop.id
 		sprite.texture = load(prop.sprite_path) as Texture2D
@@ -31,12 +112,8 @@ func render_props() -> void:
 			print("ERROR: Prop texture not found: " + prop.sprite_path)
 			sprite.queue_free()
 			continue
-		var tile: Vector2i = prop.get("tile", Vector2i(-1, -1))
-		if tile.x >= 0:
-			sprite.position = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
-			sprite.position.y -= 8
-		else:
-			sprite.position = Vector2(randf() * 1536, randf() * 1152)
+		sprite.position = base_pos
+		sprite.position.y -= 8
 		sprite.z_index = 3
 		props_layer.add_child(sprite)
 		print("Prop rendered: " + prop.id)

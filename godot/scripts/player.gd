@@ -15,6 +15,16 @@ func setup(world_data) -> void:
 	build_camera()
 
 func build_sprite() -> void:
+	# Anchored shadow (art brief §5), drawn first (below the character sprite).
+	var shadow := Sprite2D.new()
+	shadow.texture = load("res://assets/scenery/world1/clutter/shadow-blob.png") as Texture2D
+	if shadow.texture != null:
+		shadow.position = Vector2(2, 6)
+		shadow.scale = Vector2.ONE * 1.1
+		shadow.z_index = -1
+		shadow.modulate.a = 0.45
+		add_child(shadow)
+
 	sprite = AnimatedSprite2D.new()
 	sprite.name = "StableAnimatedSprite"
 	sprite.position.y = -16
