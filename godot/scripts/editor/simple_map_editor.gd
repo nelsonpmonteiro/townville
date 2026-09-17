@@ -118,20 +118,30 @@ func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		var tile = _get_tile(event.position)
+		if _mouse_over_panel(event.position):
+			return
+		var world_pos: Vector2 = get_global_mouse_position()
+		var tile = _get_tile(world_pos)
 		if not _in_bounds(tile):
 			return
 		if event.pressed:
-			_on_left_press(tile, event.position)
+			_on_left_press(tile, world_pos)
 		else:
 			dragged_entity = null
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
-		if event.pressed:
-			_remove_entity_at(_get_tile(event.position))
+		if event.pressed and not _mouse_over_panel(event.position):
+			_remove_entity_at(_get_tile(get_global_mouse_position()))
 	elif event is InputEventMouseMotion:
-		_on_mouse_motion(event.position)
+		if not _mouse_over_panel(event.position):
+			_on_mouse_motion(get_global_mouse_position())
+
+func _mouse_over_panel(screen_pos: Vector2) -> bool:
+	if not panel_ref or not panel_open:
+		return false
+	return screen_pos.x <= PANEL_WIDTH
 
 func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
+	print("MAP CLICKED at tile: ", tile, " world_pos: ", world_pos, " tool=", tool)
 	if tool == "select":
 		for e in entities:
 			var e_pos = _tile_to_world(Vector2i(e.x, e.y))
@@ -147,10 +157,13 @@ func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 		_redraw_tiles()
 		_remove_entity_at(tile)
 	elif tool == "npc":
+		print("PLACING NPC: ", active_npc, " at ", tile)
 		_add_entity("npc", active_npc, tile)
 	elif tool == "building":
+		print("PLACING BUILDING: ", active_building, " at ", tile)
 		_add_entity("building", active_building, tile)
 	elif tool == "prop":
+		print("PLACING PROP: ", active_prop, " at ", tile)
 		_add_entity("prop", active_prop, tile)
 
 func _on_mouse_motion(world_pos: Vector2) -> void:
@@ -208,6 +221,7 @@ func _remove_entity_at(tile: Vector2i) -> void:
 var panel_ref: PanelContainer
 var panel_open: bool = true
 var ui_layer: CanvasLayer
+var ground_swatch_row: HBoxContainer
 const PANEL_WIDTH := 300.0
 
 func _build_ui() -> void:
@@ -258,13 +272,21 @@ func _build_ui() -> void:
 		tool_buttons[t] = btn
 
 	_build_item_panel(vbox, "NPCs", ["mae","chester","farmer-joe","lily","vera","grandma-rose","billy","old-mac"],
-		npc_images, npc_buttons, func(id): _set_tool("npc"); active_npc = id)
+		npc_images, npc_buttons, func(id): _set_tool("npc"); active_npc = id; _select_thumbnail(npc_buttons, id))
 
 	_build_item_panel(vbox, "Buildings", ["henhouse","stable","barn","coop","animal-clinic","garden"],
-		building_images, building_buttons, func(id): _set_tool("building"); active_building = id)
+		building_images, building_buttons, func(id): _set_tool("building"); active_building = id; _select_thumbnail(building_buttons, id))
 
 	_build_item_panel(vbox, "Props", ["tree","bush","flower-red","flower-yellow","stone","well","bench","mailbox","fountain","lamppost","flower-pot"],
-		prop_images, prop_buttons, func(id): _set_tool("prop"); active_prop = id)
+		prop_images, prop_buttons, func(id): _set_tool("prop"); active_prop = id; _select_thumbnail(prop_buttons, id))
+
+	ground_swatch_row = HBoxContainer.new()
+	ground_swatch_row.add_theme_constant_override("separation", 4)
+	ground_swatch_row.visible = false
+	vbox.add_child(ground_swatch_row)
+	_add_ground_swatch(ground_swatch_row, "Grass", 0, Color(0.35, 0.55, 0.25))
+	_add_ground_swatch(ground_swatch_row, "Dirt Path", 1, Color(0.6, 0.45, 0.25))
+	_add_ground_swatch(ground_swatch_row, "Water", 2, Color(0.2, 0.4, 0.6))
 
 	var action_hbox = HBoxContainer.new()
 	vbox.add_child(action_hbox)
@@ -318,16 +340,49 @@ func _build_item_panel(parent: Node, title: String, ids: Array, images: Dictiona
 		buttons[id] = btn
 
 func _set_tool(t: String) -> void:
+	print("TOOL SELECTED: ", t)
 	tool = t
 	_update_tool_highlight()
+	if ground_swatch_row:
+		ground_swatch_row.visible = (t == "paint")
+
+func _select_thumbnail(buttons: Dictionary, active_id: String) -> void:
+	print("ITEM SELECTED: ", active_id)
+	for id in buttons:
+		var btn: TextureButton = buttons[id]
+		btn.modulate = Color(1, 1, 0.4) if id == active_id else Color.WHITE
+		btn.self_modulate = Color(1, 1, 1, 1)
+	# Yellow border highlight via a StyleBox overlay would need a Panel;
+	# modulate tint is the simplest reliable "selected" indicator on TextureButton.
+
+func _add_ground_swatch(parent: Node, label_text: String, type_id: int, color: Color) -> void:
+	var vbox := VBoxContainer.new()
+	var swatch := ColorRect.new()
+	swatch.custom_minimum_size = Vector2(32, 32)
+	swatch.color = color
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(60, 20)
+	btn.text = label_text
+	btn.pressed.connect(func(): paint_type = type_id; _highlight_ground_swatch(parent, type_id))
+	vbox.add_child(swatch)
+	vbox.add_child(btn)
+	parent.add_child(vbox)
+
+func _highlight_ground_swatch(parent: Node, active_type: int) -> void:
+	for i in range(parent.get_child_count()):
+		var vb: VBoxContainer = parent.get_child(i)
+		var swatch: ColorRect = vb.get_child(0)
+		swatch.modulate = Color(1, 1, 0.4) if i == active_type else Color.WHITE
 
 func _update_tool_highlight() -> void:
 	for t in tool_buttons:
 		var btn = tool_buttons[t]
 		if t == tool:
 			btn.add_theme_color_override("font_color", Color("#fff2a8"))
+			btn.modulate = Color(1.3, 1.3, 0.7)
 		else:
 			btn.add_theme_color_override("font_color", Color.WHITE)
+			btn.modulate = Color.WHITE
 
 func save_map(path: String) -> void:
 	var ent_data = []
