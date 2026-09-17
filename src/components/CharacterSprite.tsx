@@ -1,6 +1,10 @@
 // CharacterSprite - Renders NPC with expression (idle/happy/sad)
 import React from 'react';
 import { Image, View, StyleSheet } from 'react-native';
+import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
+
+const TILE_SIZE = 48;
+const NPC_TARGET_HEIGHT = 67; // 1.4 tiles
 
 type Expression = 'idle' | 'happy' | 'sad';
 
@@ -88,11 +92,11 @@ const WORLD2_SPRITES = {
   'officer-pat-sad': require('../../assets/images/characters/world2/officer-pat-sad.png'),
 };
 
-export default function CharacterSprite({ npcId, world, expression = 'idle', size = 48 }: Props) {
+export default function CharacterSprite({ npcId, world, expression = 'idle', size }: Props) {
   const filename = NPC_FILENAMES[npcId];
   if (!filename) {
     console.warn(`CharacterSprite: Unknown npcId "${npcId}"`);
-    return <View style={[styles.placeholder, { width: size, height: size }]} />;
+    return <View style={[styles.placeholder, { width: size || NPC_TARGET_HEIGHT, height: size || NPC_TARGET_HEIGHT }]} />;
   }
 
   const spriteKey = `${filename}-${expression}` as keyof typeof WORLD1_SPRITES;
@@ -101,13 +105,17 @@ export default function CharacterSprite({ npcId, world, expression = 'idle', siz
 
   if (!sprite) {
     console.warn(`CharacterSprite: Missing sprite for ${spriteKey} in world ${world}`);
-    return <View style={[styles.placeholder, { width: size, height: size }]} />;
+    return <View style={[styles.placeholder, { width: size || NPC_TARGET_HEIGHT, height: size || NPC_TARGET_HEIGHT }]} />;
   }
+
+  // Use aspect-scaled size (respects native proportions)
+  const targetHeight = size || NPC_TARGET_HEIGHT;
+  const scaledSize = useAspectScaledSize(sprite, targetHeight);
 
   return (
     <Image
       source={sprite}
-      style={{ width: size, height: size }}
+      style={{ width: scaledSize.width, height: scaledSize.height }}
       resizeMode="contain"
     />
   );

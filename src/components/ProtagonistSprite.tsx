@@ -1,7 +1,10 @@
 // ProtagonistSprite - Real protagonist with walk animation
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
-import { computeRenderSize } from '../utils/spriteScale';
+import { useAspectScaledSize } from '../hooks/useAspectScaledSize';
+
+const TILE_SIZE = 48;
+const PROTAGONIST_TARGET_HEIGHT = 67; // 1.4 tiles
 
 type Direction = 'front' | 'back' | 'left' | 'right';
 
@@ -101,19 +104,12 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving, direction]); // Re-sync when direction changes
   
-  // Use FIXED size - sprites are now 64×64px from GIFs
-  const width = 64;
-  const height = 64;
-  
-  // const { width, height } = computeRenderSize(
-  //   NATIVE_DIMS.width,
-  //   NATIVE_DIMS.height,
-  //   'protagonist'
-  // );
+  // Use aspect-scaled size (respects native proportions)
+  const scaledSize = useAspectScaledSize(spriteSource, PROTAGONIST_TARGET_HEIGHT);
   
   // Position offsets (center horizontally, bottom-aligned)
-  const offsetX = (TILE_SIZE - width) / 2;
-  const offsetY = TILE_SIZE - height;
+  const offsetX = (TILE_SIZE - scaledSize.width) / 2;
+  const offsetY = TILE_SIZE - scaledSize.height;
   
   // DISABLED: Walk animation causing size mismatch with idle sprites
   // const spriteSource = isMoving 
@@ -129,8 +125,8 @@ export default function ProtagonistSprite({
       style={[
         styles.sprite,
         {
-          width,
-          height,
+          width: scaledSize.width,
+          height: scaledSize.height,
           transform: [
             { translateX: Animated.add(animatedX, offsetX) },
             { translateY: Animated.add(animatedY, offsetY) },
