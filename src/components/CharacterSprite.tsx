@@ -12,6 +12,8 @@ interface Props {
   expression?: Expression;
   /** Rendered height in px; width follows aspect ratio. Default: map scale (1.4 tiles). */
   size?: number;
+  /** 'map' uses the dedicated simplified map icon (idle only); 'portrait' uses full sprites. */
+  variant?: 'map' | 'portrait';
 }
 
 // Map NPC IDs to their file names
@@ -91,13 +93,37 @@ const WORLD2_SPRITES = {
   'officer-pat-sad': require('../../assets/images/characters/world2/officer-pat-sad.png'),
 };
 
-export default function CharacterSprite({ npcId, world, expression = 'idle', size }: Props) {
+// Dedicated map icons (1254×1254-class, simplified detail for small render).
+// Used for map event points; dialogue screens keep the full idle/happy/sad set.
+const MAP_ICONS: Record<string, any> = {
+  'mae': require('../../assets/images/characters/map-icons/mae-map.png'),
+  'chester': require('../../assets/images/characters/map-icons/chester-map.png'),
+  'lily': require('../../assets/images/characters/map-icons/lily-map.png'),
+  'farmer-joe': require('../../assets/images/characters/map-icons/farmer-joe-map.png'),
+  'grandma-rose': require('../../assets/images/characters/map-icons/grandma-rose-map.png'),
+  'billy': require('../../assets/images/characters/map-icons/billy-map.png'),
+  'vera': require('../../assets/images/characters/map-icons/vera-map.png'),
+  'old-mac': require('../../assets/images/characters/map-icons/old-mac-map.png'),
+  'sam': require('../../assets/images/characters/map-icons/sam-map.png'),
+  'rosa': require('../../assets/images/characters/map-icons/rosa-map.png'),
+  'mayor-chen': require('../../assets/images/characters/map-icons/mayor-chen-map.png'),
+  'tommy': require('../../assets/images/characters/map-icons/tommy-map.png'),
+  'ms-park': require('../../assets/images/characters/map-icons/ms-park-map.png'),
+  'carlos': require('../../assets/images/characters/map-icons/carlos-map.png'),
+  'danny': require('../../assets/images/characters/map-icons/danny-map.png'),
+  'officer-pat': require('../../assets/images/characters/map-icons/officer-pat-map.png'),
+};
+
+export default function CharacterSprite({ npcId, world, expression = 'idle', size, variant = 'map' }: Props) {
   const targetHeight = size || CHARACTER_TARGET_HEIGHT;
   const filename = NPC_FILENAMES[npcId];
 
+  // Map variant prefers the dedicated icon; falls back to idle sprite.
   const spriteKey = `${filename}-${expression}`;
   const sprites: Record<string, any> = world === 1 ? WORLD1_SPRITES : WORLD2_SPRITES;
-  const sprite = filename ? sprites[spriteKey] : null;
+  const sprite = filename
+    ? (variant === 'map' && expression === 'idle' && MAP_ICONS[npcId]) || sprites[spriteKey]
+    : null;
 
   // Hook must run unconditionally (React rules); safe with null sprite
   const scaledSize = useAspectScaledSize(sprite, targetHeight);

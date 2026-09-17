@@ -80,10 +80,13 @@ const farmCollisionMap: Tile[][] = [
   ['#','#','#','#','#','#','#','#','#','#','#','#','#','#','.','.','#','#','#','#','#','#','#','#','#','#','#','#','#','#'],
 ];
 
-// Apply building footprints to walkable map
+// Apply building footprints to walkable map.
+// GATES ARE SKIPPED: their collision is runtime-dependent (closed blocks,
+// open is walkable) and handled by src/engine/collision.ts from the save.
 function applyBuildingFootprints(walkable: boolean[][], buildings: Building[]): boolean[][] {
   const result = walkable.map(row => [...row]); // Deep copy
   buildings.forEach(b => {
+    if (b.sprite.includes('gate')) return; // runtime collision (engine/collision.ts)
     for (let r = b.footprintRow; r < b.footprintRow + b.footprintH; r++) {
       for (let c = b.footprintCol; c < b.footprintCol + b.footprintW; c++) {
         if (r >= 0 && r < result.length && c >= 0 && c < result[0].length) {
@@ -109,6 +112,9 @@ const FARM_BUILDINGS: Building[] = [
   { id: 'clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 23, footprintRow: 10, footprintW: 3, footprintH: 2 },
   // Garden (Grandma Rose) - using grass area near row 7, no clearing detected per §4
   { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 33, footprintRow: 7, footprintW: 2, footprintH: 2 },
+  // Farm Gate (world exit) — 3×2 over the bottom corridor (cols 14-16, rows 28-29).
+  // Collision is RUNTIME (closed blocks, open walkable) — see engine/collision.ts.
+  { id: 'farm-gate', sprite: 'farm-gate', footprintCol: 14, footprintRow: 28, footprintW: 3, footprintH: 2 },
 ];
 
 export const WORLD_1_FARM: WorldMap = {
@@ -186,6 +192,8 @@ const DOWNTOWN_BUILDINGS: Building[] = [
   { id: 'park', npcId: 'danny', sprite: 'park', footprintCol: 16, footprintRow: 9, footprintW: 3, footprintH: 2 },
   // Park section
   { id: 'fountain', sprite: 'fountain', footprintCol: 12, footprintRow: 19, footprintW: 5, footprintH: 6 }, // Circular fountain area
+  // Town Gate (world exit) — runtime collision like farm-gate.
+  { id: 'town-gate', sprite: 'town-gate', footprintCol: 14, footprintRow: 28, footprintW: 3, footprintH: 2 },
 ];
 
 export const WORLD_2_DOWNTOWN: WorldMap = {

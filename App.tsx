@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { View, StyleSheet, Platform, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WORLD_1_FARM } from "./src/data/worldMaps";
@@ -14,6 +14,8 @@ import {
   canMove as flowAllowsMovement,
   currentNode,
 } from "./src/engine/gameFlow";
+import { effectiveWalkableMap } from "./src/engine/collision";
+import { computeBuildingStates } from "./src/state/buildingStates";
 import WorldMapRenderer from "./src/WorldMapRenderer";
 import GameHeader from "./src/GameHeader";
 import { useViewportSize } from "./src/hooks/useViewportSize";
@@ -80,6 +82,13 @@ export default function App() {
   const flowRef = useRef<FlowState>(flow);
   useEffect(() => { flowRef.current = flow; }, [flow]);
 
+  // ---------- Derived state (single source: the save) ----------
+
+  const buildingStates = useMemo(() => computeBuildingStates(save), [save]);
+  const walkable = useMemo(() => effectiveWalkableMap(WORLD_1_FARM, save), [save]);
+  const walkableRef = useRef(walkable);
+  useEffect(() => { walkableRef.current = walkable; }, [walkable]);
+
   // ---------- Movement ----------
 
   const lastMoveTimeRef = useRef(0);
@@ -87,7 +96,7 @@ export default function App() {
   const tryMove = useCallback((dir: [number, number]) => {
     setPos((current) => {
       const next = { x: current.x + dir[0], y: current.y + dir[1] };
-      if (!canMoveTo(next, WORLD_1_FARM.walkableMap)) return current;
+      if (!canMoveTo(next, walkableRef.current)) return current;
 
       setIsMoving(true);
       Animated.parallel([
@@ -213,11 +222,12 @@ export default function App() {
         >
           <WorldMapRenderer
             world={WORLD_1_FARM}
+            save={save}
             protagonistAnimatedX={animatedX}
             protagonistAnimatedY={animatedY}
             protagonistDirection={direction}
             protagonistIsMoving={isMoving}
-            buildingStates={{}}
+            buildingStates={buildingStates}
           />
         </Animated.View>
       </View>

@@ -35,6 +35,8 @@ export const CHARACTER_HEIGHT_TILES = 1.4; // protagonist AND map NPCs
 export const CHARACTER_TARGET_HEIGHT = Math.round(CHARACTER_HEIGHT_TILES * TILE_SIZE); // 67
 export const BUILDING_HEIGHT_TILES = 2.6; // standard buildings
 export const BUILDING_TARGET_HEIGHT = Math.round(BUILDING_HEIGHT_TILES * TILE_SIZE); // 125
+export const GATE_HEIGHT_TILES = 2.2; // farm/town gates
+export const GATE_TARGET_HEIGHT = Math.round(GATE_HEIGHT_TILES * TILE_SIZE); // 106
 
 // Walk animation
 export const WALK_FRAME_COUNT = 8;

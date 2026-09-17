@@ -1,15 +1,18 @@
 import React from 'react';
-import { View, Image, StyleSheet, Animated } from 'react-native';
+import { View, Image, Text, StyleSheet, Animated } from 'react-native';
 import { WorldMap, Building } from './data/worldMaps';
 import CharacterSprite from './components/CharacterSprite';
 import RealBuildingSprite from './components/RealBuildingSprite';
 import ProtagonistSprite from './components/ProtagonistSprite';
+import { Save, Point as CorePoint } from './core';
+import { fencePosts } from './engine/fence';
 import {
   TILE_SIZE,
   GRID_COLS,
   GRID_ROWS,
   CHUNK_SIZE,
   BUILDING_TARGET_HEIGHT,
+  GATE_TARGET_HEIGHT,
 } from './config';
 
 const MAP_COLS = GRID_COLS;
@@ -22,6 +25,7 @@ interface Point {
 
 interface Props {
   world: WorldMap;
+  save: Save;
   protagonistAnimatedX: Animated.Value;
   protagonistAnimatedY: Animated.Value;
   protagonistDirection?: 'front' | 'back' | 'left' | 'right';
@@ -66,7 +70,7 @@ const CHUNK_IMAGES = {
 // (Positioning helpers removed — containers are the footprint/tile rects;
 // sprites anchor bottom-center via flexbox inside them.)
 
-export default function WorldMapRenderer({ world, protagonistAnimatedX, protagonistAnimatedY, protagonistDirection = 'front', protagonistIsMoving = false, buildingStates, onTilePress }: Props) {
+export default function WorldMapRenderer({ world, save, protagonistAnimatedX, protagonistAnimatedY, protagonistDirection = 'front', protagonistIsMoving = false, buildingStates, onTilePress }: Props) {
   const worldKey = world.id === 1 ? 'w1' : 'w2';
   const chunks = CHUNK_IMAGES[worldKey];
 
@@ -122,10 +126,11 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
   };
 
   // Render buildings (z=30) — container IS the footprint rect; the sprite
-  // scales to BUILDING_TARGET_HEIGHT and anchors bottom-center automatically.
+  // scales to its category target height and anchors bottom-center.
   const renderBuildings = () => {
     return world.buildings.map((building) => {
       const state = buildingStates[building.id] || 'LOCKED';
+      const isGate = building.sprite.includes('gate');
 
       return (
         <View
@@ -144,11 +149,29 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
           <RealBuildingSprite
             buildingId={building.id}
             state={state}
-            targetHeight={BUILDING_TARGET_HEIGHT}
+            targetHeight={isGate ? GATE_TARGET_HEIGHT : BUILDING_TARGET_HEIGHT}
           />
         </View>
       );
     });
+  };
+
+  // Billy's fence posts (z=25) — drawn over the painted fence gap.
+  // Code-drawn wood posts; collision handled by engine/collision.ts.
+  const renderFencePosts = () => {
+    if (world.id !== 1) return null;
+    return fencePosts(save).map((tile: CorePoint, i: number) => (
+      <View
+        key={`fence-post-${i}`}
+        style={[
+          styles.fencePost,
+          {
+            left: tile.x * TILE_SIZE + TILE_SIZE / 2 - 4,
+            top: tile.y * TILE_SIZE + 8,
+          },
+        ]}
+      />
+    ));
   };
 
   // Render protagonist (z=45) - real sprite with animated position
@@ -168,6 +191,7 @@ export default function WorldMapRenderer({ world, protagonistAnimatedX, protagon
       {renderChunks()}
       {renderEventPoints()}
       {renderBuildings()}
+      {renderFencePosts()}
       {renderProtagonist()}
     </View>
   );
@@ -201,6 +225,16 @@ const styles = StyleSheet.create({
     alignItems: 'center', // horizontal center on footprint
     justifyContent: 'flex-end', // base sits on footprint bottom
     zIndex: 30,
+  },
+  fencePost: {
+    position: 'absolute',
+    width: 8,
+    height: 32,
+    backgroundColor: '#8B6914', // wood brown, matches painted fence
+    borderWidth: 1,
+    borderColor: '#5C4409',
+    borderRadius: 2,
+    zIndex: 25,
   },
   buildingPlaceholder: {
     position: 'absolute',
