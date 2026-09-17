@@ -197,13 +197,18 @@ export default function App() {
             width: MAP_WIDTH,
             height: MAP_HEIGHT,
             transform: [
+              // Camera follow with clamped scroll. minScroll must stay <= 0:
+              // when the viewport is LARGER than the map the range would
+              // invert ([positive, 0]) and Animated throws "inputRange must
+              // be monotonically non-decreasing" — clamp to [0,0] = centered
+              // map, no scroll needed.
               {
                 translateX: Animated.subtract(
                   viewport.width / 2,
                   Animated.add(animatedX, TILE_SIZE / 2)
                 ).interpolate({
-                  inputRange: [-(MAP_WIDTH - viewport.width), 0],
-                  outputRange: [-(MAP_WIDTH - viewport.width), 0],
+                  inputRange: [Math.min(0, -(MAP_WIDTH - viewport.width)), 0],
+                  outputRange: [Math.min(0, -(MAP_WIDTH - viewport.width)), 0],
                   extrapolate: 'clamp',
                 })
               },
@@ -212,8 +217,8 @@ export default function App() {
                   viewport.height / 2,
                   Animated.add(animatedY, TILE_SIZE / 2)
                 ).interpolate({
-                  inputRange: [-(MAP_HEIGHT - viewport.height), 0],
-                  outputRange: [-(MAP_HEIGHT - viewport.height), 0],
+                  inputRange: [Math.min(0, -(MAP_HEIGHT - viewport.height)), 0],
+                  outputRange: [Math.min(0, -(MAP_HEIGHT - viewport.height)), 0],
                   extrapolate: 'clamp',
                 })
               },
