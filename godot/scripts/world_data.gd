@@ -6,6 +6,8 @@ const COLS := 32
 const ROWS := 24
 const SPAWN := Vector2i(15, 8)
 
+var id: String = "world1"
+
 # All 8 World 1 NPCs with PixelLab idle sprites
 const NPCS := [
 	{
@@ -118,6 +120,14 @@ func _build_walkable_matrix() -> void:
 				if _in_bounds(Vector2i(c, r)):
 					walkable[r][c] = false
 
+	# Solid decorative props block movement (fountain, well, tree, stone, bench, mailbox, gate, fence)
+	const SOLID_PROP_IDS := ["fountain", "well", "tree", "stone", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
+	for prop in WORLD1_PROPS:
+		if prop.id in SOLID_PROP_IDS:
+			var pt: Vector2i = prop.get("tile", Vector2i(-1, -1))
+			if _in_bounds(pt):
+				walkable[pt.y][pt.x] = false
+
 func _paint_walkable(rect: Rect2i) -> void:
 	for y in range(rect.position.y, rect.end.y):
 		for x in range(rect.position.x, rect.end.x):
@@ -152,3 +162,37 @@ func get_adjacent_npc(tile: Vector2i) -> Dictionary:
 func interaction_text(tile: Vector2i) -> String:
 	var npc := get_adjacent_npc(tile)
 	return npc.get("dialogue", "") if npc else ""
+
+# --- Prop definitions per world ---
+
+const WORLD1_PROPS := [
+	{"id": "bench", "display_name": "Banco", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(2, 9)},
+	{"id": "flower-pot", "display_name": "Vaso", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(8, 4)},
+	{"id": "fountain", "display_name": "Fonte", "sprite_path": "res://assets/scenery/world1/scenery-fountain.png", "tile": Vector2i(16, 10)},
+	{"id": "lamppost", "display_name": "Poste", "sprite_path": "res://assets/scenery/world1/scenery-lamppost.png", "tile": Vector2i(17, 5)},
+	{"id": "mailbox", "display_name": "Caixa de Correio", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(29, 5)},
+	{"id": "bush", "display_name": "Arbusto", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(3, 18)},
+	{"id": "flower-red", "display_name": "Flor Vermelha", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(10, 17)},
+	{"id": "flower-yellow", "display_name": "Flor Amarela", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(19, 17)},
+	{"id": "stone", "display_name": "Pedra", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(30, 10)},
+	{"id": "tree", "display_name": "Árvore", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(30, 20)},
+	{"id": "well", "display_name": "Poço", "sprite_path": "res://assets/scenery/world1/scenery-well.png", "tile": Vector2i(8, 10)},
+	{"id": "farm-gate", "display_name": "Portão", "sprite_path": "res://assets/buildings/world1/building-farm-gate-open.png", "tile": Vector2i(15, 23)},
+	{"id": "fence-left", "display_name": "Cerca", "sprite_path": "res://assets/buildings/world1/building-fence.png", "tile": Vector2i(12, 19)},
+	{"id": "fence-right", "display_name": "Cerca", "sprite_path": "res://assets/buildings/world1/building-fence.png", "tile": Vector2i(16, 19)}
+]
+
+const WORLD2_PROPS := [
+	{"id": "anchor-rusty", "display_name": "Âncora", "sprite_path": "res://assets/scenery/world2/scenery-anchor-rusty.png"},
+	{"id": "barrel", "display_name": "Barril", "sprite_path": "res://assets/scenery/world2/scenery-barrel.png"},
+	{"id": "crates-stack", "display_name": "Caixotes", "sprite_path": "res://assets/scenery/world2/scenery-crates-stack.png"},
+	{"id": "fishing-net", "display_name": "Rede de Pesca", "sprite_path": "res://assets/scenery/world2/scenery-fishing-net.png"},
+	{"id": "market-stall", "display_name": "Barraca", "sprite_path": "res://assets/scenery/world2/scenery-market-stall.png"},
+	{"id": "seagull", "display_name": "Gaivota", "sprite_path": "res://assets/scenery/world2/scenery-seagull.png"}
+]
+
+func get_world_props(world_id: String) -> Array:
+	match world_id:
+		"world1": return WORLD1_PROPS
+		"world2": return WORLD2_PROPS
+		_: return WORLD1_PROPS

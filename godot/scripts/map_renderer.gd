@@ -2,6 +2,7 @@ extends Node2D
 
 var world
 var tilemap: TileMapLayer
+var props_layer: Node2D
 
 const WANG_TILE_SIZE := 16
 
@@ -23,6 +24,40 @@ const CORNER_TO_WANG_ID := {
 	["upper", "upper", "upper", "lower"]: 13,  # wang_14
 	["upper", "upper", "upper", "upper"]: 14,  # wang_15
 }
+
+func _ready() -> void:
+	render_props()
+
+func render_props() -> void:
+	if world == null:
+		return
+	if props_layer == null:
+		props_layer = Node2D.new()
+		props_layer.name = "Props"
+		props_layer.z_index = 3
+		add_child(props_layer)
+		# Clear existing props
+		for child in props_layer.get_children():
+			child.queue_free()
+	
+	var prop_list = world.get_world_props(world.id)
+	for prop in prop_list:
+		var sprite := Sprite2D.new()
+		sprite.name = "Prop_" + prop.id
+		sprite.texture = load(prop.sprite_path) as Texture2D
+		if sprite.texture == null:
+			print("ERROR: Prop texture not found: " + prop.sprite_path)
+			sprite.queue_free()
+			continue
+		var tile: Vector2i = prop.get("tile", Vector2i(-1, -1))
+		if tile.x >= 0:
+			sprite.position = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
+			sprite.position.y -= 8
+		else:
+			sprite.position = Vector2(randf() * 1536, randf() * 1152)
+		sprite.z_index = 3
+		props_layer.add_child(sprite)
+		print("Prop rendered: " + prop.id)
 
 func setup(world_data) -> void:
 	world = world_data
