@@ -65,51 +65,44 @@ const KEY = "townville.save.v1";
     }
   }, [save, ready]);
 
-  const walk = useCallback((dir: [number, number]) => {
-    if (isMoving) {
-      console.log('⏸️ Already moving, ignoring input');
+  // Movement throttle (direct on keydown, no polling)
+  const lastMoveTimeRef = useRef(0);
+  const MOVE_THROTTLE_MS = 140;
+
+  const tryMove = useCallback((dir: [number, number]) => {
+    const next = { x: pos.x + dir[0], y: pos.y + dir[1] };
+    
+    // Check collision
+    const canMove = canMoveTo(next, WORLD_1_FARM.walkableMap, []);
+    
+    if (!canMove) {
+      console.log('🚫 Blocked at', next);
       return;
     }
     
-    // Update direction based on movement
-    if (dir[0] === -1) setDirection('left');
-    else if (dir[0] === 1) setDirection('right');
-    else if (dir[1] === -1) setDirection('back');
-    else if (dir[1] === 1) setDirection('front');
+    console.log('✅ Moving from', pos, 'to', next);
     
-    const next = { x: pos.x + dir[0], y: pos.y + dir[1] };
-    console.log('🚶 Walk attempt:', { from: pos, to: next, dir });
+    // Update position IMMEDIATELY (not after animation)
+    setPos(next);
+    setIsMoving(true);
     
-    // Use walkableMap instead of collisionMap (40×30 grid)
-    const canMove = canMoveTo(next, WORLD_1_FARM.walkableMap, []);
-    console.log('🔍 Can move?', canMove, 'Tile:', WORLD_1_FARM.walkableMap[next.y]?.[next.x]);
-    
-    if (canMove) {
-      console.log('✅ Moving to', next);
-      setIsMoving(true);
-      
-      // Animate to new position
-      Animated.parallel([
-        Animated.timing(animatedX, {
-          toValue: next.x * TILE_SIZE,
-          duration: MOVEMENT_DURATION,
-          useNativeDriver: false, // Web doesn't support native driver
-        }),
-        Animated.timing(animatedY, {
-          toValue: next.y * TILE_SIZE,
-          duration: MOVEMENT_DURATION,
-          useNativeDriver: false, // Web doesn't support native driver
-        }),
-      ]).start(() => {
-        console.log('✅ Animation complete, new pos:', next);
-        setIsMoving(false);
-        setPos(next);
-        checkEventPointCollision(next);
-      });
-    } else {
-      console.log('🚫 Movement blocked at', next);
-    }
-  }, [isMoving, pos, animatedX, animatedY]);
+    // Animate smoothly to new position
+    Animated.parallel([
+      Animated.timing(animatedX, {
+        toValue: next.x * TILE_SIZE,
+        duration: MOVEMENT_DURATION,
+        useNativeDriver: false,
+      }),
+      Animated.timing(animatedY, {
+        toValue: next.y * TILE_SIZE,
+        duration: MOVEMENT_DURATION,
+        useNativeDriver: false,
+      }),
+    ]).start(() => {
+      setIsMoving(false);
+      checkEventPointCollision(next);
+    });
+  }, [pos, animatedX, animatedY]);
 
   // Check if player stepped on an event point
   const checkEventPointCollision = (playerPos: Point) => {
@@ -135,6 +128,9 @@ const KEY = "townville.save.v1";
     if (Platform.OS !== "web") return;
 
     const handler = (e: KeyboardEvent) => {
+      // Disable movement during interactions
+      if (interaction.state.type !== 'idle') return;
+      
       // Toggle edit mode with 'E' key
       if (e.key === 'e' || e.key === 'E') {
         setEditMode(prev => !prev);
@@ -143,26 +139,37 @@ const KEY = "townville.save.v1";
       
       if (editMode) return; // Disable movement in edit mode
       
-      const dirs: Record<string, [number, number]> = {
-        ArrowUp: [0, -1],
-        w: [0, -1],
-        ArrowDown: [0, 1],
-        s: [0, 1],
-        ArrowLeft: [-1, 0],
-        a: [-1, 0],
-        ArrowRight: [1, 0],
-        d: [1, 0],
-      };
-
-      if (dirs[e.key]) {
-        e.preventDefault();
-        walk(dirs[e.key]); // Pass array directly
+      // Map key to direction vector
+      let dir: [number, number] | null = null;
+      
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        dir = [0, -1];
+        setDirection('back');
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        dir = [0, 1];
+        setDirection('front');
+      } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        dir = [-1, 0];
+        setDirection('left');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        dir = [1, 0];
+        setDirection('right');
       }
+
+      if (!dir) return;
+      
+      // Throttle movement to prevent spam
+      const now = Date.now();
+      if (now - lastMoveTimeRef.current < MOVE_THROTTLE_MS) return;
+      lastMoveTimeRef.current = now;
+
+      e.preventDefault();
+      tryMove(dir);
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editMode, walk]); // walk is now stable with useCallback
+  }, [editMode, interaction.state.type, tryMove]);
 
   // Handle dialogue advancement
   const handleDialogueChoice = (nextNodeId: string, isCorrect?: boolean) => {
