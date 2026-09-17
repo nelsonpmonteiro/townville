@@ -110,11 +110,10 @@ export default function ProtagonistSprite({
   const offsetX = (TILE_SIZE - width) / 2;
   const offsetY = TILE_SIZE - height;
   
-  // Select sprite source - TEMPORARILY USING IDLE ONLY TO DEBUG
-  const spriteSource = IDLE_SPRITES[direction];
-  // const spriteSource = isMoving 
-  //   ? WALK_FRAMES[direction][currentFrame]
-  //   : IDLE_SPRITES[direction];
+  // Select sprite source
+  const spriteSource = isMoving 
+    ? WALK_FRAMES[direction][currentFrame]
+    : IDLE_SPRITES[direction];
   
   return (
     <Animated.Image
