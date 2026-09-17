@@ -96,20 +96,17 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving, direction]); // Re-sync when direction changes
   
+  // Select sprite source FIRST (before using in hook)
+  const spriteSource = isMoving 
+    ? WALK_FRAMES[direction][currentFrame]
+    : IDLE_SPRITES[direction];
+  
   // Use aspect-scaled size (respects native proportions)
   const scaledSize = useAspectScaledSize(spriteSource, PROTAGONIST_TARGET_HEIGHT);
   
   // Position offsets (center horizontally, bottom-aligned)
   const offsetX = (TILE_SIZE - scaledSize.width) / 2;
   const offsetY = TILE_SIZE - scaledSize.height;
-  
-  // DISABLED: Walk animation causing size mismatch with idle sprites
-  // const spriteSource = isMoving 
-  //   ? WALK_FRAMES[direction][currentFrame]
-  //   : IDLE_SPRITES[direction];
-  
-  // Use ONLY idle sprites (no animation) until we get consistent assets
-  const spriteSource = IDLE_SPRITES[direction];
   
   return (
     <Animated.Image
