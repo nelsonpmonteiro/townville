@@ -96,6 +96,14 @@ func _build_walkable_matrix() -> void:
 	_paint_walkable(Rect2i(3, 6, 2, 4))
 	_paint_walkable(Rect2i(23, 6, 2, 4))
 	_paint_walkable(Rect2i(16, 14, 11, 2))
+	# South yard + side bypass for Coop and Clinic, so their door (which faces
+	# down/south on the sprite, same as every other building — no flips) has
+	# real street right in front of it, matching each building's true street
+	# side instead of forcing a broken vertical-flip on the art.
+	_paint_walkable(Rect2i(3, 10, 2, 1))
+	_paint_walkable(Rect2i(2, 6, 1, 5))
+	_paint_walkable(Rect2i(23, 10, 2, 1))
+	_paint_walkable(Rect2i(25, 6, 1, 5))
 
 	# Visual path mask mirrors the walkable network before entities carve holes in it,
 	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
@@ -189,7 +197,7 @@ const WORLD1_PROPS := [
 	{"id": "flower-red", "display_name": "Flor Vermelha", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(5, 7)},
 	# Clinic (Vera) cluster
 	{"id": "fountain", "display_name": "Fonte", "sprite_path": "res://assets/scenery/world1/scenery-fountain.png", "tile": Vector2i(22, 7)},
-	{"id": "flower-pot", "display_name": "Vaso", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(25, 6)},
+	{"id": "flower-pot", "display_name": "Vaso", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(26, 6)},
 	# Garden (Rose) cluster
 	{"id": "flower-red", "display_name": "Flor Vermelha", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(24, 14)},
 	{"id": "flower-yellow", "display_name": "Flor Amarela", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(24, 15)},

@@ -39,9 +39,11 @@ func build_world() -> void:
 func add_buildings() -> void:
 	# Per-building scale and horizontal flip, set individually per user spec:
 	# henhouse/coop keep their size but flip horizontally, stable is 1.5x,
-	# barn/clinic are 2x, garden stays default. Footprint/collision (2x2
-	# tiles) is unchanged — sprite is bottom-anchored so its doorway still
-	# sits on the footprint's bottom edge regardless of scale.
+	# barn/clinic are 2x, garden stays default. All doors face south/down as
+	# drawn (no vertical flip — that broke the art, roof reading as ground).
+	# Coop and Clinic instead got a real street routed to their south (see
+	# world_data.gd's south-yard connectors) so their existing door orientation
+	# is already correct. Footprint/collision (2x2 tiles) is unchanged.
 	for b in world.BUILDINGS:
 		var texture := load(b.sprite) as Texture2D
 		var building_scale: float = b.get("scale", 1.0)
