@@ -127,7 +127,7 @@ function renderStageOverlay(state: BuildingState, size: number) {
   const showGlow = state === 'STAGE_3';
 
   return (
-    <View style={[StyleSheet.absoluteFill, { opacity }]} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { opacity, pointerEvents: 'none' }]}>
       {showScaffolding && (
         <View style={styles.scaffolding}>
           {/* Diagonal lines to simulate scaffolding */}

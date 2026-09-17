@@ -35,9 +35,9 @@ export default function SceneryProp({ prop }: Props) {
         {
           left: prop.col * TILE_SIZE,
           top: prop.row * TILE_SIZE,
+          pointerEvents: 'none',
         },
       ]}
-      pointerEvents="none"
     >
       <Image
         source={sprite}
