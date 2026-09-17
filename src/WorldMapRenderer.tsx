@@ -10,15 +10,11 @@ import SceneryProp from './components/SceneryProp';
 import { WORLD1_PROPS } from './data/worldProps';
 import {
   TILE_SIZE,
-  GRID_COLS,
-  GRID_ROWS,
   CHUNK_SIZE,
   BUILDING_TARGET_HEIGHT,
   GATE_TARGET_HEIGHT,
 } from './config';
 
-const MAP_COLS = GRID_COLS;
-const MAP_ROWS = GRID_ROWS;
 
 interface Point {
   x: number;
@@ -197,7 +193,7 @@ export default function WorldMapRenderer({ world, save, protagonistAnimatedX, pr
   };
 
   return (
-    <View style={styles.mapContainer}>
+    <View style={[styles.mapContainer, { width: world.cols * TILE_SIZE, height: world.rows * TILE_SIZE }]}>
       {renderChunks()}
       {renderScenery()}
       {renderEventPoints()}
@@ -211,8 +207,7 @@ export default function WorldMapRenderer({ world, save, protagonistAnimatedX, pr
 const styles = StyleSheet.create({
   mapContainer: {
     position: 'relative',
-    width: MAP_COLS * TILE_SIZE, // 1440
-    height: MAP_ROWS * TILE_SIZE, // 960
+    overflow: 'hidden',
     backgroundColor: '#1a1a1a',
   },
   chunk: {

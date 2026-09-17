@@ -27,8 +27,8 @@ func build_world() -> void:
 	map.setup(world)
 	add_child(map)
 
-	add_farm_landmarks()
-	add_npc()
+	add_buildings()
+	add_npcs()
 	player = PlayerScript.new()
 	player.name = "Player"
 	player.z_index = 20
@@ -36,55 +36,49 @@ func build_world() -> void:
 	player.setup(world)
 	add_hud()
 
-func add_farm_landmarks() -> void:
-	var title := Label.new()
-	title.text = "WORLD 1 · FAZENDA TOWNVILLE"
-	title.position = Vector2(72, 40)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color("#fff2bf"))
-	title.add_theme_color_override("font_shadow_color", Color("#24351d"))
-	title.add_theme_constant_override("shadow_offset_x", 2)
-	title.add_theme_constant_override("shadow_offset_y", 2)
-	add_child(title)
-	for landmark in [
-		[Vector2(4, 3), Vector2(3, 3), Color("#a85b46"), "GALINHEIRO"],
-		[Vector2(12, 3), Vector2(3, 3), Color("#8d6e63"), "ESTÁBULO"],
-		[Vector2(24, 2), Vector2(4, 3), Color("#b4493f"), "CELEIRO"],
-		[Vector2(18, 9), Vector2(3, 2), Color("#d7e7ef"), "CLÍNICA"]
-	]:
-		var panel := ColorRect.new()
-		panel.position = landmark[0] * world.TILE_SIZE
-		panel.size = landmark[1] * world.TILE_SIZE
-		panel.color = landmark[2]
-		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.z_index = 2
-		add_child(panel)
+func add_buildings() -> void:
+	for b in world.BUILDINGS:
+		var sprite := Sprite2D.new()
+		sprite.name = "Building_" + b.id
+		sprite.texture = load(b.sprite)
+		# Center building in footprint
+		var fp_center: Vector2 = Vector2(b.footprintCol + b.footprintW / 2.0, b.footprintRow + b.footprintH / 2.0) * world.TILE_SIZE
+		sprite.position = fp_center
+		sprite.position.y -= 12
+		sprite.z_index = 5
+		add_child(sprite)
+		# Building label
 		var label := Label.new()
-		label.text = landmark[3]
-		label.position = panel.position + Vector2(8, panel.size.y * 0.5 - 10)
-		label.add_theme_font_size_override("font_size", 13)
+		label.text = b.label
+		label.position = sprite.position + Vector2(-30, -50)
+		label.add_theme_font_size_override("font_size", 12)
 		label.add_theme_color_override("font_color", Color.WHITE)
-		label.z_index = 3
+		label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
+		label.z_index = 6
 		add_child(label)
 
-func add_npc() -> void:
-	var npc := Sprite2D.new()
-	npc.name = "VeraNPC"
-	npc.texture = load("res://assets/characters/world1/vera-idle.png")
-	npc.position = Vector2(world.NPC.tile * world.TILE_SIZE) + Vector2.ONE * world.TILE_SIZE * 0.5
-	npc.position.y -= 12
-	npc.scale = Vector2.ONE * 1.4
-	npc.z_index = 15
-	add_child(npc)
-	var name_label := Label.new()
-	name_label.text = "Dra. Vera"
-	name_label.position = npc.position + Vector2(-38, -58)
-	name_label.add_theme_color_override("font_color", Color.WHITE)
-	name_label.add_theme_color_override("font_shadow_color", Color.BLACK)
-	name_label.add_theme_constant_override("shadow_offset_x", 1)
-	name_label.add_theme_constant_override("shadow_offset_y", 1)
-	name_label.z_index = 16
-	add_child(name_label)
+func add_npcs() -> void:
+	for npc in world.NPCS:
+		var sprite := Sprite2D.new()
+		sprite.name = "NPC_" + npc.id
+		if npc.has("sprite_path"):
+			sprite.texture = load(npc.sprite_path)
+		sprite.position = Vector2(npc.tile * world.TILE_SIZE) + Vector2.ONE * world.TILE_SIZE * 0.5
+		sprite.position.y -= 12
+		sprite.scale = Vector2.ONE * 1.4
+		sprite.z_index = 15
+		add_child(sprite)
+		var name_label := Label.new()
+		name_label.text = npc.display_name
+		name_label.position = sprite.position + Vector2(-38, -58)
+		name_label.add_theme_color_override("font_color", Color.WHITE)
+		name_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		name_label.add_theme_constant_override("shadow_offset_x", 1)
+		name_label.add_theme_constant_override("shadow_offset_y", 1)
+		name_label.z_index = 16
+		add_child(name_label)
 
 func add_hud() -> void:
 	var layer := CanvasLayer.new()
@@ -129,9 +123,11 @@ func _process(_delta: float) -> void:
 	if player == null:
 		return
 	fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
-	var nearby: bool = world.is_npc_near(player.current_tile())
-	prompt_label.text = "[E] Falar com Dra. Vera" if nearby else ""
-	if not nearby:
+	var nearby: Dictionary = world.get_adjacent_npc(player.current_tile())
+	if nearby:
+		prompt_label.text = "[E] Falar com " + nearby.display_name
+	else:
+		prompt_label.text = ""
 		dialogue_label.visible = false
 
 func _unhandled_key_input(event: InputEvent) -> void:

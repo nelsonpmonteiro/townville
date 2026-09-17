@@ -1,6 +1,26 @@
-# Townville — Godot 4 POC
+# Townville — Godot 4 POC com PixelLab
 
-POC jogável isolada do app Expo. O World 1 usa uma alternativa visual coerente e compacta construída diretamente da mesma matriz 32×24 usada pela colisão: 48 px por tile, total exato de **1536×1152 px**. Isso elimina o antigo desacordo com os 12 chunks de 480 px (1920×1440).
+## Estado atual
+
+- Mundo **32×24 tiles** (48px/tile) = 1536×1152px
+- Mapa e colisão de uma única fonte
+- **8 NPCs** com sprites PixelLab: Mae, Chester, Joe, Vera, Lily, Rose, Billy, Old Mac
+- **6 prédios** com sprites PixelLab: Galinheiros, Estábulo, Celeiro, Clínica, Jardim
+- **Tilesets Wang** PixelLab importados (grama↔terra 16px)
+- Câmera suave com limites do mundo
+- HUD com FPS, instruções e prompts de interação
+- Movimento WASD/setas, interação com E/Espaço
+- 22 testes passando, screenshot gerado
+
+## Assets PixelLab
+
+| Tipo | Origem |
+|------|--------|
+| NPCs idle | `artifacts/pixellab-world1-idle/*.png` |
+| Prédios | `artifacts/pixellab-world1-buildings-idle/*.png` |
+| Terreno | `artifacts/pixellab-terrain-v2-grass-dirt/tileset.png` |
+| Água | `artifacts/pixellab-terrain-v2-water-grass/tileset.png` |
+| Mapa completo | `artifacts/pixellab-world1-map-v2/` |
 
 ## Executar
 

@@ -96,14 +96,8 @@ const WORLD2_SPRITES = {
 // Dedicated map icons (1254×1254-class, simplified detail for small render).
 // Used for map event points; dialogue screens keep the full idle/happy/sad set.
 const MAP_ICONS: Record<string, any> = {
-  'mae': require('../../assets/images/characters/map-icons/mae-map.png'),
-  'chester': require('../../assets/images/characters/map-icons/chester-map.png'),
-  'lily': require('../../assets/images/characters/map-icons/lily-map.png'),
-  'farmer-joe': require('../../assets/images/characters/map-icons/farmer-joe-map.png'),
-  'grandma-rose': require('../../assets/images/characters/map-icons/grandma-rose-map.png'),
-  'billy': require('../../assets/images/characters/map-icons/billy-map.png'),
-  'vera': require('../../assets/images/characters/map-icons/vera-map.png'),
-  'old-mac': require('../../assets/images/characters/map-icons/old-mac-map.png'),
+  // World 1 intentionally falls back to its PixelLab idle sprites so the
+  // map and dialogue use the same current-generation character art.
   'sam': require('../../assets/images/characters/map-icons/sam-map.png'),
   'rosa': require('../../assets/images/characters/map-icons/rosa-map.png'),
   'mayor-chen': require('../../assets/images/characters/map-icons/mayor-chen-map.png'),

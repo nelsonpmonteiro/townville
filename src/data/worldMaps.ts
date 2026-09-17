@@ -27,6 +27,8 @@ export interface Building {
 export interface WorldMap {
   id: number;
   name: string;
+  cols: number;
+  rows: number;
   collisionMap: Tile[][]; // Legacy format - use walkableMap instead
   walkableMap: boolean[][]; // Pixel-perfect collision data (true = walkable)
   spawn: { x: number; y: number };
@@ -98,41 +100,34 @@ function applyBuildingFootprints(walkable: boolean[][], buildings: Building[]): 
   return result;
 }
 
-// World 1 buildings - using detected clearings from HERMES-pixel-perfect-placement.md §4
+// Compact World 1: asymmetric placement around branching paths.
 const FARM_BUILDINGS: Building[] = [
-  // Pad A (rows 3-5, cols 6-8) → Henhouse (Mae)
-  { id: 'henhouse', npcId: 'mae', sprite: 'henhouse', footprintCol: 6, footprintRow: 3, footprintW: 3, footprintH: 3 },
-  // Pad B (rows 3-5, cols 15-17) → Stable (Chester)
-  { id: 'stable', npcId: 'chester', sprite: 'stable', footprintCol: 15, footprintRow: 3, footprintW: 3, footprintH: 3 },
-  // Pad C (rows 3-4, col 26) → Barn (Farmer Joe) - expanding to 2×2 minimum
-  { id: 'barn', npcId: 'farmer-joe', sprite: 'barn', footprintCol: 25, footprintRow: 3, footprintW: 3, footprintH: 3 },
-  // Pad D (rows 13-15, cols 7-9) → Coop (Lily)
-  { id: 'coop', npcId: 'lily', sprite: 'coop', footprintCol: 7, footprintRow: 13, footprintW: 3, footprintH: 3 },
-  // Pad E (rows 10-11, cols 23-25) → Animal Clinic (Vera)
-  { id: 'clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 23, footprintRow: 10, footprintW: 3, footprintH: 2 },
-  // Garden (Grandma Rose) - using grass area near row 7, no clearing detected per §4
-  { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 33, footprintRow: 7, footprintW: 2, footprintH: 2 },
-  // Farm Gate (world exit) — 3×2 over the bottom corridor (cols 14-16, rows 28-29).
-  // Collision is RUNTIME (closed blocks, open walkable) — see engine/collision.ts.
-  { id: 'farm-gate', sprite: 'farm-gate', footprintCol: 14, footprintRow: 28, footprintW: 3, footprintH: 2 },
+  { id: 'henhouse', npcId: 'mae', sprite: 'henhouse', footprintCol: 2, footprintRow: 2, footprintW: 3, footprintH: 3 },
+  { id: 'stable', npcId: 'chester', sprite: 'stable', footprintCol: 12, footprintRow: 3, footprintW: 3, footprintH: 3 },
+  { id: 'barn', npcId: 'farmer-joe', sprite: 'barn', footprintCol: 24, footprintRow: 2, footprintW: 3, footprintH: 3 },
+  { id: 'coop', npcId: 'lily', sprite: 'coop', footprintCol: 4, footprintRow: 11, footprintW: 3, footprintH: 3 },
+  { id: 'clinic', npcId: 'vera', sprite: 'animal-clinic', footprintCol: 18, footprintRow: 9, footprintW: 3, footprintH: 2 },
+  { id: 'garden', npcId: 'grandma-rose', sprite: 'garden', footprintCol: 25, footprintRow: 13, footprintW: 2, footprintH: 2 },
+  { id: 'farm-gate', sprite: 'farm-gate', footprintCol: 14, footprintRow: 22, footprintW: 3, footprintH: 2 },
 ];
 
 export const WORLD_1_FARM: WorldMap = {
   id: 1,
   name: 'Farm',
-  collisionMap: farmCollisionMap, // Legacy - kept for compatibility
+  cols: 32,
+  rows: 24,
+  collisionMap: WORLD1_WALKABLE.map(row => row.map(open => open ? '.' : '#')),
   walkableMap: applyBuildingFootprints(WORLD1_WALKABLE, FARM_BUILDINGS),
-  spawn: { x: 20, y: 7 }, // Center horizontal path (row 7, col ~20)
-  exits: [{ x: 16, y: 29, toWorld: 2 }], // Bottom center
+  spawn: { x: 15, y: 8 },
+  exits: [{ x: 15, y: 23, toWorld: 2 }],
   eventPoints: [
-    // Event points near buildings - adjusted to 40×30 grid
-    { id: 'ep_mae_1', npcId: 'mae', x: 7, y: 6 }, // Near henhouse
-    { id: 'ep_chester_1', npcId: 'chester', x: 16, y: 6 }, // Near stable
-    { id: 'ep_lily_1', npcId: 'lily', x: 8, y: 16 }, // Near coop
-    { id: 'ep_joe_1', npcId: 'farmer-joe', x: 26, y: 6 }, // Near barn
-    { id: 'ep_vera_1', npcId: 'vera', x: 24, y: 12 }, // Near clinic
-    { id: 'ep_rose_1', npcId: 'grandma-rose', x: 34, y: 9 }, // Near garden
-    { id: 'ep_billy_1', npcId: 'billy', x: 16, y: 26 }, // Bottom path
+    { id: 'ep_mae_1', npcId: 'mae', x: 5, y: 5 },
+    { id: 'ep_chester_1', npcId: 'chester', x: 11, y: 6 },
+    { id: 'ep_joe_1', npcId: 'farmer-joe', x: 27, y: 5 },
+    { id: 'ep_vera_1', npcId: 'vera', x: 21, y: 12 },
+    { id: 'ep_lily_1', npcId: 'lily', x: 8, y: 15 },
+    { id: 'ep_rose_1', npcId: 'grandma-rose', x: 27, y: 17 },
+    { id: 'ep_billy_1', npcId: 'billy', x: 13, y: 19 },
   ],
   buildings: FARM_BUILDINGS,
 };
@@ -199,6 +194,8 @@ const DOWNTOWN_BUILDINGS: Building[] = [
 export const WORLD_2_DOWNTOWN: WorldMap = {
   id: 2,
   name: 'Downtown',
+  cols: 40,
+  rows: 30,
   collisionMap: downtownCollisionMap, // Legacy - kept for compatibility
   walkableMap: applyBuildingFootprints(WORLD2_WALKABLE, DOWNTOWN_BUILDINGS),
   spawn: { x: 16, y: 1 }, // Top center (arrives from Farm)

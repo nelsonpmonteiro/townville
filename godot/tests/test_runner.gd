@@ -9,6 +9,72 @@ func expect(condition: bool, message: String) -> void:
 		failures += 1
 		push_error("FAIL: " + message)
 
+func write_json(path: String, value: Variant) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(value, "  "))
+
+func collision_matrix(rows: int = 24, cols: int = 32) -> Array:
+	var matrix := []
+	for y in rows:
+		var row := []
+		for x in cols:
+			row.append(1 if x == 15 else 0)
+		matrix.append(row)
+	return matrix
+
+func make_single_pack(name: String) -> String:
+	var directory := "user://world_pack_tests/" + name
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
+	var image := Image.create(1536, 1152, false, Image.FORMAT_RGBA8)
+	image.fill(Color("#527c43"))
+	image.save_png(directory.path_join("background.png"))
+	write_json(directory.path_join("collision.json"), {"walkable": collision_matrix()})
+	write_json(directory.path_join("anchors.json"), {
+		"spawn": {"tile": [15, 8]},
+		"npcs": [{"id": "vera", "display_name": "Dra. Vera", "tile": [21, 12], "sprite": "res://assets/characters/world1/vera-idle.png", "dialogue": "Olá"}],
+		"buildings": [{"id": "clinic", "tile": [18, 9]}]
+	})
+	write_json(directory.path_join("manifest.json"), {
+		"contract_version": 1,
+		"world_id": "world1",
+		"version": "1.0.0-test",
+		"tile_size": 48,
+		"cols": 32,
+		"rows": 24,
+		"width_px": 1536,
+		"height_px": 1152,
+		"art": {"mode": "single", "file": "background.png"},
+		"collision": {"file": "collision.json"},
+		"anchors": {"file": "anchors.json"}
+	})
+	return directory
+
+func make_chunk_pack(name: String) -> String:
+	var directory := make_single_pack(name)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(directory.path_join("background.png")))
+	var files := []
+	for y in 2:
+		for x in 2:
+			var filename := "chunk_%d_%d.png" % [x, y]
+			var image := Image.create(768, 576, false, Image.FORMAT_RGBA8)
+			image.fill(Color("#4f7840"))
+			image.save_png(directory.path_join(filename))
+			files.append(filename)
+	write_json(directory.path_join("manifest.json"), {
+		"contract_version": 1,
+		"world_id": "world1",
+		"version": "1.0.0-chunks",
+		"tile_size": 48,
+		"cols": 32,
+		"rows": 24,
+		"width_px": 1536,
+		"height_px": 1152,
+		"art": {"mode": "chunks", "grid_cols": 2, "grid_rows": 2, "chunk_width_px": 768, "chunk_height_px": 576, "files": files},
+		"collision": {"file": "collision.json"},
+		"anchors": {"file": "anchors.json"}
+	})
+	return directory
+
 func _initialize() -> void:
 	var implementation := "res://scripts/world_data.gd"
 	expect(FileAccess.file_exists(implementation), "world data implementation exists")
@@ -28,10 +94,12 @@ func _initialize() -> void:
 	expect(not world.is_walkable(Vector2i(32, 8)), "right world boundary blocks movement")
 	expect(not world.is_walkable(Vector2i(0, 0)), "blocked matrix tile rejects movement")
 	expect(world.camera_limits() == Rect2i(0, 0, 1536, 1152), "camera limits match compact world")
-	expect(world.NPC.id == "vera", "current World 1 NPC is configured")
-	expect(not world.is_walkable(world.NPC.tile), "NPC occupancy is represented in the same collision matrix")
-	expect(world.is_npc_near(Vector2i(20, 12)), "NPC interaction works from an adjacent tile")
-	expect(world.interaction_text(Vector2i(20, 12)).contains("Vera"), "NPC interaction returns demonstrative dialogue")
+	expect(world.NPCS.size() == 8, "all 8 World 1 NPCs configured")
+	expect(not world.is_walkable(world.NPCS[0].tile), "NPC tile blocks movement")
+	var adjacent_npc = world.get_adjacent_npc(world.NPCS[0].tile + Vector2i(1, 0))
+	expect(adjacent_npc.size() > 0, "NPC adjacent detection works")
+	expect(world.interaction_text(world.NPCS[0].tile + Vector2i(1, 0)).length() > 0, "NPC interaction returns dialogue")
+	expect(not world.get_adjacent_npc(Vector2i(15, 8)).size(), "no NPC near spawn")
 
 	var movement_path := "res://scripts/player_movement.gd"
 	expect(FileAccess.file_exists(movement_path), "player movement implementation exists")

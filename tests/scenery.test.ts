@@ -27,7 +27,7 @@ test("every prop type has its PNG asset present", () => {
 
 test("props are in-grid, off paths, off buildings, off event points", () => {
   for (const p of WORLD1_PROPS) {
-    assert.ok(p.col >= 0 && p.col < 40 && p.row >= 0 && p.row < 30, `${p.type} out of grid`);
+    assert.ok(p.col >= 0 && p.col < WORLD_1_FARM.cols && p.row >= 0 && p.row < WORLD_1_FARM.rows, `${p.type} out of grid`);
 
     // Not on walkable path (props sit on decorative ground)
     assert.equal(
@@ -56,8 +56,8 @@ test("props are in-grid, off paths, off buildings, off event points", () => {
 
 test("blocking props block their tile; walk-over props don't", () => {
   // All-true base to observe the prop effect in isolation
-  const base: boolean[][] = Array.from({ length: 30 }, () =>
-    Array.from({ length: 40 }, () => true)
+  const base: boolean[][] = Array.from({ length: WORLD_1_FARM.rows }, () =>
+    Array.from({ length: WORLD_1_FARM.cols }, () => true)
   );
   const applied = applyPropCollision(base, WORLD1_PROPS);
 

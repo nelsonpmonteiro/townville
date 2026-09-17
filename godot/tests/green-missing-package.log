@@ -1,0 +1,26 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PASS: world-pack loader implementation exists
+PASS: missing active package selects playable fallback
+PASS: world data implementation exists
+PASS: world has 32 columns
+PASS: world has 24 rows
+PASS: world is exactly 1536x1152 pixels
+PASS: collision matrix is the single 32x24 map source
+PASS: spawn is walkable
+PASS: player can walk east from spawn
+PASS: left world boundary blocks movement
+PASS: right world boundary blocks movement
+PASS: blocked matrix tile rejects movement
+PASS: camera limits match compact world
+PASS: current World 1 NPC is configured
+PASS: NPC occupancy is represented in the same collision matrix
+PASS: NPC interaction works from an adjacent tile
+PASS: NPC interaction returns demonstrative dialogue
+PASS: player movement implementation exists
+PASS: four-direction movement advances on walkable terrain
+PASS: movement cannot enter blocked or out-of-bounds tiles
+PASS: playable main scene exists
+PASS: main scene instantiates as World 1
+PASS: scene exposes world construction
+ALL TESTS PASSED

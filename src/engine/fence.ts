@@ -14,13 +14,10 @@
 import { Save, Point } from '../core';
 import { completedPhaseCount } from '../state/buildingStates';
 
-// Gap tiles on the bottom corridor next to Billy's event point (16,26).
-// Path tiles at rows 26-27 span cols 14-17; the corridor proper is
-// cols 15-16 — the gap closes the wide shoulder tiles (14,26) & (17,26).
-// Verified against src/data/collision_w1.ts (rows 27-28 of the file).
+// Gap tiles on the compact farm's lower fence, beside Billy's branch.
 export const FENCE_GAP_TILES: Point[] = [
-  { x: 14, y: 26 },
-  { x: 17, y: 26 },
+  { x: 13, y: 20 },
+  { x: 17, y: 20 },
 ];
 
 /** How many posts are visible for Billy's progress. */

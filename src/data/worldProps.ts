@@ -29,20 +29,19 @@ export const BLOCKING_PROP_TYPES: PropType[] = ['tree', 'stone', 'well'];
 
 export const WORLD1_PROPS: WorldProp[] = [
   { type: 'tree', col: 9, row: 5, targetHeightTiles: 2.3 },
-  { type: 'tree', col: 20, row: 6, targetHeightTiles: 2.3 },
-  { type: 'tree', col: 30, row: 4, targetHeightTiles: 2.3 },
-  // spec had (6,6) but that tile is main-corridor path → moved to (6,9)
-  { type: 'bush', col: 6, row: 9, targetHeightTiles: 0.65 },
-  { type: 'bush', col: 18, row: 8, targetHeightTiles: 0.65 },
-  { type: 'bush', col: 28, row: 5, targetHeightTiles: 0.65 },
-  { type: 'bush', col: 12, row: 20, targetHeightTiles: 0.65 },
-  { type: 'flower-yellow', col: 21, row: 11, targetHeightTiles: 0.4 },
-  { type: 'flower-yellow', col: 8, row: 18, targetHeightTiles: 0.4 },
-  { type: 'flower-red', col: 22, row: 12, targetHeightTiles: 0.4 },
-  { type: 'flower-red', col: 31, row: 9, targetHeightTiles: 0.4 },
-  { type: 'stone', col: 19, row: 11, targetHeightTiles: 0.35 },
-  { type: 'stone', col: 24, row: 13, targetHeightTiles: 0.35 },
-  { type: 'well', col: 33, row: 15, targetHeightTiles: 1.3 },
+  { type: 'tree', col: 21, row: 4, targetHeightTiles: 2.3 },
+  { type: 'tree', col: 29, row: 10, targetHeightTiles: 2.3 },
+  { type: 'bush', col: 3, row: 10, targetHeightTiles: 0.65 },
+  { type: 'bush', col: 10, row: 12, targetHeightTiles: 0.65 },
+  { type: 'bush', col: 23, row: 15, targetHeightTiles: 0.65 },
+  { type: 'bush', col: 19, row: 20, targetHeightTiles: 0.65 },
+  { type: 'flower-yellow', col: 9, row: 13, targetHeightTiles: 0.4 },
+  { type: 'flower-yellow', col: 22, row: 14, targetHeightTiles: 0.4 },
+  { type: 'flower-red', col: 28, row: 12, targetHeightTiles: 0.4 },
+  { type: 'flower-red', col: 4, row: 18, targetHeightTiles: 0.4 },
+  { type: 'stone', col: 11, row: 18, targetHeightTiles: 0.35 },
+  { type: 'stone', col: 23, row: 19, targetHeightTiles: 0.35 },
+  { type: 'well', col: 29, row: 19, targetHeightTiles: 1.3 },
 ];
 
 /** Block tiles occupied by blocking props. Returns a NEW matrix. */

@@ -7,26 +7,27 @@ import { MAP_WIDTH, MAP_HEIGHT } from '../config';
 
 const HEADER_HEIGHT = 60; // GameHeader height
 
-function measure() {
+function measure(mapWidth: number, mapHeight: number) {
   const w = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const h = typeof window !== 'undefined' ? window.innerHeight - HEADER_HEIGHT : 800;
   return {
-    width: Math.min(w, MAP_WIDTH),
-    height: Math.min(h, MAP_HEIGHT),
+    width: Math.min(w, mapWidth),
+    height: Math.min(h, mapHeight),
   };
 }
 
-export function useViewportSize() {
-  const [size, setSize] = useState(measure);
+export function useViewportSize(mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT) {
+  const [size, setSize] = useState(() => measure(mapWidth, mapHeight));
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const onResize = () => setSize(measure());
+    const onResize = () => setSize(measure(mapWidth, mapHeight));
+    onResize();
 
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [mapWidth, mapHeight]);
 
   return size;
 }

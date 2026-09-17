@@ -21,7 +21,7 @@ This is the actual implemented local prototype, not the unavailable historical C
   - `App.tsx` — thin shell: rendering, keyboard, animation, persistence. Dispatches FlowEvents; never implements game rules inline.
 - 40×30 grid, 48px tiles (`src/config.ts`). Movement blocks via `effectiveWalkableMap` (base walkableMap includes building footprints; gates/fence resolved at runtime). Camera follows player with clamped interpolation.
 - Sprite scale contract: ALL sprite PNGs trimmed (canvas == content); characters 1.4 tiles, buildings 2.6, gates 2.2; ProtagonistSprite uses a static NATIVE_DIMS table (checked by tests/sprites.test.ts) — update it when replacing player art. Walk clock derives frame from wall time (continuous gait).
-- Map NPCs use dedicated `characters/map-icons/*-map.png` (CharacterSprite variant='map'); dialogue portraits use world1/world2 sets.
+- World 1 map NPCs use their current PixelLab `world1/*-idle.png` sprites; World 2 keeps dedicated `characters/map-icons/*-map.png` sprites. Dialogue portraits use world-specific sets.
 - Scoring: exactly 100 once per `npcId:phase`; errors NEVER deduct score/streak; 3rd error on a point costs 1 life; session = 5 events; maxAttempts=3 then failure dialogue → retry with fresh attempts.
 - Save key `townville.save.v1`, schema `version:1`. Do not silently change the schema. Unknown/malformed saves recover safely.
 - Audio must remain gesture-gated, mute-persistent and background-paused. No microphone permission is requested.

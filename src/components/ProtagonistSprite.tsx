@@ -1,16 +1,16 @@
 // ProtagonistSprite - protagonist with continuous walk animation.
 //
 // SIZING CONTRACT (do not break):
-// - All player PNGs are TRIMMED (canvas == visible content). If you
-//   replace assets, trim them (scripts or PIL bbox crop) or the
-//   character will visibly shrink/grow between idle and walk.
+// - Use one union alpha-bbox per direction for idle + all walk frames.
+//   Never trim frames independently: their shared canvas keeps scale
+//   and foot placement stable throughout the gait.
 // - Render size is computed from the STATIC dimension table below —
 //   never from Image.getSize (async → one-frame flicker at 48×48).
 // - Height is fixed at CHARACTER_TARGET_HEIGHT for every frame and
 //   direction; width follows each source's aspect ratio.
 // - Anchor: bottom-center of the logical tile.
 import React, { useEffect, useState } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, Image, StyleSheet } from 'react-native';
 import {
   TILE_SIZE,
   CHARACTER_TARGET_HEIGHT,
@@ -74,21 +74,25 @@ const IDLE_SPRITES = {
 
 // STATIC native dimensions of the trimmed assets (measured, checked by
 // tests/sprites.test.ts). Update ONLY when replacing the asset files.
-// Idle set: hi-res source (townville-protagonist-complete.zip) trimmed
-// and downscaled to walk-frame scale — same 106px height, same aspect.
+// PixelLab idle + 8 walk frames share a union-cropped canvas per direction.
 const NATIVE_DIMS = {
-  walk: { width: 40, height: 106 }, // all 32 walk frames share this canvas
+  walk: {
+    front: { width: 20, height: 54 },
+    back: { width: 20, height: 52 },
+    left: { width: 26, height: 53 },
+    right: { width: 27, height: 53 },
+  },
   idle: {
-    front: { width: 40, height: 106 },
-    back: { width: 38, height: 106 },
-    left: { width: 40, height: 106 },
-    right: { width: 40, height: 106 },
+    front: { width: 20, height: 54 },
+    back: { width: 20, height: 52 },
+    left: { width: 26, height: 53 },
+    right: { width: 27, height: 53 },
   },
 } as const;
 
 /** Deterministic render size: fixed target height, aspect-true width. */
 function renderSize(isMoving: boolean, direction: Direction) {
-  const dims = isMoving ? NATIVE_DIMS.walk : NATIVE_DIMS.idle[direction];
+  const dims = isMoving ? NATIVE_DIMS.walk[direction] : NATIVE_DIMS.idle[direction];
   const scale = CHARACTER_TARGET_HEIGHT / dims.height;
   return { width: dims.width * scale, height: CHARACTER_TARGET_HEIGHT };
 }
@@ -107,6 +111,17 @@ export default function ProtagonistSprite({
   isMoving = false,
 }: Props) {
   const [frame, setFrame] = useState(0);
+  const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
+  const markLoaded = (key: string) => setLoaded(previous => {
+    if (previous.has(key)) return previous;
+    return new Set(previous).add(key);
+  });
+  // All layers stay mounted, including across direction/idle transitions.
+  // A source swap can display undecoded pixels even with fadeDuration=0.
+  const allReady = loaded.size === 4 * (WALK_FRAME_COUNT + 1);
+  const shownDirection = allReady ? direction : 'front';
+  const shownMoving = allReady && isMoving;
+  const activeKey = `${shownDirection}:${shownMoving ? frame : 'idle'}`;
 
   // Continuous walk clock: frame derives from wall time, so the cycle
   // NEVER restarts between tiles (tile hops briefly toggle isMoving).
@@ -122,19 +137,15 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving]);
 
-  const spriteSource = isMoving
-    ? WALK_FRAMES[direction][frame]
-    : IDLE_SPRITES[direction];
-
-  const size = renderSize(isMoving, direction);
+  const size = renderSize(shownMoving, shownDirection);
 
   // Anchor: bottom-center of the tile (feet planted on tile base)
   const offsetX = (TILE_SIZE - size.width) / 2;
   const offsetY = TILE_SIZE - size.height;
 
   return (
-    <Animated.Image
-      source={spriteSource}
+    <Animated.View
+      testID="protagonist"
       style={[
         styles.sprite,
         {
@@ -146,9 +157,26 @@ export default function ProtagonistSprite({
           ],
         },
       ]}
-      resizeMode="contain"
-      fadeDuration={0}
-    />
+    >
+      {(Object.keys(IDLE_SPRITES) as Direction[]).flatMap(dir =>
+        [IDLE_SPRITES[dir], ...WALK_FRAMES[dir]].map((source, index) => {
+          const key = `${dir}:${index === 0 ? 'idle' : index - 1}`;
+          const active = key === activeKey;
+          return (
+            <Image
+              key={key}
+              source={source}
+              nativeID={active ? "protagonist-active" : undefined}
+              onLoad={() => markLoaded(key)}
+              style={{ position: 'absolute', width: '100%', height: '100%',
+                opacity: active ? 1 : 0 }}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+          );
+        })
+      )}
+    </Animated.View>
   );
 }
 
