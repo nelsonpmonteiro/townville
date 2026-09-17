@@ -134,6 +134,11 @@ func _build_walkable_matrix() -> void:
 	_paint_walkable(Rect2i(2, 6, 1, 5))
 	_paint_walkable(Rect2i(23, 10, 2, 1))
 	_paint_walkable(Rect2i(25, 6, 1, 5))
+	# South yard for Garden too — same reasoning: every building's door now
+	# faces south (per the unified stable-style art), so Garden needs street
+	# directly below its footprint as well, not just the west-side approach.
+	_paint_walkable(Rect2i(25, 15, 1, 2))
+	_paint_walkable(Rect2i(25, 16, 3, 1))
 
 	# Visual path mask mirrors the walkable network before entities carve holes in it,
 	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
@@ -251,7 +256,7 @@ const WORLD1_GRASS_CLUTTER := [
 	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(22, 6), "scale": 0.9},
 	{"id": "mushroom-cluster", "sprite_path": "res://assets/scenery/world1/clutter/mushroom-cluster.png", "tile": Vector2i(22, 9), "scale": 1.0},
 	# Rose / garden approach
-	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(25, 15), "scale": 0.9},
+	{"id": "wildflower-purple", "sprite_path": "res://assets/scenery/world1/clutter/wildflower-purple.png", "tile": Vector2i(26, 15), "scale": 0.9},
 ]
 
 # Farmyard clutter: hay bales, crates, barrel, signpost clustered near the
