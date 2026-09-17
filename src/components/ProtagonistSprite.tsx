@@ -57,10 +57,12 @@ const IDLE_SPRITES = {
   right: require('../../assets/images/player/boy-right.png'),
 };
 
-// Dimensions (all frames normalized to 40×106)
+// Dimensions of ORIGINAL verified sprites (not trimmed/normalized)
 const NATIVE_DIMS = {
-  width: 40,
-  height: 106,
+  // boy-front/back/left are 1254×1254, boy-right is 128×128
+  // We'll use a fixed render size instead of scaling from native
+  width: 67,  // 1.4 tiles × 48px = 67px height
+  height: 67,
 };
 
 const TILE_SIZE = 48;
@@ -99,12 +101,16 @@ export default function ProtagonistSprite({
     return () => clearInterval(interval);
   }, [isMoving, direction]); // Re-sync when direction changes
   
-  // Compute render size
-  const { width, height } = computeRenderSize(
-    NATIVE_DIMS.width,
-    NATIVE_DIMS.height,
-    'protagonist'
-  );
+  // Use FIXED render size instead of computing from native dims
+  // (idle sprites are 128-1254px, walk frames are 40×106px - very inconsistent)
+  const width = 67;   // 1.4 tiles × 48px
+  const height = 67;
+  
+  // const { width, height } = computeRenderSize(
+  //   NATIVE_DIMS.width,
+  //   NATIVE_DIMS.height,
+  //   'protagonist'
+  // );
   
   // Position offsets (center horizontally, bottom-aligned)
   const offsetX = (TILE_SIZE - width) / 2;
