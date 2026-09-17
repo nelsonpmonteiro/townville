@@ -71,11 +71,14 @@ func _ready() -> void:
 	# exists to preview/paint changes; it does not replace map_renderer.
 	_setup_grid()
 	_build_ui()
+	# Editor guide layers start HIDDEN: the game boots in play mode and the
+	# grid/tile overlay must only appear after the first F1 toggle. Without
+	# this the grid leaks into normal gameplay (Priority 1 bug).
+	_apply_edit_mode_visibility()
 
 var edit_mode := false
 
-func toggle() -> void:
-	edit_mode = not edit_mode
+func _apply_edit_mode_visibility() -> void:
 	if ui_layer:
 		ui_layer.visible = edit_mode
 	if grid_lines:
@@ -84,6 +87,10 @@ func toggle() -> void:
 		tile_container.visible = edit_mode
 	if collision_layer:
 		collision_layer.visible = edit_mode and tool == "collision"
+
+func toggle() -> void:
+	edit_mode = not edit_mode
+	_apply_edit_mode_visibility()
 	# entity_layer (placed props/buildings/npcs) stays visible always —
 	# it must NOT be tied to the editor's own on/off state, otherwise
 	# everything placed disappears the moment you close the editor.
@@ -411,17 +418,30 @@ func _make_sprite(type: String, id: String) -> Sprite2D:
 
 func _building_scale_for(id: String) -> float:
 	if world:
+		var lookup_id := _canonical_building_id(id)
 		for b in world.BUILDINGS:
-			if b.id == id:
+			if b.id == lookup_id:
 				return b.get("scale", 1.0)
 	return 1.0
 
 func _building_flip_for(id: String) -> bool:
 	if world:
+		var lookup_id := _canonical_building_id(id)
 		for b in world.BUILDINGS:
-			if b.id == id:
+			if b.id == lookup_id:
 				return b.get("flip_h", false)
 	return false
+
+# The editor's Buildings palette uses "animal-clinic" (matches the sprite
+# filename building-animal-clinic.png), but world.BUILDINGS — the single
+# source of truth for scale/flip/footprint used everywhere else — calls
+# the same building "clinic". Without this alias, a Clinic placed through
+# the editor silently fell back to the default 1.0x scale instead of the
+# real 1.5x, while the pre-existing Clinic on the map stayed 1.5x.
+func _canonical_building_id(id: String) -> String:
+	if id == "animal-clinic":
+		return "clinic"
+	return id
 
 func _remove_entity_at(tile: Vector2i) -> void:
 	for i in range(entities.size() - 1, -1, -1):

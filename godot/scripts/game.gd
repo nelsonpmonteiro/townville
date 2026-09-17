@@ -35,8 +35,40 @@ var max_attempts = 3
 
 func _ready() -> void:
 	build_world()
+	_install_js_bridge()
 	if "--capture" in OS.get_cmdline_user_args():
 		capture_after_render.call_deferred()
+
+# Web-only introspection hook used by scripts/web-perf-probe.cjs to verify the
+# game from a real browser (FPS, player tile, quest state, editor mode, grid).
+# Godot's JS callbacks can't return values, so we publish state into
+# window.__townville_state each frame via eval. No-op on non-web platforms.
+var _js_bridge_on := false
+var _js_frame := 0
+
+func _install_js_bridge() -> void:
+	_js_bridge_on = OS.has_feature("web")
+
+func _publish_js_state() -> void:
+	if not _js_bridge_on:
+		return
+	_js_frame += 1
+	if _js_frame % 6 != 0:
+		return
+	var t: Vector2i = player.current_tile() if player else Vector2i(-1, -1)
+	var grid_visible := false
+	if map_editor and map_editor.grid_lines:
+		grid_visible = map_editor.grid_lines.visible
+	var d := {
+		"fps": Engine.get_frames_per_second(),
+		"tile": [t.x, t.y],
+		"quest_state": quest_state,
+		"dialogue_visible": dialogue_label.visible if dialogue_label else false,
+		"dialogue_text": dialogue_label.text if dialogue_label else "",
+		"edit_mode": map_editor.edit_mode if map_editor else false,
+		"grid_visible": grid_visible,
+	}
+	JavaScriptBridge.eval("window.__townville_state=" + JSON.stringify(d) + ";", true)
 
 func build_world() -> void:
 	if built:
@@ -275,6 +307,7 @@ func add_quest_ui() -> void:
 func _process(_delta: float) -> void:
 	if player == null:
 		return
+	_publish_js_state()
 	fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
 	var nearby: Dictionary = world.get_adjacent_npc(player.current_tile())
 	if nearby and quest_state == "idle":

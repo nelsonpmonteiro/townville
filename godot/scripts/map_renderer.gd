@@ -131,7 +131,6 @@ func render_props() -> void:
 		sprite.position.y -= 8
 		sprite.z_index = 3
 		props_layer.add_child(sprite)
-		print("Prop rendered: " + prop.id)
 
 func setup(world_data) -> void:
 	world = world_data
