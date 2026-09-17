@@ -6,15 +6,18 @@ export function useAspectScaledSize(source: any, targetHeight: number) {
   const [size, setSize] = useState({ width: targetHeight, height: targetHeight });
   
   useEffect(() => {
-    try {
-      const resolved = Image.resolveAssetSource(source);
-      if (!resolved) {
-        console.warn('useAspectScaledSize: Could not resolve source');
+    // If source is already an object with uri/width/height (from require())
+    if (typeof source === 'object' && source.uri) {
+      // React Native Web includes dimensions in the require() result
+      if (source.width && source.height) {
+        const scale = targetHeight / source.height;
+        setSize({ width: source.width * scale, height: targetHeight });
         return;
       }
       
+      // Fallback: try Image.getSize with the uri directly
       Image.getSize(
-        resolved.uri,
+        source.uri,
         (nativeW, nativeH) => {
           const scale = targetHeight / nativeH;
           setSize({ width: nativeW * scale, height: targetHeight });
@@ -23,6 +26,28 @@ export function useAspectScaledSize(source: any, targetHeight: number) {
           console.warn('useAspectScaledSize: getSize failed', error);
         }
       );
+      return;
+    }
+    
+    // Native: try resolveAssetSource (only exists on native platforms)
+    try {
+      const resolveAssetSource = (Image as any).resolveAssetSource;
+      if (typeof resolveAssetSource === 'function') {
+        const resolved = resolveAssetSource(source);
+        if (resolved) {
+          Image.getSize(
+            resolved.uri,
+            (nativeW, nativeH) => {
+              const scale = targetHeight / nativeH;
+              setSize({ width: nativeW * scale, height: targetHeight });
+            },
+            (error) => {
+              console.warn('useAspectScaledSize: getSize failed', error);
+            }
+          );
+          return;
+        }
+      }
     } catch (error) {
       console.warn('useAspectScaledSize: Error resolving asset', error);
     }
