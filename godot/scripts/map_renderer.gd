@@ -72,6 +72,21 @@ func render_clutter() -> void:
 		sprite.z_index = 4
 		clutter_layer.add_child(sprite)
 
+	# Border framing (art brief §6): dense bushes ringing the map edge, no
+	# shadow needed — they read as background mass, not focal props.
+	for item in world.WORLD1_BORDER_CLUTTER:
+		var tile: Vector2i = item.tile
+		var base_pos: Vector2 = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
+		var sprite := Sprite2D.new()
+		sprite.name = "Border_" + item.id
+		sprite.texture = load(item.sprite_path) as Texture2D
+		if sprite.texture == null:
+			continue
+		sprite.position = base_pos
+		sprite.scale = Vector2.ONE * item.get("scale", 1.0)
+		sprite.z_index = 4
+		clutter_layer.add_child(sprite)
+
 func render_props() -> void:
 	if world == null:
 		return
