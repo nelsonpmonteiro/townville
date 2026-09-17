@@ -1,6 +1,7 @@
 // RealBuildingSprite - Renders building with locked/unlocked state
 import React from 'react';
 import { Image, View, StyleSheet } from 'react-native';
+import { crossShadow } from '../utils/shadow';
 
 type BuildingState = 'LOCKED' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' | 'COMPLETE';
 
@@ -200,9 +201,11 @@ const styles = StyleSheet.create({
     height: 12,
     backgroundColor: 'rgba(255, 215, 0, 0.6)',
     borderRadius: 6,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
+    ...crossShadow('0px 0px 6px rgba(255, 215, 0, 0.8)', {
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 6,
+    }),
   },
 });

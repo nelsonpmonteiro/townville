@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
+import { crossShadow } from "./utils/shadow";
 
 interface CelebrationScreenProps {
   npcName: string;
@@ -119,10 +120,12 @@ const s = StyleSheet.create({
     padding: 32,
     alignItems: "center",
     maxWidth: 400,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    ...crossShadow("0px 8px 16px rgba(0, 0, 0, 0.3)", {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+    }),
     elevation: 10,
   },
   particle: {

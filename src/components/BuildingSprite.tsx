@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { BuildingState } from '../types/progress';
+import { crossShadow } from '../utils/shadow';
 
 interface Props {
   buildingId: string;
@@ -182,9 +183,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700',
     borderRadius: 999,
     opacity: 0.6,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+    ...crossShadow('0px 0px 10px rgba(255, 215, 0, 0.8)', {
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+    }),
   },
 });

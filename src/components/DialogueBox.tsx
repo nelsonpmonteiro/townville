@@ -1,7 +1,8 @@
 // DialogueBox component - displays NPC dialogue with typewriter effect
-import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated, Platform } from 'react-native';
 import { DialogueNode, DialogueChoice } from '../types/dialogue';
+import { crossShadow } from '../utils/shadow';
 
 const TILE_SIZE = 48;
 
@@ -16,6 +17,27 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const [charIndex, setCharIndex] = useState(0);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  // Bounce animation for continue indicator (▼)
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -6,
+          duration: 400,
+          useNativeDriver: false,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bounceAnim]);
 
   // Typewriter effect
   useEffect(() => {
@@ -67,7 +89,7 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
         <Pressable onPress={handleContinue} style={styles.textArea}>
           <Text style={styles.text}>{displayedText}</Text>
           {isComplete && !node.choices && (
-            <Text style={styles.continueIndicator}>▼</Text>
+            <Animated.Text style={[styles.continueIndicator, { transform: [{ translateY: bounceAnim }] }]}>▼</Animated.Text>
           )}
         </Pressable>
 
@@ -107,10 +129,12 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 3,
     borderColor: '#4a90e2',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    ...crossShadow('0px 4px 8px rgba(0, 0, 0, 0.5)', {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.5,
+      shadowRadius: 8,
+    }),
   },
   header: {
     flexDirection: 'row',
@@ -143,7 +167,6 @@ const styles = StyleSheet.create({
     color: '#4a90e2',
     textAlign: 'right',
     marginTop: 8,
-    animation: 'bounce 1s infinite',
   },
   choicesContainer: {
     marginTop: 20,

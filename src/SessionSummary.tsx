@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { crossShadow } from "./utils/shadow";
 
 interface SessionSummaryProps {
   questsCompleted: number;
@@ -90,10 +91,12 @@ const s = StyleSheet.create({
     padding: 40,
     maxWidth: 500,
     width: "90%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    ...crossShadow("0px 10px 20px rgba(0, 0, 0, 0.3)", {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+    }),
     elevation: 15,
   },
   title: {
@@ -163,10 +166,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    ...crossShadow("0px 4px 8px rgba(124, 58, 237, 0.3)", {
+      shadowColor: "#7C3AED",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+    }),
     elevation: 4,
   },
   buttonText: {
