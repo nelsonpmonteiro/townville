@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Townville Godot POC"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/editor/map_editor.tscn"
 config/features=PackedStringArray("4.7")
 
 [display]
