@@ -68,9 +68,13 @@ func add_map_editor() -> void:
 	map_editor.world = world
 	map_editor.map_renderer = map_renderer_node
 	add_child(map_editor)
+	# Reapply any previously saved edits (new props/buildings/npcs +
+	# terrain/collision changes) so they survive a restart — Save alone
+	# only wrote the file, nothing reloaded it before this.
+	map_editor.load_map("user://map.json")
 
 func is_map_editor_active() -> bool:
-	return map_editor != null and map_editor.visible
+	return map_editor != null and map_editor.edit_mode
 
 func add_buildings() -> void:
 	for b in world.BUILDINGS:
@@ -287,10 +291,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if map_editor:
 			map_editor.toggle()
 			if hud_layer:
-				hud_layer.visible = not map_editor.visible
+				hud_layer.visible = not map_editor.edit_mode
 		get_viewport().set_input_as_handled()
 		return
-	if map_editor and map_editor.visible:
+	if map_editor and map_editor.edit_mode:
 		return
 	if event.pressed and not event.echo and (event.keycode == KEY_E or event.keycode == KEY_SPACE):
 		if quest_state == "quest_active" or quest_state == "success":

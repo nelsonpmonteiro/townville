@@ -59,7 +59,12 @@ func _ready() -> void:
 		building_images[b] = load("res://assets/buildings/world1/building-%s.png" % b)
 	for p in ["tree","bush","flower-red","flower-yellow","stone","well","bench","mailbox","fountain","lamppost","flower-pot"]:
 		prop_images[p] = load("res://assets/scenery/world1/scenery-%s.png" % p)
-	visible = false
+	# This root Node2D itself must stay visible at all times — it hosts
+	# entity_layer, which holds every placed prop/building/npc. Hiding this
+	# node (visible=false) would hide entity_layer too and make everything
+	# placed disappear the moment the editor UI closes. Only the editor's
+	# own guide layers (grid_lines/tile_container/collision_layer/ui_layer)
+	# toggle with edit_mode; entity_layer never does.
 	# Overlay mode: this editor draws ON TOP of the already-running World1 map
 	# (same coordinate space, same camera). The tile grid below is a
 	# semi-transparent EDIT OVERLAY, not the ground truth terrain — it only
@@ -67,11 +72,22 @@ func _ready() -> void:
 	_setup_grid()
 	_build_ui()
 
+var edit_mode := false
+
 func toggle() -> void:
-	visible = not visible
+	edit_mode = not edit_mode
 	if ui_layer:
-		ui_layer.visible = visible
-	if visible:
+		ui_layer.visible = edit_mode
+	if grid_lines:
+		grid_lines.visible = edit_mode
+	if tile_container:
+		tile_container.visible = edit_mode
+	if collision_layer:
+		collision_layer.visible = edit_mode and tool == "collision"
+	# entity_layer (placed props/buildings/npcs) stays visible always —
+	# it must NOT be tied to the editor's own on/off state, otherwise
+	# everything placed disappears the moment you close the editor.
+	if edit_mode:
 		_register_existing_entities()
 
 # Finds the already-placed BuildingGroup_*/NPCGroup_* containers created by
@@ -79,7 +95,11 @@ func toggle() -> void:
 # entities, so Select+drag and Delete work on what's ALREADY on the map,
 # not only on new items placed through this editor session.
 func _register_existing_entities() -> void:
-	entities.clear()
+	# Preserve editor-placed items (new props/buildings/npcs) — only
+	# rebuild the "*_existing" (world_data.gd) portion of the list, since
+	# those node references can go stale across scene changes but the
+	# freshly-placed ones are already correct and must not be discarded.
+	entities = entities.filter(func(e): return e.type not in ["building_existing", "npc_existing"])
 	var game_root = get_parent()
 	if game_root == null:
 		return
@@ -163,7 +183,7 @@ func _in_bounds(tile: Vector2i) -> bool:
 	return tile.x >= 0 and tile.x < COLS and tile.y >= 0 and tile.y < ROWS
 
 func _input(event: InputEvent) -> void:
-	if not visible:
+	if not edit_mode:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if _mouse_over_panel(event.position):
@@ -234,15 +254,10 @@ func _redraw_collision_overlay() -> void:
 func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 	print("MAP CLICKED at tile: ", tile, " world_pos: ", world_pos, " tool=", tool)
 	if tool == "select":
-		for e in entities:
-			var e_pos = _entity_anchor_world(e)
-			var radius: float = TILE_SIZE * 0.8
-			if e.type == "building_existing":
-				radius = max(e.get("fw", 1), e.get("fh", 1)) * TILE_SIZE * 0.6
-			if world_pos.distance_to(e_pos) < radius:
-				dragged_entity = e
-				drag_offset = e_pos - world_pos
-				return
+		dragged_entity = _find_entity_at(tile, world_pos)
+		if dragged_entity:
+			drag_offset = _entity_anchor_world(dragged_entity) - world_pos
+		return
 	elif tool == "paint":
 		grid[tile.y][tile.x] = paint_type
 		_paint_real_ground(tile, paint_type == 1)
@@ -269,6 +284,62 @@ func _entity_anchor_world(e: Dictionary) -> Vector2:
 		return Vector2(e.x + fw / 2.0, e.y + fh) * TILE_SIZE
 	return _tile_to_world(Vector2i(e.x, e.y))
 
+# Point-type entities (npc/npc_existing/prop) are checked first, within a
+# tight radius, so a small NPC standing near/inside a large building's
+# footprint is still selectable — otherwise the building's wide bounding
+# box would always win and you could never grab the NPC again.
+func _find_entity_at(tile: Vector2i, world_pos: Vector2):
+	var best_point = null
+	var best_point_dist := INF
+	for e in entities:
+		if e.type == "building_existing":
+			continue
+		var e_pos = _entity_anchor_world(e)
+		var d = world_pos.distance_to(e_pos)
+		if d < TILE_SIZE * 0.8 and d < best_point_dist:
+			best_point = e
+			best_point_dist = d
+	if best_point:
+		return best_point
+	for e in entities:
+		if e.type != "building_existing":
+			continue
+		var fw: int = e.get("fw", 1)
+		var fh: int = e.get("fh", 1)
+		if tile.x >= e.x and tile.x < e.x + fw and tile.y >= e.y and tile.y < e.y + fh:
+			return e
+	return null
+
+# Interaction (talking to NPCs, quests) reads from world.NPCS[i].tile, NOT
+# from the visual sprite position. Dragging an NPC only moved the sprite;
+# without this, the NPC would render in the new spot but be un-interactable
+# there (and still interactable in its old, now-empty spot).
+func _sync_npc_tile_in_world(npc_id: String, new_tile: Vector2i) -> void:
+	if world == null:
+		return
+	for npc in world.NPCS:
+		if npc.id == npc_id:
+			var old_tile: Vector2i = npc.tile
+			if _wd_in_bounds(old_tile):
+				world.walkable[old_tile.y][old_tile.x] = true
+			npc.tile = new_tile
+			if _wd_in_bounds(new_tile):
+				world.walkable[new_tile.y][new_tile.x] = false
+			return
+
+func _wd_in_bounds(t: Vector2i) -> bool:
+	return world != null and t.x >= 0 and t.x < world.COLS and t.y >= 0 and t.y < world.ROWS
+
+# world.path_mask/walkable are strictly-typed Array[Array of bool]; JSON
+# always deserializes as loosely-typed Array/Variant, so a direct assignment
+# (world.path_mask = json_array) raises "Invalid assignment ... on typed
+# array". Copy values in place, row by row, instead of replacing the array.
+func _assign_bool_grid(target: Array, source: Array) -> void:
+	for y in range(min(target.size(), source.size())):
+		var src_row = source[y]
+		for x in range(min(target[y].size(), src_row.size())):
+			target[y][x] = bool(src_row[x])
+
 func _on_mouse_motion(world_pos: Vector2) -> void:
 	if dragged_entity:
 		var target_anchor: Vector2 = world_pos + drag_offset
@@ -294,6 +365,7 @@ func _on_mouse_motion(world_pos: Vector2) -> void:
 				if dragged_entity.type == "npc_existing":
 					dragged_entity.node.set_meta("tile_x", raw_tile.x)
 					dragged_entity.node.set_meta("tile_y", raw_tile.y)
+					_sync_npc_tile_in_world(dragged_entity.id, raw_tile)
 
 func _add_entity(type: String, id: String, tile: Vector2i) -> void:
 	for i in range(entities.size() - 1, -1, -1):
@@ -517,15 +589,37 @@ func _update_tool_highlight() -> void:
 			btn.modulate = Color.WHITE
 
 func save_map(path: String) -> void:
+	# New items placed through the editor (props/new buildings/npcs) are
+	# saved as full entities; the original world_data.gd buildings/npcs
+	# ("*_existing") are only saved as position OVERRIDES if they were
+	# actually moved — re-adding them as new entities would duplicate them.
 	var ent_data = []
+	var moved_existing = []
 	for e in entities:
+		if e.type in ["building_existing", "npc_existing"]:
+			moved_existing.append({"id": e.id, "type": e.type, "x": e.x, "y": e.y})
+			continue
 		ent_data.append({"id": e.id, "type": e.type, "x": e.x, "y": e.y})
-	var data = {"version": 1, "cols": COLS, "rows": ROWS, "grid": grid, "entities": ent_data}
+	var data = {
+		"version": 2,
+		"cols": COLS,
+		"rows": ROWS,
+		"entities": ent_data,
+		"moved_existing": moved_existing,
+		"path_mask": world.path_mask if world else [],
+		"walkable": world.walkable if world else [],
+	}
 	var f = FileAccess.open(path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "  "))
 		f.close()
+		if status_label:
+			status_label.text = "Saved " + str(ent_data.size()) + " new item(s) + terrain to " + path
 
+# Reapplies a previously saved map: new props/buildings/npcs placed through
+# the editor, plus any terrain/collision edits (path_mask/walkable). Safe to
+# call at boot (auto-load) — it never touches the pre-existing world_data.gd
+# entities, only re-adds items this editor placed and were saved.
 func load_map(path: String) -> void:
 	if not FileAccess.file_exists(path):
 		return
@@ -533,18 +627,53 @@ func load_map(path: String) -> void:
 	if not f:
 		return
 	var j = JSON.new()
-	j.parse(f.get_as_text())
+	var parse_err := j.parse(f.get_as_text())
 	f.close()
+	if parse_err != OK:
+		push_warning("Map editor: failed to parse " + path)
+		return
 	var d = j.data
-	if d.has("grid"):
-		grid = d.grid
-		_redraw_tiles()
+	if typeof(d) != TYPE_DICTIONARY:
+		return
+	if world and d.has("path_mask") and d.path_mask is Array and d.path_mask.size() == world.ROWS:
+		_assign_bool_grid(world.path_mask, d.path_mask)
+		if d.has("walkable") and d.walkable is Array and d.walkable.size() == world.ROWS:
+			_assign_bool_grid(world.walkable, d.walkable)
+		if map_renderer and map_renderer.has_method("rebuild_tilemap"):
+			map_renderer.rebuild_tilemap()
+		_sync_grid_from_world()
 	if d.has("entities"):
-		for e in entities:
-			e.node.queue_free()
-		entities.clear()
+		# Clear only editor-placed items (never *_existing world_data ones)
+		for i in range(entities.size() - 1, -1, -1):
+			if entities[i].type not in ["building_existing", "npc_existing"]:
+				entities[i].node.queue_free()
+				entities.remove_at(i)
 		for ed in d.entities:
 			_add_entity(ed.type, ed.id, Vector2i(ed.x, ed.y))
+	if d.has("moved_existing"):
+		# Applied directly against world.NPCS / the real building containers
+		# in the scene tree — NOT against `entities`, because load_map runs
+		# at boot before the editor UI (and _register_existing_entities)
+		# has ever populated that array.
+		for m in d.moved_existing:
+			var new_tile := Vector2i(m.x, m.y)
+			if m.type == "npc_existing":
+				_sync_npc_tile_in_world(m.id, new_tile)
+				var npc_node = get_parent().get_node_or_null("NPCGroup_" + m.id)
+				if npc_node:
+					npc_node.position = _tile_to_world(new_tile)
+					npc_node.set_meta("tile_x", new_tile.x)
+					npc_node.set_meta("tile_y", new_tile.y)
+			elif m.type == "building_existing":
+				var b_node = get_parent().get_node_or_null("BuildingGroup_" + m.id)
+				if b_node:
+					var fw: int = b_node.get_meta("footprint_w", 1)
+					var fh: int = b_node.get_meta("footprint_h", 1)
+					b_node.position = Vector2(new_tile.x + fw / 2.0, new_tile.y + fh) * TILE_SIZE
+					b_node.set_meta("footprint_col", new_tile.x)
+					b_node.set_meta("footprint_row", new_tile.y)
+	if status_label:
+		status_label.text = "Loaded map from " + path
 
 func clear_map() -> void:
 	for e in entities:

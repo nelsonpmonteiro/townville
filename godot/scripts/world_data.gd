@@ -20,24 +20,24 @@ var id: String = "world1"
 #
 # Interaction flow: intro → quest_start (show problem) → player answers → success → complete
 #                                                         → failure (retry, max 3)
-const NPCS := [
+const NPCS_TEMPLATE := [
 	{
 		"id": "mae",
 		"display_name": "Mae",
 		"sprite_path": "res://assets/characters/world1/mae-idle.png",
 		"tile": Vector2i(4, 4),
-		"ccss": "K.CC.B.4",
-		"skill": "Counting 1:1",
-		"dialogue": "Oh! So glad you arrived! The storm messed everything up. I need to know how many eggs I collected today, but I lost count. Can you help me?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Oh! So glad you arrived! The storm messed everything up. I collected 4 eggs this morning, then found 3 more behind the hay! Can you help me count how many I have in total?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "Mae dropped her egg basket! Count the scattered eggs.\nHow many eggs are there?",
-			"correct_answer": 4,
-			"hints": ["Point at each egg as you count.", "Count out loud: 1, 2, 3...", "Take your time!"],
-			"success": "Perfect! {answer} eggs! Now I know what to take to the market!",
-			"failure": "Hmm, not quite. Let's try again — point at each egg.",
+			"problem": "Mae collected 4 eggs in the morning.\nThen she found 3 more behind the hay!\nHow many eggs does she have now?",
+			"correct_answer": 7,
+			"hints": ["Count the 4 eggs she already had, then add 3 more: 4, 5, 6, 7.", "4 + 3: count up from 4 — 5, 6, 7.", "There are 7 eggs in total."],
+			"success": "Seven eggs! That's a great morning for the hens.",
+			"failure": "Hmm, not quite. Let's try counting again — 4 plus 3 more.",
 			"complete": "The henhouse is looking better already. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/egg.png", "count": 4}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/egg.png", "count": 7}
 		}
 	},
 	{
@@ -45,18 +45,18 @@ const NPCS := [
 		"display_name": "Chester",
 		"sprite_path": "res://assets/characters/world1/chester-idle.png",
 		"tile": Vector2i(14, 4),
-		"ccss": "K.CC.C.6",
-		"skill": "Compare groups",
-		"dialogue": "*Neigh!* I have two piles of hay here. Which has MORE for me to eat first? I don't want to end up with the smaller one!",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "*Neigh!* I'm Chester the horse. Chester ate 5 carrots this morning, and I'm bringing him 6 more for lunch. Can you help me count the total?",
 		"quest": {
-			"type": "compare",
-			"problem": "Chester has two piles of hay.\nPile A: 2 bales\nPile B: 7 bales\nWhich pile has MORE?",
-			"correct_answer": "B",
-			"hints": ["Look at both piles. Which one is taller?", "Count the bales in each pile.", "7 is more than 2!"],
-			"success": "*Happy neigh!* Perfect! Pile B has more!",
-			"failure": "Hmm, let's look again. Count each pile — which number is bigger?",
+			"type": "numberpad",
+			"problem": "Chester ate 5 carrots this morning.\nNow I'm bringing him 6 more for lunch.\nHow many carrots is that in total?",
+			"correct_answer": 11,
+			"hints": ["Count the 5 carrots he already ate, then add 6 more: 5, 6, 7, 8, 9, 10, 11.", "5 + 6: count up from 5 — 6, 7, 8, 9, 10, 11.", "There are 11 carrots altogether."],
+			"success": "Chester's going to be one happy horse! Eleven carrots total.",
+			"failure": "Hmm, let's try again. 5 carrots plus 6 more — count them up.",
 			"complete": "The stable is looking better already. Come back anytime!",
-			"visual": {"icon_a": "res://assets/scenery/world1/clutter/hay-bale.png", "icon_b": "res://assets/scenery/world1/clutter/hay-bale.png", "count_a": 2, "count_b": 7}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/carrot.png", "count": 11}
 		}
 	},
 	{
@@ -64,18 +64,18 @@ const NPCS := [
 		"display_name": "Farmer Joe",
 		"sprite_path": "res://assets/characters/world1/farmer-joe-idle.png",
 		"tile": Vector2i(24, 4),
-		"ccss": "K.OA.A.2",
-		"skill": "Add & subtract",
-		"dialogue": "Hey there! I'm Farmer Joe. I'm building a new barn and I need help with calculations. I have 3 hay bales and received 4 more. How many do I have now?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Hey there! I'm Farmer Joe. I'm building a new barn and I need help with calculations. I stacked 6 hay bales this morning, and just brought in 5 more from the field! Can you help me count the total?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "Joe has 3 hay bales.\nHe received 4 more.\nHow many hay bales does Joe have now?",
-			"correct_answer": 7,
-			"hints": ["Start with the first number and count up.", "Point at each hay bale as you count.", "3 + 4: count 4, 5, 6, 7."],
-			"success": "That's right! 7 hay bales total!",
-			"failure": "Hmm, let's try again. Count the first group, then add the second.",
+			"problem": "Joe stacked 6 hay bales this morning.\nThen he brought in 5 more from the field!\nHow many hay bales does he have now?",
+			"correct_answer": 11,
+			"hints": ["Count the 6 bales he already stacked, then add 5 more: 6, 7, 8, 9, 10, 11.", "6 + 5: count up from 6 — 7, 8, 9, 10, 11.", "There are 11 bales in total."],
+			"success": "Eleven bales — that'll last us a while!",
+			"failure": "Hmm, let's try again. 6 bales plus 5 more — count them up.",
 			"complete": "Stop by the barn anytime for more math help!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/hay-bale.png", "count": 7}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/hay-bale.png", "count": 11}
 		}
 	},
 	{
@@ -83,18 +83,18 @@ const NPCS := [
 		"display_name": "Lily",
 		"sprite_path": "res://assets/characters/world1/lily-idle.png",
 		"tile": Vector2i(4, 7),
-		"ccss": "K.OA.A.2",
-		"skill": "Add & subtract",
-		"dialogue": "Hi! I'm Lily. The chicks are always running off! There were 3 in the pen and 2 more came running. How many chicks do I have now?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Hi! I'm Lily. I found 3 baby chicks by the fence, and 4 more near the barn! Can you help me count how many chicks I have in total?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "Lily had 3 chicks in the pen.\n2 more came running!\nHow many chicks does Lily have now?",
-			"correct_answer": 5,
-			"hints": ["Count the first group, then count the second group.", "Point at each chick as you count.", "3 + 2: count 4, 5."],
-			"success": "Perfect! All 5 chicks are safe in the pen!",
-			"failure": "Hmm, that's not quite it. Let's try counting again.",
+			"problem": "Lily found 3 baby chicks by the fence.\nThen she found 4 more near the barn!\nHow many chicks does she have now?",
+			"correct_answer": 7,
+			"hints": ["Count the 3 chicks she already found, then add 4 more: 3, 4, 5, 6, 7.", "3 + 4: count up from 3 — 4, 5, 6, 7.", "There are 7 chicks in total."],
+			"success": "Seven little chicks, all safe and sound!",
+			"failure": "Hmm, that's not quite it. Let's try counting again — 3 plus 4 more.",
 			"complete": "Come back anytime — the chicks always need counting!",
-			"visual": {"icon": "res://assets/characters/world1/lily-idle.png", "count": 5}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/chick.png", "count": 7}
 		}
 	},
 	{
@@ -102,18 +102,18 @@ const NPCS := [
 		"display_name": "Dr. Vera",
 		"sprite_path": "res://assets/characters/world1/vera-idle.png",
 		"tile": Vector2i(24, 7),
-		"ccss": "K.OA.A.1",
+		"ccss": "2.OA.A.1",
 		"skill": "Addition",
-		"dialogue": "Welcome to the clinic! 4 kittens are sleeping and 3 more just hopped in. How many kittens are there now?",
+		"dialogue": "Welcome to the clinic! I have 5 bandages ready, and just restocked 6 more from the supply closet. Can you help me count how many I have in total?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "4 kittens are sleeping in the basket.\n3 more just hopped in.\nHow many kittens are there now?",
-			"correct_answer": 7,
-			"hints": ["Start with the bigger number and count up.", "Count the first group, then add the second.", "4 + 3: count 5, 6, 7."],
-			"success": "Perfect! You added them correctly!",
-			"failure": "Not quite — let's try counting from the bigger number.",
+			"problem": "Vera has 5 bandages ready.\nShe just restocked 6 more from the supply closet!\nHow many bandages does she have now?",
+			"correct_answer": 11,
+			"hints": ["Count the 5 bandages she already had, then add 6 more: 5, 6, 7, 8, 9, 10, 11.", "5 + 6: count up from 5 — 6, 7, 8, 9, 10, 11.", "There are 11 bandages in total."],
+			"success": "Eleven bandages — fully stocked for whatever comes in!",
+			"failure": "Hmm, not quite. Let's try counting again — 5 plus 6 more.",
 			"complete": "The clinic is always open — come back anytime!",
-			"visual": {"icon": "res://assets/characters/world1/vera-idle.png", "count": 7}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/bandage.png", "count": 11}
 		}
 	},
 	{
@@ -121,19 +121,18 @@ const NPCS := [
 		"display_name": "Grandma Rose",
 		"sprite_path": "res://assets/characters/world1/grandma-rose-idle.png",
 		"tile": Vector2i(25, 14),
-		"ccss": "K.MD.A.1",
-		"skill": "Compare lengths",
-		"dialogue": "Well hello, dear! Look at the sunflower and the carrot. Which one is taller?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Well hello, dear! I picked 7 tomatoes this morning, and just found 5 more hiding under the leaves! Can you help me count the total?",
 		"quest": {
-			"type": "compare_length",
-			"problem": "Look at the sunflower and the carrot.\nWhich one is taller?",
-			"correct_answer": "sunflower",
-			"options": ["Sunflower", "Carrot"],
-			"hints": ["Compare them side by side — which one reaches higher?", "Look at the stems. The longer stem means the taller plant.", "The sunflower stretches way up high!"],
-			"success": "Why yes, the sunflower is taller — you've got a good eye!",
-			"failure": "Hmm, take another look. Which one reaches higher?",
+			"type": "numberpad",
+			"problem": "Grandma Rose picked 7 tomatoes this morning.\nThen she found 5 more hiding under the leaves!\nHow many tomatoes does she have now?",
+			"correct_answer": 12,
+			"hints": ["Count the 7 tomatoes she already picked, then add 5 more: 7, 8, 9, 10, 11, 12.", "7 + 5: count up from 7 — 8, 9, 10, 11, 12.", "There are 12 tomatoes in total."],
+			"success": "Twelve tomatoes — perfect for tonight's sauce!",
+			"failure": "Hmm, not quite. Let's try again — 7 plus 5 more tomatoes.",
 			"complete": "The garden always needs a careful observer. Come back anytime!",
-			"visual": {"icon_a": "res://assets/scenery/world1/scenery-flower-yellow.png", "icon_b": "res://assets/scenery/world1/scenery-tree.png"}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/tomato.png", "count": 12}
 		}
 	},
 	{
@@ -141,18 +140,18 @@ const NPCS := [
 		"display_name": "Billy",
 		"sprite_path": "res://assets/characters/world1/billy-idle.png",
 		"tile": Vector2i(15, 10),
-		"ccss": "K.CC.A.1",
-		"skill": "Number sequence",
-		"dialogue": "Hey! I'm Billy. I'm numbering the fence posts. We counted 1,2,3... up to 10. What number comes next?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Hey! I'm Billy. I've got 6 nails in my toolbox, and Old Mac just gave me 4 more! Can you help me count how many nails I have now?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "Billy is numbering fence posts.\nHe counted: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10\nWhat number comes next?",
-			"correct_answer": 11,
-			"hints": ["Count from 1 to 10, then keep going!", "What comes after 10?", "10, then 11!"],
-			"success": "That's right! After 10 comes 11. Nice one!",
-			"failure": "Hmm, let's try again. Count from 1 to 10, then keep going!",
+			"problem": "Billy has 6 nails in his toolbox.\nOld Mac just gave him 4 more!\nHow many nails does Billy have now?",
+			"correct_answer": 10,
+			"hints": ["Count the 6 nails he already had, then add 4 more: 6, 7, 8, 9, 10.", "6 + 4: count up from 6 — 7, 8, 9, 10.", "There are 10 nails in total."],
+			"success": "Ten nails — enough to finish this fence!",
+			"failure": "Hmm, let's try again. 6 nails plus 4 more — count them up.",
 			"complete": "I'll be right here at the gate. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/signpost.png", "count": 11}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/nail.png", "count": 10}
 		}
 	},
 	{
@@ -160,18 +159,18 @@ const NPCS := [
 		"display_name": "Old Mac",
 		"sprite_path": "res://assets/characters/world1/old-mac-idle.png",
 		"tile": Vector2i(15, 19),
-		"ccss": "K review",
-		"skill": "Gatekeeper",
-		"dialogue": "Hmm. You know how to count, compare, add and subtract. But let me warn you — out there the numbers get BIGGER. Think you can handle that?",
+		"ccss": "2.OA.A.1",
+		"skill": "Addition",
+		"dialogue": "Hmm. You're doing well with addition! Let me test you one more time. I found 4 old keys in the shed, and just discovered 5 more in the workbench drawer. Can you help me count how many keys I have in total?",
 		"quest": {
 			"type": "numberpad",
-			"problem": "Old Mac wants to make sure you're ready.\nCount these animals for him.\n(There are 8 animals)",
-			"correct_answer": 8,
-			"hints": ["Point at each animal as you count.", "Count out loud: 1, 2, 3...", "Take your time — there's no rush."],
-			"success": "Not bad. You counted them correctly.",
-			"failure": "Not quite. Let's try again — take your time.",
+			"problem": "Old Mac found 4 old keys in the shed.\nThen he discovered 5 more in the workbench drawer!\nHow many keys does he have now?",
+			"correct_answer": 9,
+			"hints": ["Count the 4 keys he already found, then add 5 more: 4, 5, 6, 7, 8, 9.", "4 + 5: count up from 4 — 5, 6, 7, 8, 9.", "There are 9 keys in total."],
+			"success": "Nine keys — one of these has got to open the gate! Welcome to Downtown.",
+			"failure": "Hmm, not quite. Let's try again — 4 keys plus 5 more.",
 			"complete": "The gate is open. Welcome to the city, kid.",
-			"visual": {"icon": "res://assets/characters/world1/mae-idle.png", "count": 8}
+			"visual": {"icon": "res://assets/scenery/world1/clutter/key.png", "count": 9}
 		}
 	}
 ]
@@ -189,8 +188,13 @@ const BUILDINGS := [
 
 var walkable: Array[Array] = []
 var path_mask: Array[Array] = []
+var NPCS: Array = []
 
 func _init() -> void:
+	# Deep-duplicate the template so each NPC dict is a fresh, WRITABLE copy —
+	# dictionaries nested inside a `const` array are read-only in Godot 4, so
+	# the map editor could never persist a dragged NPC's new tile without this.
+	NPCS = NPCS_TEMPLATE.duplicate(true)
 	_build_walkable_matrix()
 
 func _build_walkable_matrix() -> void:
