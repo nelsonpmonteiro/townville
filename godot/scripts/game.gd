@@ -12,6 +12,7 @@ var dialogue_label: Label
 var fps_label: Label
 var built := false
 var map_editor: Node2D
+var map_renderer_node: Node2D
 
 # Quest UI
 var quest_panel: PanelContainer
@@ -46,6 +47,7 @@ func build_world() -> void:
 	map.name = "Compact32x24Map"
 	map.setup(world)
 	add_child(map)
+	map_renderer_node = map
 
 	add_buildings()
 	add_npcs()
@@ -62,6 +64,8 @@ func add_map_editor() -> void:
 	map_editor = MapEditorScript.new()
 	map_editor.name = "MapEditor"
 	map_editor.z_index = 50
+	map_editor.world = world
+	map_editor.map_renderer = map_renderer_node
 	add_child(map_editor)
 
 func is_map_editor_active() -> bool:
@@ -76,22 +80,32 @@ func add_buildings() -> void:
 		var fp_bottom: float = (b.footprintRow + b.footprintH) * world.TILE_SIZE
 		var scaled_height: float = texture.get_height() * building_scale if texture != null else 0.0
 
+		var container := Node2D.new()
+		container.name = "BuildingGroup_" + b.id
+		container.position = Vector2(fp_center.x, fp_bottom)
+		container.set_meta("building_id", b.id)
+		container.set_meta("footprint_col", b.footprintCol)
+		container.set_meta("footprint_row", b.footprintRow)
+		container.set_meta("footprint_w", b.footprintW)
+		container.set_meta("footprint_h", b.footprintH)
+		add_child(container)
+
 		var shadow := Sprite2D.new()
 		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
 		if shadow.texture != null:
-			shadow.position = Vector2(fp_center.x + 6, fp_bottom - 6)
+			shadow.position = Vector2(6, -6)
 			shadow.scale = Vector2(b.footprintW, b.footprintH) * (0.9 + building_scale * 0.35)
 			shadow.z_index = 4
 			shadow.modulate.a = 0.4
-			add_child(shadow)
+			container.add_child(shadow)
 
 		var sprite := Sprite2D.new()
 		sprite.name = "Building_" + b.id
 		sprite.texture = texture
 		sprite.scale = Vector2(building_scale * (-1.0 if flip_h else 1.0), building_scale)
-		sprite.position = Vector2(fp_center.x, fp_bottom - scaled_height / 2.0)
+		sprite.position = Vector2(0, -scaled_height / 2.0)
 		sprite.z_index = 5
-		add_child(sprite)
+		container.add_child(sprite)
 		var label := Label.new()
 		label.text = b.label
 		label.position = sprite.position + Vector2(-40, -scaled_height / 2.0 - 18)
@@ -101,30 +115,37 @@ func add_buildings() -> void:
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 1)
 		label.z_index = 6
-		add_child(label)
+		container.add_child(label)
 
 func add_npcs() -> void:
 	for npc in world.NPCS:
 		var npc_pos: Vector2 = Vector2(npc.tile * world.TILE_SIZE) + Vector2.ONE * world.TILE_SIZE * 0.5
 
+		var container := Node2D.new()
+		container.name = "NPCGroup_" + npc.id
+		container.position = npc_pos
+		container.set_meta("npc_id", npc.id)
+		container.set_meta("tile_x", npc.tile.x)
+		container.set_meta("tile_y", npc.tile.y)
+		add_child(container)
+
 		var shadow := Sprite2D.new()
 		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
 		if shadow.texture != null:
-			shadow.position = npc_pos + Vector2(4, 14)
+			shadow.position = Vector2(4, 14)
 			shadow.scale = Vector2.ONE * 1.2
 			shadow.z_index = 14
 			shadow.modulate.a = 0.4
-			add_child(shadow)
+			container.add_child(shadow)
 
 		var sprite := Sprite2D.new()
 		sprite.name = "NPC_" + npc.id
 		if npc.has("sprite_path"):
 			sprite.texture = load(npc.sprite_path)
-		sprite.position = npc_pos
-		sprite.position.y -= 12
+		sprite.position = Vector2(0, -12)
 		sprite.scale = Vector2.ONE * 1.4
 		sprite.z_index = 15
-		add_child(sprite)
+		container.add_child(sprite)
 		var name_label := Label.new()
 		name_label.text = npc.display_name
 		name_label.position = sprite.position + Vector2(-38, -58)
@@ -133,7 +154,7 @@ func add_npcs() -> void:
 		name_label.add_theme_constant_override("shadow_offset_x", 1)
 		name_label.add_theme_constant_override("shadow_offset_y", 1)
 		name_label.z_index = 16
-		add_child(name_label)
+		container.add_child(name_label)
 
 func add_hud() -> void:
 	var layer := CanvasLayer.new()

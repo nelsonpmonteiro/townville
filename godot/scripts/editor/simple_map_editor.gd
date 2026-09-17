@@ -4,6 +4,9 @@ const TILE_SIZE = 48
 const COLS = 30
 const ROWS = 20
 
+var world = null
+var map_renderer: Node2D = null
+
 var grid = []
 var entities = []
 var tool = "select"
@@ -62,6 +65,32 @@ func toggle() -> void:
 	visible = not visible
 	if ui_layer:
 		ui_layer.visible = visible
+	if visible:
+		_register_existing_entities()
+
+# Finds the already-placed BuildingGroup_*/NPCGroup_* containers created by
+# game.gd (add_buildings/add_npcs) and registers them as movable/deletable
+# entities, so Select+drag and Delete work on what's ALREADY on the map,
+# not only on new items placed through this editor session.
+func _register_existing_entities() -> void:
+	entities.clear()
+	var game_root = get_parent()
+	if game_root == null:
+		return
+	for child in game_root.get_children():
+		if not child.has_meta("building_id") and not child.has_meta("npc_id"):
+			continue
+		if child.has_meta("building_id"):
+			var col: int = child.get_meta("footprint_col")
+			var row: int = child.get_meta("footprint_row")
+			var fw: int = child.get_meta("footprint_w")
+			var fh: int = child.get_meta("footprint_h")
+			entities.append({"id": child.get_meta("building_id"), "type": "building_existing", "x": col, "y": row, "fw": fw, "fh": fh, "node": child})
+		elif child.has_meta("npc_id"):
+			var tx: int = child.get_meta("tile_x")
+			var ty: int = child.get_meta("tile_y")
+			entities.append({"id": child.get_meta("npc_id"), "type": "npc_existing", "x": tx, "y": ty, "node": child})
+	print("Registered ", entities.size(), " existing entities for select/move/delete")
 
 func _setup_grid() -> void:
 	grid.clear()
@@ -70,23 +99,36 @@ func _setup_grid() -> void:
 		row.resize(COLS)
 		row.fill(0)
 		grid.append(row)
-	_redraw_tiles()
+	_sync_grid_from_world()
 	_draw_grid()
 
-func _redraw_tiles() -> void:
-	for child in tile_container.get_children():
-		child.queue_free()
+# Mirrors world.path_mask into the editor's local grid array so the overlay
+# always reflects the REAL terrain already painted by map_renderer, instead
+# of starting blank / out of sync with what's actually on screen.
+func _sync_grid_from_world() -> void:
+	if world == null or world.path_mask.is_empty():
+		return
 	for y in range(ROWS):
 		for x in range(COLS):
-			if grid[y][x] == 0:
+			grid[y][x] = 1 if world.path_mask[y][x] else 0
+	_redraw_tiles()
+
+func _redraw_tiles() -> void:
+	if tile_container == null:
+		return
+	for child in tile_container.get_children():
+		child.queue_free()
+	# This overlay only marks the tile currently painted as PATH so the
+	# editor still shows something even before the real TileMapLayer
+	# repaints; the real ground texture change happens in map_renderer.
+	for y in range(ROWS):
+		for x in range(COLS):
+			if grid[y][x] != 1:
 				continue
 			var cr = ColorRect.new()
 			cr.size = Vector2.ONE * TILE_SIZE
 			cr.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
-			match grid[y][x]:
-				1: cr.color = Color(0.6, 0.45, 0.25, 0.6)
-				2: cr.color = Color(0.2, 0.4, 0.6, 0.6)
-				_: cr.color = Color(0.35, 0.55, 0.25, 0.6)
+			cr.color = Color(1, 1, 0, 0.12)
 			tile_container.add_child(cr)
 
 func _draw_grid() -> void:
@@ -140,21 +182,39 @@ func _mouse_over_panel(screen_pos: Vector2) -> bool:
 		return false
 	return screen_pos.x <= PANEL_WIDTH
 
+# Writes directly into the REAL terrain data (world.path_mask / world.walkable)
+# and repaints the actual TileMapLayer via map_renderer, so Paint swaps the
+# real ground texture instead of only drawing a colored overlay on top of it.
+func _paint_real_ground(tile: Vector2i, as_path: bool) -> void:
+	if world == null:
+		_redraw_tiles()
+		return
+	if tile.y < 0 or tile.y >= world.ROWS or tile.x < 0 or tile.x >= world.COLS:
+		return
+	world.path_mask[tile.y][tile.x] = as_path
+	world.walkable[tile.y][tile.x] = as_path
+	if map_renderer and map_renderer.has_method("rebuild_tilemap"):
+		map_renderer.rebuild_tilemap()
+	_redraw_tiles()
+
 func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 	print("MAP CLICKED at tile: ", tile, " world_pos: ", world_pos, " tool=", tool)
 	if tool == "select":
 		for e in entities:
-			var e_pos = _tile_to_world(Vector2i(e.x, e.y))
-			if world_pos.distance_to(e_pos) < TILE_SIZE * 0.8:
+			var e_pos = _entity_anchor_world(e)
+			var radius: float = TILE_SIZE * 0.8
+			if e.type == "building_existing":
+				radius = max(e.get("fw", 1), e.get("fh", 1)) * TILE_SIZE * 0.6
+			if world_pos.distance_to(e_pos) < radius:
 				dragged_entity = e
 				drag_offset = e_pos - world_pos
 				return
 	elif tool == "paint":
 		grid[tile.y][tile.x] = paint_type
-		_redraw_tiles()
+		_paint_real_ground(tile, paint_type == 1)
 	elif tool == "erase":
 		grid[tile.y][tile.x] = 0
-		_redraw_tiles()
+		_paint_real_ground(tile, false)
 		_remove_entity_at(tile)
 	elif tool == "npc":
 		print("PLACING NPC: ", active_npc, " at ", tile)
@@ -166,14 +226,38 @@ func _on_left_press(tile: Vector2i, world_pos: Vector2) -> void:
 		print("PLACING PROP: ", active_prop, " at ", tile)
 		_add_entity("prop", active_prop, tile)
 
+func _entity_anchor_world(e: Dictionary) -> Vector2:
+	if e.type == "building_existing":
+		var fw: int = e.get("fw", 1)
+		var fh: int = e.get("fh", 1)
+		return Vector2(e.x + fw / 2.0, e.y + fh) * TILE_SIZE
+	return _tile_to_world(Vector2i(e.x, e.y))
+
 func _on_mouse_motion(world_pos: Vector2) -> void:
 	if dragged_entity:
-		var raw_tile = Vector2i(int((world_pos.x + drag_offset.x) / TILE_SIZE),
-			int((world_pos.y + drag_offset.y) / TILE_SIZE))
-		if _in_bounds(raw_tile):
-			dragged_entity.x = raw_tile.x
-			dragged_entity.y = raw_tile.y
-			dragged_entity.node.position = _tile_to_world(raw_tile)
+		var target_anchor: Vector2 = world_pos + drag_offset
+		if dragged_entity.type == "building_existing":
+			var fw: int = dragged_entity.get("fw", 1)
+			var fh: int = dragged_entity.get("fh", 1)
+			var raw_col := int(target_anchor.x / TILE_SIZE - fw / 2.0)
+			var raw_row := int(target_anchor.y / TILE_SIZE - fh)
+			var top_left := Vector2i(raw_col, raw_row)
+			var bottom_right := Vector2i(raw_col + fw - 1, raw_row + fh - 1)
+			if _in_bounds(top_left) and _in_bounds(bottom_right):
+				dragged_entity.x = raw_col
+				dragged_entity.y = raw_row
+				dragged_entity.node.position = Vector2(raw_col + fw / 2.0, raw_row + fh) * TILE_SIZE
+				dragged_entity.node.set_meta("footprint_col", raw_col)
+				dragged_entity.node.set_meta("footprint_row", raw_row)
+		else:
+			var raw_tile = Vector2i(int(target_anchor.x / TILE_SIZE), int(target_anchor.y / TILE_SIZE))
+			if _in_bounds(raw_tile):
+				dragged_entity.x = raw_tile.x
+				dragged_entity.y = raw_tile.y
+				dragged_entity.node.position = _tile_to_world(raw_tile)
+				if dragged_entity.type == "npc_existing":
+					dragged_entity.node.set_meta("tile_x", raw_tile.x)
+					dragged_entity.node.set_meta("tile_y", raw_tile.y)
 
 func _add_entity(type: String, id: String, tile: Vector2i) -> void:
 	for i in range(entities.size() - 1, -1, -1):
@@ -213,7 +297,14 @@ func _make_sprite(type: String, id: String) -> Sprite2D:
 func _remove_entity_at(tile: Vector2i) -> void:
 	for i in range(entities.size() - 1, -1, -1):
 		var e = entities[i]
-		if e.x == tile.x and e.y == tile.y:
+		var hit := false
+		if e.type == "building_existing":
+			var fw: int = e.get("fw", 1)
+			var fh: int = e.get("fh", 1)
+			hit = tile.x >= e.x and tile.x < e.x + fw and tile.y >= e.y and tile.y < e.y + fh
+		else:
+			hit = e.x == tile.x and e.y == tile.y
+		if hit:
 			e.node.queue_free()
 			entities.remove_at(i)
 			return
@@ -286,7 +377,6 @@ func _build_ui() -> void:
 	vbox.add_child(ground_swatch_row)
 	_add_ground_swatch(ground_swatch_row, "Grass", 0, Color(0.35, 0.55, 0.25))
 	_add_ground_swatch(ground_swatch_row, "Dirt Path", 1, Color(0.6, 0.45, 0.25))
-	_add_ground_swatch(ground_swatch_row, "Water", 2, Color(0.2, 0.4, 0.6))
 
 	var action_hbox = HBoxContainer.new()
 	vbox.add_child(action_hbox)

@@ -154,7 +154,19 @@ func build_tilemap() -> void:
 	tilemap.tile_set = tileset
 	tilemap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-	if world == null or world.path_mask.is_empty():
+	# Scale: 16px tiles * 3 = 48px to match world.TILE_SIZE
+	tilemap.scale = Vector2.ONE * 3.0
+	tilemap.z_index = -10
+	add_child(tilemap)
+
+	rebuild_tilemap()
+
+# Recomputes the Wang-autotiled terrain from world.path_mask and repaints the
+# real TileMapLayer cells. Call this again any time path_mask changes at
+# runtime (e.g. from the in-game map editor's Paint tool) so painting
+# actually swaps the ground tile, not just an overlay drawn on top of it.
+func rebuild_tilemap() -> void:
+	if world == null or world.path_mask.is_empty() or tilemap == null:
 		push_error("World path_mask is unavailable; cannot derive terrain")
 		return
 
@@ -193,11 +205,6 @@ func build_tilemap() -> void:
 			var atlas_col := wang_id % 4
 			var atlas_row := wang_id / 4
 			tilemap.set_cell(Vector2i(x, y), 0, Vector2i(atlas_col, atlas_row))
-
-	# Scale: 16px tiles * 3 = 48px to match world.TILE_SIZE
-	tilemap.scale = Vector2.ONE * 3.0
-	tilemap.z_index = -10
-	add_child(tilemap)
 
 func _build_tileset_source(texture_path: String) -> TileSetAtlasSource:
 	# Load through Godot's resource system
