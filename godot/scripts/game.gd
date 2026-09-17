@@ -37,31 +37,44 @@ func build_world() -> void:
 	add_hud()
 
 func add_buildings() -> void:
+	# Per-building scale and horizontal flip, set individually per user spec:
+	# henhouse/coop keep their size but flip horizontally, stable is 1.5x,
+	# barn/clinic are 2x, garden stays default. Footprint/collision (2x2
+	# tiles) is unchanged — sprite is bottom-anchored so its doorway still
+	# sits on the footprint's bottom edge regardless of scale.
 	for b in world.BUILDINGS:
+		var texture := load(b.sprite) as Texture2D
+		var building_scale: float = b.get("scale", 1.0)
+		var flip_h: bool = b.get("flip_h", false)
+		var fp_center: Vector2 = Vector2(b.footprintCol + b.footprintW / 2.0, b.footprintRow + b.footprintH / 2.0) * world.TILE_SIZE
+		var fp_bottom: float = (b.footprintRow + b.footprintH) * world.TILE_SIZE
+		var scaled_height: float = texture.get_height() * building_scale if texture != null else 0.0
+
 		# Anchored shadow (art brief §5): larger scale for buildings so the blob
 		# reads under the whole footprint instead of floating.
 		var shadow := Sprite2D.new()
 		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
-		var fp_center: Vector2 = Vector2(b.footprintCol + b.footprintW / 2.0, b.footprintRow + b.footprintH / 2.0) * world.TILE_SIZE
 		if shadow.texture != null:
-			shadow.position = fp_center + Vector2(6, b.footprintH * world.TILE_SIZE * 0.32)
-			shadow.scale = Vector2(b.footprintW, b.footprintH) * 1.1
+			shadow.position = Vector2(fp_center.x + 6, fp_bottom - 6)
+			shadow.scale = Vector2(b.footprintW, b.footprintH) * (0.9 + building_scale * 0.35)
 			shadow.z_index = 4
 			shadow.modulate.a = 0.4
 			add_child(shadow)
 
 		var sprite := Sprite2D.new()
 		sprite.name = "Building_" + b.id
-		sprite.texture = load(b.sprite)
-		# Center building in footprint
-		sprite.position = fp_center
-		sprite.position.y -= 12
+		sprite.texture = texture
+		sprite.scale = Vector2(building_scale * (-1.0 if flip_h else 1.0), building_scale)
+		# Center horizontally in footprint, bottom-align to the footprint's
+		# bottom edge (with default centered=true, offset the center up by
+		# half the scaled height so the sprite's base touches the doorway).
+		sprite.position = Vector2(fp_center.x, fp_bottom - scaled_height / 2.0)
 		sprite.z_index = 5
 		add_child(sprite)
 		# Building label
 		var label := Label.new()
 		label.text = b.label
-		label.position = sprite.position + Vector2(-30, -50)
+		label.position = sprite.position + Vector2(-40, -scaled_height / 2.0 - 18)
 		label.add_theme_font_size_override("font_size", 12)
 		label.add_theme_color_override("font_color", Color.WHITE)
 		label.add_theme_color_override("font_shadow_color", Color.BLACK)
