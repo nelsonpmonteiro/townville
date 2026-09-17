@@ -13,7 +13,7 @@ func write_json(path: String, value: Variant) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(value, "  "))
 
-func collision_matrix(rows: int = 24, cols: int = 32) -> Array:
+func collision_matrix(rows: int = 30, cols: int = 40) -> Array:
 	var matrix := []
 	for y in rows:
 		var row := []
@@ -25,24 +25,24 @@ func collision_matrix(rows: int = 24, cols: int = 32) -> Array:
 func make_single_pack(name: String) -> String:
 	var directory := "user://world_pack_tests/" + name
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
-	var image := Image.create(1536, 1152, false, Image.FORMAT_RGBA8)
+	var image := Image.create(1920, 1440, false, Image.FORMAT_RGBA8)
 	image.fill(Color("#527c43"))
 	image.save_png(directory.path_join("background.png"))
 	write_json(directory.path_join("collision.json"), {"walkable": collision_matrix()})
 	write_json(directory.path_join("anchors.json"), {
-		"spawn": {"tile": [15, 8]},
-		"npcs": [{"id": "vera", "display_name": "Dra. Vera", "tile": [21, 12], "sprite": "res://assets/characters/world1/vera-idle.png", "dialogue": "Olá"}],
-		"buildings": [{"id": "clinic", "tile": [18, 9]}]
+		"spawn": {"tile": [20, 6]},
+		"npcs": [{"id": "vera", "display_name": "Dra. Vera", "tile": [23, 13], "sprite": "res://assets/characters/world1/vera-idle.png", "dialogue": "Olá"}],
+		"buildings": [{"id": "clinic", "tile": [23, 10]}]
 	})
 	write_json(directory.path_join("manifest.json"), {
 		"contract_version": 1,
 		"world_id": "world1",
 		"version": "1.0.0-test",
 		"tile_size": 48,
-		"cols": 32,
-		"rows": 24,
-		"width_px": 1536,
-		"height_px": 1152,
+		"cols": 40,
+		"rows": 30,
+		"width_px": 1920,
+		"height_px": 1440,
 		"art": {"mode": "single", "file": "background.png"},
 		"collision": {"file": "collision.json"},
 		"anchors": {"file": "anchors.json"}
@@ -56,7 +56,7 @@ func make_chunk_pack(name: String) -> String:
 	for y in 2:
 		for x in 2:
 			var filename := "chunk_%d_%d.png" % [x, y]
-			var image := Image.create(768, 576, false, Image.FORMAT_RGBA8)
+			var image := Image.create(960, 720, false, Image.FORMAT_RGBA8)
 			image.fill(Color("#4f7840"))
 			image.save_png(directory.path_join(filename))
 			files.append(filename)
@@ -65,11 +65,11 @@ func make_chunk_pack(name: String) -> String:
 		"world_id": "world1",
 		"version": "1.0.0-chunks",
 		"tile_size": 48,
-		"cols": 32,
-		"rows": 24,
-		"width_px": 1536,
-		"height_px": 1152,
-		"art": {"mode": "chunks", "grid_cols": 2, "grid_rows": 2, "chunk_width_px": 768, "chunk_height_px": 576, "files": files},
+		"cols": 40,
+		"rows": 30,
+		"width_px": 1920,
+		"height_px": 1440,
+		"art": {"mode": "chunks", "grid_cols": 2, "grid_rows": 2, "chunk_width_px": 960, "chunk_height_px": 720, "files": files},
 		"collision": {"file": "collision.json"},
 		"anchors": {"file": "anchors.json"}
 	})
@@ -84,22 +84,22 @@ func _initialize() -> void:
 
 	var WorldData = load(implementation)
 	var world = WorldData.new()
-	expect(world.COLS == 32, "world has 32 columns")
-	expect(world.ROWS == 24, "world has 24 rows")
-	expect(world.world_size_px() == Vector2i(1536, 1152), "world is exactly 1536x1152 pixels")
-	expect(world.walkable.size() == 24 and world.walkable[0].size() == 32, "collision matrix is the single 32x24 map source")
+	expect(world.COLS == 40, "world has 40 columns")
+	expect(world.ROWS == 30, "world has 30 rows")
+	expect(world.world_size_px() == Vector2i(1920, 1440), "world is exactly 1920x1440 pixels")
+	expect(world.walkable.size() == 30 and world.walkable[0].size() == 40, "collision matrix is the single 40x30 map source")
 	expect(world.is_walkable(world.SPAWN), "spawn is walkable")
 	expect(world.is_walkable(world.SPAWN + Vector2i(1, 0)), "player can walk east from spawn")
 	expect(not world.is_walkable(Vector2i(-1, 8)), "left world boundary blocks movement")
-	expect(not world.is_walkable(Vector2i(32, 8)), "right world boundary blocks movement")
+	expect(not world.is_walkable(Vector2i(40, 8)), "right world boundary blocks movement")
 	expect(not world.is_walkable(Vector2i(0, 0)), "blocked matrix tile rejects movement")
-	expect(world.camera_limits() == Rect2i(0, 0, 1536, 1152), "camera limits match compact world")
+	expect(world.camera_limits() == Rect2i(0, 0, 1920, 1440), "camera limits match compact world")
 	expect(world.NPCS.size() == 8, "all 8 World 1 NPCs configured")
 	expect(not world.is_walkable(world.NPCS[0].tile), "NPC tile blocks movement")
 	var adjacent_npc = world.get_adjacent_npc(world.NPCS[0].tile + Vector2i(1, 0))
 	expect(adjacent_npc.size() > 0, "NPC adjacent detection works")
 	expect(world.interaction_text(world.NPCS[0].tile + Vector2i(1, 0)).length() > 0, "NPC interaction returns dialogue")
-	expect(not world.get_adjacent_npc(Vector2i(15, 8)).size(), "no NPC near spawn")
+	expect(not world.get_adjacent_npc(world.SPAWN).size(), "no NPC near spawn")
 
 	var movement_path := "res://scripts/player_movement.gd"
 	expect(FileAccess.file_exists(movement_path), "player movement implementation exists")

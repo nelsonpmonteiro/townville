@@ -10,7 +10,6 @@ const TERRAIN_TEXTURE := "res://assets/terrain/tileset-grass-dirt-v3.png"
 func _ready() -> void:
 	render_props()
 	render_decals()
-	render_clutter()
 
 func render_decals() -> void:
 	# Flat ground decals (cart tracks, footprints, puddles) sit just above the
@@ -34,59 +33,6 @@ func render_decals() -> void:
 		sprite.z_index = 1
 		decals_layer.add_child(sprite)
 
-func render_clutter() -> void:
-	# Grass and farmyard clutter (art brief §3-4): purely decorative, non-blocking,
-	# each item gets an anchored shadow blob drawn first for grounding (art brief §5).
-	if world == null:
-		return
-	var clutter_layer := Node2D.new()
-	clutter_layer.name = "Clutter"
-	add_child(clutter_layer)
-	var all_clutter: Array = []
-	all_clutter.append_array(world.WORLD1_GRASS_CLUTTER)
-	all_clutter.append_array(world.WORLD1_FARM_CLUTTER)
-	for item in all_clutter:
-		var tile: Vector2i = item.tile
-		var base_pos: Vector2 = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
-		var item_scale: float = item.get("scale", 1.0)
-
-		var shadow := Sprite2D.new()
-		shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
-		if shadow.texture != null:
-			shadow.position = base_pos + Vector2(3, 10) * item_scale
-			shadow.scale = Vector2.ONE * item_scale * 0.8
-			shadow.z_index = 3
-			shadow.modulate.a = 0.45
-			clutter_layer.add_child(shadow)
-
-		var sprite := Sprite2D.new()
-		sprite.name = "Clutter_" + item.id
-		sprite.texture = load(item.sprite_path) as Texture2D
-		if sprite.texture == null:
-			print("ERROR: Clutter texture not found: " + item.sprite_path)
-			sprite.queue_free()
-			continue
-		sprite.position = base_pos
-		sprite.position.y -= 6
-		sprite.scale = Vector2.ONE * item_scale
-		sprite.z_index = 4
-		clutter_layer.add_child(sprite)
-
-	# Border framing (art brief §6): dense bushes ringing the map edge, no
-	# shadow needed — they read as background mass, not focal props.
-	for item in world.WORLD1_BORDER_CLUTTER:
-		var tile: Vector2i = item.tile
-		var base_pos: Vector2 = Vector2(tile) * world.TILE_SIZE + Vector2.ONE * world.TILE_SIZE * 0.5
-		var sprite := Sprite2D.new()
-		sprite.name = "Border_" + item.id
-		sprite.texture = load(item.sprite_path) as Texture2D
-		if sprite.texture == null:
-			continue
-		sprite.position = base_pos
-		sprite.scale = Vector2.ONE * item.get("scale", 1.0)
-		sprite.z_index = 4
-		clutter_layer.add_child(sprite)
-
 func render_props() -> void:
 	if world == null:
 		return
@@ -108,9 +54,11 @@ func render_props() -> void:
 		else:
 			base_pos = Vector2(randf() * 1536, randf() * 1152)
 
-		# Anchored shadow (art brief §5) for every vertical prop except flat ground
-		# decorations that already read as flush with the ground (flower pots).
-		if prop.id != "flower-pot":
+		# Anchored shadow (art brief §5) for vertical/blocking props only — flat
+		# ground decorations (flowers, pots, signs) already read as flush with
+		# the ground and don't need a drop shadow.
+		const FLAT_PROP_IDS := ["flower-pot", "flower-red", "flower-yellow", "flower-purple", "sign"]
+		if not (prop.id in FLAT_PROP_IDS):
 			var shadow := Sprite2D.new()
 			shadow.texture = load(world.SHADOW_BLOB_SPRITE) as Texture2D
 			if shadow.texture != null:
