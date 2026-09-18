@@ -421,6 +421,10 @@ func _building_scale_for(id: String) -> float:
 		var lookup_id := _canonical_building_id(id)
 		for b in world.BUILDINGS:
 			if b.id == lookup_id:
+				if b.has("render_h"):
+					var tex := load(b.sprite) as Texture2D
+					if tex and tex.get_height() > 0:
+						return (float(b.render_h) * TILE_SIZE) / float(tex.get_height())
 				return b.get("scale", 1.0)
 	return 1.0
 

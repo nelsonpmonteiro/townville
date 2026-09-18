@@ -85,15 +85,17 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   check('ArrowRight moves player', s.tile[0] === 16 && s.tile[1] === 6, `tile=${s.tile}`);
   R.fps_moving = +(await rafFps(page, 2)).toFixed(1);
 
-  // Walk to Mae along the row-5 spine: up one row, then hold Left until the
-  // player is Manhattan-adjacent to her (position comes from the engine, not
-  // hardcoded — the map is edited by the user and NPCs move).
+  // Walk to Mae (EXACT-map-data standingTile (5,3)): along the row-5 spine to
+  // col 4, then up the Henhouse connector to (4,4) — Chebyshev-adjacent to her.
   await hold(page, 'ArrowUp', 450);
   const mae = (await state(page)).npcs.mae;
   await page.keyboard.down('ArrowLeft');
-  for (let i = 0; i < 40; i++) { await sleep(100); s = await state(page); if (Math.abs(s.tile[0] - mae[0]) + Math.abs(s.tile[1] - mae[1]) === 1) break; }
-  await page.keyboard.up('ArrowLeft'); await sleep(150); s = await state(page);
-  check('walked next to Mae', Math.abs(s.tile[0] - mae[0]) + Math.abs(s.tile[1] - mae[1]) === 1, `tile=${s.tile} mae=${mae}`);
+  for (let i = 0; i < 60; i++) { await sleep(100); s = await state(page); if (s.tile[0] <= mae[0] - 1) break; }
+  await page.keyboard.up('ArrowLeft'); await sleep(150);
+  await page.keyboard.down('ArrowUp');
+  for (let i = 0; i < 20; i++) { await sleep(100); s = await state(page); if (Math.max(Math.abs(s.tile[0] - mae[0]), Math.abs(s.tile[1] - mae[1])) === 1) break; }
+  await page.keyboard.up('ArrowUp'); await sleep(150); s = await state(page);
+  check('walked next to Mae', Math.max(Math.abs(s.tile[0] - mae[0]), Math.abs(s.tile[1] - mae[1])) === 1, `tile=${s.tile} mae=${mae}`);
   const maeSide = s.tile.slice();
 
   // ---------- Phase 1: basket_in, REAL mouse drags ----------
@@ -173,7 +175,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   check('12 → correct', s.flow.last_correct === true && /Twelve eggs/.test(s.flow.result_text));
   s = await waitState(page, s => s.flow.state === 'map', 4000);
   check('phase 4 unlocked, back on map, movement free', s.phases.mae === 3 && s.flow.state === 'map');
-  await hold(page, 'ArrowRight', 400);
+  await hold(page, 'ArrowDown', 400);
   const s2 = await state(page);
   check('player moves again after loop', s2.tile[0] !== s.tile[0] || s2.tile[1] !== s.tile[1], `${s.tile}→${s2.tile}`);
   await page.screenshot({ path: '/tmp/tv-after-loop.png' });

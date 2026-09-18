@@ -25,7 +25,7 @@ const NPCS_TEMPLATE := [
 		"id": "mae",
 		"display_name": "Mae",
 		"sprite_path": "res://assets/characters/world1/mae-idle.png",
-		"tile": Vector2i(9, 5),
+		"tile": Vector2i(5, 3),
 		"building": "henhouse",
 		"item": "egg",
 		"container": "basket",
@@ -53,7 +53,7 @@ const NPCS_TEMPLATE := [
 		"id": "chester",
 		"display_name": "Chester",
 		"sprite_path": "res://assets/characters/world1/chester-idle.png",
-		"tile": Vector2i(14, 4),
+		"tile": Vector2i(15, 3),
 		"building": "stable",
 		"item": "carrot",
 		"container": "feed basket",
@@ -81,7 +81,7 @@ const NPCS_TEMPLATE := [
 		"id": "farmer-joe",
 		"display_name": "Farmer Joe",
 		"sprite_path": "res://assets/characters/world1/farmer-joe-idle.png",
-		"tile": Vector2i(24, 4),
+		"tile": Vector2i(25, 3),
 		"building": "barn",
 		"item": "hay bale",
 		"container": "cart",
@@ -109,7 +109,7 @@ const NPCS_TEMPLATE := [
 		"id": "lily",
 		"display_name": "Lily",
 		"sprite_path": "res://assets/characters/world1/lily-idle.png",
-		"tile": Vector2i(2, 10),
+		"tile": Vector2i(5, 9),
 		"building": "coop",
 		"item": "chick",
 		"container": "coop basket",
@@ -137,7 +137,7 @@ const NPCS_TEMPLATE := [
 		"id": "vera",
 		"display_name": "Dr. Vera",
 		"sprite_path": "res://assets/characters/world1/vera-idle.png",
-		"tile": Vector2i(25, 10),
+		"tile": Vector2i(25, 9),
 		"building": "clinic",
 		"item": "bandage",
 		"container": "medical basket",
@@ -165,7 +165,7 @@ const NPCS_TEMPLATE := [
 		"id": "grandma-rose",
 		"display_name": "Grandma Rose",
 		"sprite_path": "res://assets/characters/world1/grandma-rose-idle.png",
-		"tile": Vector2i(25, 14),
+		"tile": Vector2i(26, 15),
 		"building": "garden",
 		"item": "tomato",
 		"container": "basket",
@@ -249,19 +249,16 @@ const NPCS_TEMPLATE := [
 
 # Building footprints — layout from the latest user spec (30x20 grid, exact
 # col/row per building). Sprites unchanged (current PixelLab pixel art).
+# Buildings — EXACT-map-data.json. Render rule: scale so height == render_h * 48
+# (aspect preserved), center horizontally in the footprint, bottom-align to the
+# footprint's bottom edge. Footprint tiles are blocked.
 const BUILDINGS := [
-	{"id": "henhouse", "sprite": "res://assets/buildings/world1/building-henhouse.png", "footprintCol": 8, "footprintRow": 3, "footprintW": 2, "footprintH": 2, "label": "HENHOUSE", "scale": 1.0, "flip_h": true},
-	{"id": "stable", "sprite": "res://assets/buildings/world1/building-stable.png", "footprintCol": 13, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "STABLE", "scale": 1.5, "flip_h": false},
-	{"id": "barn", "sprite": "res://assets/buildings/world1/building-barn.png", "footprintCol": 23, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "BARN", "scale": 2.0, "flip_h": false},
-	{"id": "coop", "sprite": "res://assets/buildings/world1/building-coop.png", "footprintCol": 2, "footprintRow": 7, "footprintW": 2, "footprintH": 2, "label": "COOP", "scale": 1.0, "flip_h": true},
-	{"id": "clinic", "sprite": "res://assets/buildings/world1/building-animal-clinic.png", "footprintCol": 23, "footprintRow": 8, "footprintW": 2, "footprintH": 2, "label": "CLINIC", "scale": 1.5, "flip_h": false},
-	{"id": "garden", "sprite": "res://assets/buildings/world1/building-garden.png", "footprintCol": 26, "footprintRow": 14, "footprintW": 2, "footprintH": 2, "label": "GARDEN", "scale": 1.0, "flip_h": false},
-	# Below: added via the in-game Map Editor (townville_map_export.json) and
-	# committed here so they're part of the permanent map, not a per-browser
-	# local save. Same sprites/scale/flip as their originals — distinct ids
-	# only to avoid clashing with the map editor's node-name lookups.
-	{"id": "clinic-2", "sprite": "res://assets/buildings/world1/building-animal-clinic.png", "footprintCol": 25, "footprintRow": 7, "footprintW": 2, "footprintH": 2, "label": "CLINIC", "scale": 1.5, "flip_h": false},
-	{"id": "garden-2", "sprite": "res://assets/buildings/world1/building-garden.png", "footprintCol": 27, "footprintRow": 11, "footprintW": 2, "footprintH": 2, "label": "GARDEN", "scale": 1.0, "flip_h": false},
+	{"id": "henhouse", "sprite": "res://assets/buildings/world1/building-henhouse.png", "footprintCol": 3, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "HENHOUSE", "render_h": 2.0, "flip_h": true},
+	{"id": "stable", "sprite": "res://assets/buildings/world1/building-stable.png", "footprintCol": 13, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "STABLE", "render_h": 2.6, "flip_h": false},
+	{"id": "barn", "sprite": "res://assets/buildings/world1/building-barn.png", "footprintCol": 23, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "BARN", "render_h": 3.2, "flip_h": false},
+	{"id": "coop", "sprite": "res://assets/buildings/world1/building-coop.png", "footprintCol": 3, "footprintRow": 8, "footprintW": 2, "footprintH": 2, "label": "COOP", "render_h": 2.0, "flip_h": true},
+	{"id": "clinic", "sprite": "res://assets/buildings/world1/building-animal-clinic.png", "footprintCol": 23, "footprintRow": 8, "footprintW": 2, "footprintH": 2, "label": "CLINIC", "render_h": 2.6, "flip_h": false},
+	{"id": "garden", "sprite": "res://assets/buildings/world1/building-garden.png", "footprintCol": 26, "footprintRow": 14, "footprintW": 2, "footprintH": 2, "label": "GARDEN", "render_h": 1.6, "flip_h": false, "no_dirt": true},
 ]
 
 var walkable: Array[Array] = []
@@ -288,32 +285,16 @@ func _build_walkable_matrix() -> void:
 		prow.fill(false)
 		path_mask.append(prow)
 
-	# Path network per the latest user spec: horizontal spine + branch
-	# clearings + central vertical trunk + garden connector.
-	_paint_walkable(Rect2i(1, 5, 28, 1))
-	_paint_walkable(Rect2i(3, 2, 2, 3))
-	_paint_walkable(Rect2i(13, 2, 2, 3))
-	_paint_walkable(Rect2i(23, 2, 2, 3))
-	_paint_walkable(Rect2i(15, 6, 2, 14))
-	_paint_walkable(Rect2i(3, 6, 2, 4))
-	_paint_walkable(Rect2i(23, 6, 2, 4))
-	_paint_walkable(Rect2i(16, 14, 11, 2))
-	# South yard + side bypass for Coop and Clinic, so their door (which faces
-	# down/south on the sprite, same as every other building — no flips) has
-	# real street right in front of it, matching each building's true street
-	# side instead of forcing a broken vertical-flip on the art.
-	_paint_walkable(Rect2i(3, 10, 2, 1))
-	_paint_walkable(Rect2i(2, 6, 1, 5))
-	_paint_walkable(Rect2i(23, 10, 2, 1))
-	_paint_walkable(Rect2i(25, 6, 1, 5))
-	# South street for garden-2 (added via editor import): connect its south
-	# door (row 13) up to the existing clinic-2 side street (col 25-26).
-	_paint_walkable(Rect2i(25, 11, 3, 3))
-	# South yard for Garden too — same reasoning: every building's door now
-	# faces south (per the unified stable-style art), so Garden needs street
-	# directly below its footprint as well, not just the west-side approach.
-	_paint_walkable(Rect2i(25, 15, 1, 2))
-	_paint_walkable(Rect2i(25, 16, 3, 1))
+	# Path network — EXACT-map-data.json: row-5 spine, col-15/16 trunk, the
+	# connectorPatches_dirtPath tiles, garden walkway. Nothing else.
+	_paint_walkable(Rect2i(1, 5, 28, 1))          # spine
+	_paint_walkable(Rect2i(15, 6, 2, 14))         # vertical trunk to the south gate
+	_paint_walkable(Rect2i(3, 4, 2, 1))           # Henhouse → spine
+	_paint_walkable(Rect2i(13, 4, 2, 1))          # Stable → spine
+	_paint_walkable(Rect2i(23, 4, 2, 1))          # Barn → spine
+	_paint_walkable(Rect2i(3, 6, 2, 2))           # spine → Coop
+	_paint_walkable(Rect2i(23, 6, 2, 2))          # spine → Clinic
+	_paint_walkable(Rect2i(16, 14, 11, 2))        # trunk → Garden door
 
 	# Visual path mask mirrors the walkable network before entities carve holes in it,
 	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
@@ -334,7 +315,7 @@ func _build_walkable_matrix() -> void:
 			for c in range(b.footprintCol, b.footprintCol + b.footprintW):
 				if _in_bounds(Vector2i(c, r)):
 					walkable[r][c] = false
-					path_mask[r][c] = true
+					path_mask[r][c] = not b.get("no_dirt", false)  # Garden sits on plain grass
 
 	# Solid decorative props block movement (fountain, well, tree, stone, bench, mailbox, gate, fence)
 	const SOLID_PROP_IDS := ["fountain", "well", "tree", "stone", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
@@ -374,7 +355,9 @@ func get_npc_at(tile: Vector2i) -> Dictionary:
 func get_adjacent_npc(tile: Vector2i) -> Dictionary:
 	for npc in NPCS:
 		var delta: Vector2i = (tile - npc.tile).abs()
-		if delta.x + delta.y <= 1 and (delta.x + delta.y) > 0:
+		# Chebyshev distance 1: diagonals count, so an NPC standing beside the
+		# path (EXACT-map-data standingTile) is reachable from the path tile.
+		if max(delta.x, delta.y) == 1:
 			return npc
 	return {}
 

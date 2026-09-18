@@ -18,14 +18,14 @@ extends CanvasLayer
 enum State { MAP, DIALOGUE, EXERCISE, FEEDBACK }
 
 const ITEM_ICONS := {
-	"egg": "res://assets/scenery/world1/clutter/wildflower-white.png",
-	"carrot": "res://assets/scenery/world1/clutter/wildflower-purple.png",
-	"hay bale": "res://assets/scenery/world1/clutter/hay-bale.png",
-	"chick": "res://assets/scenery/world1/clutter/mushroom-cluster.png",
-	"bandage": "res://assets/scenery/world1/clutter/wood-crate.png",
-	"tomato": "res://assets/scenery/world1/clutter/wildflower-purple.png",
-	"nail": "res://assets/scenery/world1/clutter/signpost.png",
-	"key": "res://assets/scenery/world1/clutter/barrel.png",
+	"egg": "res://assets/ui/items/egg.png",
+	"carrot": "res://assets/ui/items/carrot.png",
+	"hay bale": "res://assets/ui/items/hay-bale.png",
+	"chick": "res://assets/ui/items/chick.png",
+	"bandage": "res://assets/ui/items/bandage.png",
+	"tomato": "res://assets/ui/items/tomato.png",
+	"nail": "res://assets/ui/items/nail.png",
+	"key": "res://assets/ui/items/key.png",
 }
 const FEEDBACK_SECONDS := 1.8
 const TYPE_SPEED := 0.035

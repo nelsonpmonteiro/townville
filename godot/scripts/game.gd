@@ -142,7 +142,10 @@ func is_map_editor_active() -> bool:
 func add_buildings() -> void:
 	for b in world.BUILDINGS:
 		var texture := load(b.sprite) as Texture2D
+		# EXACT-map-data renderRule: height = render_h tiles, aspect preserved.
 		var building_scale: float = b.get("scale", 1.0)
+		if b.has("render_h") and texture != null and texture.get_height() > 0:
+			building_scale = (float(b.render_h) * world.TILE_SIZE) / float(texture.get_height())
 		var flip_h: bool = b.get("flip_h", false)
 		var fp_center: Vector2 = Vector2(b.footprintCol + b.footprintW / 2.0, b.footprintRow + b.footprintH / 2.0) * world.TILE_SIZE
 		var fp_bottom: float = (b.footprintRow + b.footprintH) * world.TILE_SIZE
@@ -210,8 +213,13 @@ func add_npcs() -> void:
 		sprite.name = "NPC_" + npc.id
 		if npc.has("sprite_path"):
 			sprite.texture = load(npc.sprite_path)
-		sprite.position = Vector2(0, -12)
-		sprite.scale = Vector2.ONE * 1.4
+		# npcRenderRule: height = 1.4 tiles, centered on the tile, feet on the tile's bottom edge.
+		var npc_scale := 1.4
+		if sprite.texture != null and sprite.texture.get_height() > 0:
+			npc_scale = (1.4 * world.TILE_SIZE) / float(sprite.texture.get_height())
+		sprite.scale = Vector2.ONE * npc_scale
+		var npc_h: float = (sprite.texture.get_height() * npc_scale) if sprite.texture != null else world.TILE_SIZE * 1.4
+		sprite.position = Vector2(0, world.TILE_SIZE * 0.5 - npc_h / 2.0)
 		sprite.z_index = 15
 		container.add_child(sprite)
 		var name_label := Label.new()
