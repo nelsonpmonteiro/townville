@@ -261,27 +261,52 @@ const BUILDINGS := [
 	{"id": "coop", "sprite": "res://assets/buildings/world1/building-coop.png", "footprintCol": 2, "footprintRow": 7, "footprintW": 2, "footprintH": 2, "label": "COOP", "scale": 1.0, "flip_h": true},
 ]
 
-const EDITOR_GRID := [
+# Painted in the in-game Map Editor and exported (townville_map_export.json,
+# v2). Applied literally. EDITOR_DIRT = ground look ('.' = dirt),
+# EDITOR_WALKABLE = collision ('.' = walkable). They are independent layers.
+const EDITOR_DIRT := [
 	"##############################",
 	"##############################",
-	"#############..########..#####",
-	"#############..########..#####",
-	"##############.########...####",
-	"#..#...#######.####..........#",
-	"##....#....#.##....######.####",
-	"##...##.#######..#############",
-	"##...#.########..#############",
-	"##...##########..########.####",
+	"#############..##.#####..#####",
+	"########..###..#####.##..#####",
+	"########..####.########...####",
+	"#..#...##.####.####..........#",
+	"##....#....#.#.....######.####",
+	"##...##.#######..########..###",
+	"##...#.########..########..###",
+	"##...##.#######..########.####",
 	"##....#########..####.....####",
 	"###############..####.########",
-	"###############..####.########",
-	"###############..####.########",
-	"###############............###",
+	"###############..##.#.########",
+	"############.##..####.#####..#",
+	"###############..............#",
 	"###############.............##",
-	"###############..########...##",
+	"###########.###..########...##",
 	"###############..#############",
 	"###############..#############",
 	"###############..#############",
+]
+const EDITOR_WALKABLE := [
+	"#.##########.###....##########",
+	"################.##...####...#",
+	"################.##...####...#",
+	"##########.#####.##########..#",
+	"#.......##.##.#...##....#..###",
+	"#.......##..#..#.............#",
+	"##......................#.####",
+	"####......#..#..........######",
+	"####....##...#....###...######",
+	"##.....##..#...............###",
+	"###....###...#.#..##.....#.###",
+	"#####..###.###....##.........#",
+	"#####......###....##....#..###",
+	"######.#######...........#.###",
+	"#####....#...#...........#.###",
+	"#####....#.###...............#",
+	"#####......#..................",
+	"#####.............######......",
+	"#####.............###########.",
+	"################.#############",
 ]
 
 var walkable: Array[Array] = []
@@ -308,43 +333,22 @@ func _build_walkable_matrix() -> void:
 		prow.fill(false)
 		path_mask.append(prow)
 
-	# Dirt/path network painted in the in-game Map Editor and exported to
-	# townville_map_export.json — applied literally, row by row ('.' = dirt).
+	# Both layers come straight from the editor export. NPC tiles and building
+	# footprints still block movement (the game needs that), nothing else is
+	# derived or "corrected" here.
 	for y in ROWS:
 		for x in COLS:
-			walkable[y][x] = EDITOR_GRID[y][x] == "."
-
-	# Visual path mask mirrors the walkable network before entities carve holes in it,
-	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
-	for y in ROWS:
-		for x in COLS:
-			path_mask[y][x] = walkable[y][x]
-
-	# NPC tiles are solid but stand on the path visually
+			walkable[y][x] = EDITOR_WALKABLE[y][x] == "."
+			path_mask[y][x] = EDITOR_DIRT[y][x] == "."
 	for npc in NPCS:
 		var t: Vector2i = npc.tile
 		if _in_bounds(t):
 			walkable[t.y][t.x] = false
-			path_mask[t.y][t.x] = true
-
-	# Building footprints block movement; their footprint reads as packed dirt/yard
 	for b in BUILDINGS:
 		for r in range(b.footprintRow, b.footprintRow + b.footprintH):
 			for c in range(b.footprintCol, b.footprintCol + b.footprintW):
 				if _in_bounds(Vector2i(c, r)):
 					walkable[r][c] = false
-					path_mask[r][c] = true
-
-	# Solid decorative props block movement (fountain, well, tree, stone, bench, mailbox, gate, fence)
-	const SOLID_PROP_IDS := ["fountain", "well", "tree", "stone", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
-	# Only wayside props (not trees/stones planted in open grass) mark the ground as path
-	const PATHSIDE_PROP_IDS := ["fountain", "well", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
-	for prop in WORLD1_PROPS:
-		var pt: Vector2i = prop.get("tile", Vector2i(-1, -1))
-		if prop.id in SOLID_PROP_IDS and _in_bounds(pt):
-			walkable[pt.y][pt.x] = false
-		if prop.id in PATHSIDE_PROP_IDS and _in_bounds(pt):
-			path_mask[pt.y][pt.x] = true
 
 func _paint_walkable(rect: Rect2i) -> void:
 	for y in range(rect.position.y, rect.end.y):
