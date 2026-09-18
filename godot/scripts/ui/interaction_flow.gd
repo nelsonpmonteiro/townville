@@ -58,6 +58,7 @@ var prompt_label: Label
 var hint_label: Label
 var basket_row: HBoxContainer      # basket_in/out layout root
 var source_title: Label
+var source_panel: PanelContainer
 var source_items: HFlowContainer
 var basket_zone: PanelContainer
 var basket_items: HFlowContainer
@@ -70,6 +71,8 @@ var addition_summary: HBoxContainer # visual existing-items + added-items feedba
 var addition_existing_items: HFlowContainer
 var addition_added_items: HFlowContainer
 var done_btn: Button               # basket modes: child submits when finished
+var hint_btn: Button               # phases 1-2: on-request hint, not shown by default
+var hints_used_this_exercise := 0  # tracked per exercise, surfaced via debug_state for the teacher panel
 var text_row: VBoxContainer        # text layout root
 var answer_input: LineEdit
 var submit_btn: Button
@@ -343,9 +346,17 @@ func _build_exercise() -> void:
 	src_box.add_child(src_title)
 	source_title = src_title
 	var src_panel := PanelContainer.new()
+	src_panel.name = "SourceDropZone"
 	src_panel.custom_minimum_size = Vector2(230, 140)
 	src_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
 	src_box.add_child(src_panel)
+	source_panel = src_panel
+	# SourceDropZone accepts drops back from the basket — the child can undo
+	# an addition (basket_in) by dragging an item back to the pool, since
+	# there's no live counter telling them when they've overshot; they need
+	# to be able to freely add/remove and reconsider before pressing Done.
+	src_panel.set_script(DropZoneScript)
+	src_panel.flow = self
 	source_items = HFlowContainer.new()
 	source_items.name = "SourceItems"
 	source_items.alignment = FlowContainer.ALIGNMENT_CENTER
@@ -421,15 +432,10 @@ func _build_exercise() -> void:
 	addition_added_items.add_theme_constant_override("h_separation", 4)
 	added_panel.add_child(addition_added_items)
 
-	done_btn = Button.new()
-	done_btn.name = "DoneButton"
-	done_btn.text = "Done!"
-	done_btn.custom_minimum_size = Vector2(140, 42)
-	done_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	done_btn.add_theme_font_size_override("font_size", 18)
-	_apply_button_style(done_btn)
-	done_btn.pressed.connect(_on_done)
-	v.add_child(done_btn)
+	# NOTE: done_btn / hint_btn are created and appended AFTER text_row and
+	# visual_row below, so the button always lands as the LAST child of `v` —
+	# at the very bottom of the panel — regardless of which exercise mode
+	# (basket/text/array/share) is showing above it.
 
 	# ---- text layout ----
 	text_row = VBoxContainer.new()
@@ -496,6 +502,33 @@ func _build_exercise() -> void:
 	visual_zones.alignment = BoxContainer.ALIGNMENT_CENTER
 	visual_zones.add_theme_constant_override("separation", 8)
 	visual_row.add_child(visual_zones)
+
+	# ---- Done / Hint buttons: added LAST so they always render at the
+	# bottom of the panel, after whichever mode-specific layout above is
+	# visible (basket/text/array/share) — button position never shifts
+	# between exercise types.
+	done_btn = Button.new()
+	done_btn.name = "DoneButton"
+	done_btn.text = "Done!"
+	done_btn.custom_minimum_size = Vector2(140, 42)
+	done_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	done_btn.add_theme_font_size_override("font_size", 18)
+	_apply_button_style(done_btn)
+	done_btn.pressed.connect(_on_done)
+	v.add_child(done_btn)
+
+	# Hint is opt-in only (never shown by default) for basket phases 1-2 —
+	# per-exercise usage is tracked (hints_used_this_exercise) so a tutor can
+	# see which counting exercises a student needed help on.
+	hint_btn = Button.new()
+	hint_btn.name = "HintButton"
+	hint_btn.text = "Need a hint?"
+	hint_btn.custom_minimum_size = Vector2(140, 36)
+	hint_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	hint_btn.add_theme_font_size_override("font_size", 14)
+	_apply_button_style(hint_btn)
+	hint_btn.pressed.connect(_on_hint_requested)
+	v.add_child(hint_btn)
 
 func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	var zone := PanelContainer.new()
@@ -622,6 +655,7 @@ func _open_exercise() -> void:
 	equation_label.text = ""
 	addition_summary.visible = false
 	done_btn.text = "Done!"
+	hints_used_this_exercise = 0
 	_clear(addition_existing_items)
 	_clear(addition_added_items)
 	_clear(basket_items); _clear(source_items); _clear(tray_items); _clear(icon_grid)
@@ -632,28 +666,29 @@ func _open_exercise() -> void:
 	var mode: String = exercise.mode
 	basket_row.visible = mode in ["basket_in", "basket_out"]
 	done_btn.visible = mode != "text"
+	hint_btn.visible = mode in ["basket_in", "basket_out"]
+	hint_btn.disabled = false
 	text_row.visible = mode == "text"
 	visual_row.visible = mode in ["array", "share"]
 	var icon: String = ITEM_ICONS.get(npc.item, "")
 	match mode:
 		"basket_in":
-			prompt_label.text = "%s already has %d %s in the %s. The target is %d. Drag %s from the %s until the %s shows %d." % [npc.display_name, int(exercise.a), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), POOL_LABELS.get(npc.item, "supply").to_lower(), npc.get("container", "basket"), int(exercise.answer)]
+			# No live counter is shown anywhere (source or basket): the child
+			# must count the pictured items themselves, not read a running
+			# tally. The pool always has more draggable eggs than needed
+			# (target minus starting minus POOL_EXTRA) so "drag everything"
+			# fails as a strategy — some must stay in the pool.
 			tray_zone.visible = false
 			source_items.get_parent().get_parent().visible = true
-			# Pre-existing basket items are NOT draggable: if they were, a new
-			# drop landing on top of one (unavoidable as the basket fills up)
-			# resolves to that item as the drop target instead of the basket
-			# zone — drag_item.gd only accepts drops inside a share zone, so
-			# the drop is silently rejected right when the basket is nearly full.
 			for i in exercise.a:
-				basket_items.add_child(_make_item(icon, false))
-			var pool_size: int = int(exercise.b) + POOL_EXTRA
+				basket_items.add_child(_make_item(icon, true))
+			var needed: int = int(exercise.answer) - int(exercise.a)
+			var pool_size: int = needed + POOL_EXTRA
 			for i in pool_size:
 				source_items.add_child(_make_item(icon, true))
 			basket_count = exercise.a
 			_update_basket_counter()
 		"basket_out":
-			prompt_label.text = "%s has %d %s in the %s and needs to keep %d. Drag %s out until the %s shows %d." % [npc.display_name, int(exercise.start), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), npc.get("container", "basket"), int(exercise.answer)]
 			tray_zone.visible = true
 			source_items.get_parent().get_parent().visible = false
 			for i in exercise.start:
@@ -671,19 +706,16 @@ func _open_exercise() -> void:
 			_open_share(icon)
 
 func _update_basket_counter() -> void:
-	var target: int = int(exercise.get("answer", basket_count))
-	basket_counter.text = "%s: %d/%d" % [npc.get("container", "Basket").capitalize(), basket_count, target]
+	# No live counts anywhere (§6 of the redesign spec): reading a running
+	# tally lets a child bypass counting the pictured items entirely. Labels
+	# stay plain — "Basket", "Nest" — the child must look at and count the
+	# actual pictures to know how many are there.
+	basket_counter.text = npc.get("container", "Basket").capitalize()
 	var mode: String = exercise.get("mode", "")
 	if mode == "basket_in":
-		# Source (Nest) counts DOWN as items leave it — half the operation
-		# was previously invisible once dragged.
-		source_title.text = "%s: %d" % [POOL_LABELS.get(npc.item, "Supply"), source_items.get_child_count()]
+		source_title.text = POOL_LABELS.get(npc.item, "Supply")
 	elif mode == "basket_out":
-		# Removal tray counts UP toward the amount that's meant to leave,
-		# instead of items just vanishing with nothing tracking where they went.
-		var removed: int = int(exercise.get("start", basket_count)) - basket_count
-		var remove_target: int = int(exercise.get("remove", removed))
-		tray_label.text = "%s: %d/%d" % [exercise.get("tray", "Out"), removed, remove_target]
+		tray_label.text = exercise.get("tray", "Out")
 
 func _show_equation() -> void:
 	var mode: String = exercise.get("mode", "")
@@ -781,27 +813,31 @@ func drop_into(zone_name: String, source: Control) -> void:
 		_emit_placement_feedback(zone, target.get_child_count())
 		_update_share_status(false)
 		return
+	# basket_in / basket_out: free drag between Source pool, Basket and Tray.
+	# Items stay draggable everywhere (no auto-resolve on overshoot per §7 of
+	# the redesign spec) — the child can add, remove and reconsider freely;
+	# validation only happens when they press Done.
 	if mode == "basket_in" and zone_name == "BasketDropZone" and source.get_parent() == source_items:
 		source.get_parent().remove_child(source)
-		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		source.set_script(null)
 		basket_items.add_child(source)
 		basket_count += 1
-		_update_basket_counter()
 		_emit_placement_feedback(basket_zone, basket_count)
-		if basket_count > int(exercise.answer):
-			_resolve(false)
+		return
+	if mode == "basket_in" and zone_name == "SourceDropZone" and source.get_parent() == basket_items:
+		source.get_parent().remove_child(source)
+		source_items.add_child(source)
+		basket_count -= 1
 		return
 	if mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
 		source.get_parent().remove_child(source)
-		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		source.set_script(null)
 		tray_items.add_child(source)
 		basket_count -= 1
-		_update_basket_counter()
-		_emit_placement_feedback(tray_zone, int(exercise.get("start", basket_count)) - basket_count)
-		if basket_count < int(exercise.answer):
-			_resolve(false)
+		_emit_placement_feedback(tray_zone, tray_items.get_child_count())
+		return
+	if mode == "basket_out" and zone_name == "BasketDropZone" and source.get_parent() == tray_items:
+		source.get_parent().remove_child(source)
+		basket_items.add_child(source)
+		basket_count += 1
 		return
 
 func _is_share_items_container(node: Node) -> bool:
@@ -907,6 +943,9 @@ func _on_submit() -> void:
 func _build_pop_audio() -> void:
 	pop_player = AudioStreamPlayer.new()
 	pop_player.name = "PlacementPop"
+	# Routed to the SFX bus so the volume popover's Effects slider controls the
+	# placement pops independently of the background music.
+	pop_player.bus = "SFX"
 	add_child(pop_player)
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
@@ -1023,16 +1062,6 @@ func _apply_hints() -> void:
 		hint_label.visible = true
 	if wrong_attempts >= 2:
 		match exercise.mode:
-			"basket_in":
-				var ghost := basket_zone.get_child(0).get_node("Ghost") as Label
-				ghost.text = "O ".repeat(exercise.answer).strip_edges()
-				ghost.add_theme_font_size_override("font_size", 22)
-				ghost.visible = true
-			"basket_out":
-				var ghost := basket_zone.get_child(0).get_node("Ghost") as Label
-				ghost.text = str(exercise.answer)
-				ghost.add_theme_font_size_override("font_size", 40)
-				ghost.visible = true
 			"text":
 				var g: Array = exercise.get("grid", [1, 1])
 				icon_grid.columns = int(g[1])
@@ -1040,6 +1069,48 @@ func _apply_hints() -> void:
 				for i in int(g[0]) * int(g[1]):
 					icon_grid.add_child(_make_item(icon, false))
 				icon_grid.visible = true
+			# basket_in / basket_out tier-2 escalation is the same opt-in
+			# counting aid as the Hint button (_on_hint_requested) — no
+			# separate numeral ghost, which would put a number back on
+			# screen and let the child read it instead of counting.
+			_:
+				pass
+
+func _on_hint_requested() -> void:
+	if state != State.EXERCISE or exercise.mode not in ["basket_in", "basket_out"]:
+		return
+	hints_used_this_exercise += 1
+	hint_btn.disabled = true
+	hint_label.text = "Hint: " + exercise.get("hint1", "")
+	hint_label.visible = true
+	# Numbering the pictured items ("1, 2, 3...") is a temporary counting
+	# aid shown ONLY on request — never by default — per §8 of the redesign
+	# spec. It labels every item currently in play across pool/basket/tray
+	# with its position within its own container, so the child practices
+	# counting each group rather than being handed the answer directly.
+	_number_items(source_items)
+	_number_items(basket_items)
+	_number_items(tray_items)
+
+func _number_items(container: Control) -> void:
+	if container == null:
+		return
+	var i := 1
+	for child in container.get_children():
+		var label := child.get_node_or_null("CountBadge") as Label
+		if label == null:
+			label = Label.new()
+			label.name = "CountBadge"
+			label.add_theme_font_size_override("font_size", 12)
+			label.add_theme_color_override("font_color", Color("#ffd75a"))
+			label.add_theme_color_override("font_shadow_color", Color.BLACK)
+			label.add_theme_constant_override("shadow_offset_x", 1)
+			label.add_theme_constant_override("shadow_offset_y", 1)
+			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			label.position = Vector2(-4, -6)
+			child.add_child(label)
+		label.text = str(i)
+		i += 1
 
 func _clear(c: Node) -> void:
 	for ch in c.get_children():
@@ -1063,6 +1134,7 @@ func debug_state() -> Dictionary:
 		"share_groups": share_zones.size(),
 		"tray_count": tray_items.get_child_count() if tray_items else 0,
 		"wrong_attempts": wrong_attempts,
+		"hints_used_this_exercise": hints_used_this_exercise,
 		"hint_visible": hint_label.visible if hint_label else false,
 		"hint_text": hint_label.text if hint_label else "",
 		"ghost_visible": (basket_zone.get_child(0).get_node("Ghost") as Label).visible if basket_zone else false,
@@ -1089,12 +1161,26 @@ func debug_drag_one(target_zone: String) -> bool:
 			return true
 	return false
 
+## Same as debug_drag_one, but the item is picked from an explicit
+## container — needed to test dragging AGAINST the exercise's default
+## direction (undo: basket → pool for basket_in, tray → basket for
+## basket_out), since debug_drag_one always drags from the forward side.
+func debug_drag_one_from(from: Control, target_zone: String) -> bool:
+	for ch in from.get_children():
+		if ch.get_script() == DragItemScript:
+			drop_into(target_zone, ch)
+			return true
+	return false
+
 func debug_submit(text: String) -> void:
 	answer_input.text = text
 	_on_submit()
 
 func debug_done() -> void:
 	_on_done()
+
+func debug_hint() -> void:
+	_on_hint_requested()
 
 # =====================================================================
 # Native drag-and-drop scripts (attached at runtime)

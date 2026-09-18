@@ -13,20 +13,26 @@ func _get_drag_data(_pos: Vector2) -> Variant:
 	set_drag_preview(preview)
 	return {"item": true, "source_node": self}
 
-# Items placed in a fair-sharing group stay draggable. If another item is
-# dropped directly over them, forward that drop to the surrounding group.
-func _share_zone() -> Control:
+# If a drop lands directly on top of another draggable item — unavoidable
+# once a zone already has several items in it, and now common since basket
+# items stay draggable (so the child can drag one back out to undo) —
+# forward the drop to whichever drop-zone ancestor actually owns this item,
+# instead of the drop being silently rejected right when a zone is full.
+# Object.get() is safe on any node: returns null if the property doesn't
+# exist, so this works for every DropZoneScript zone (basket, tray, source,
+# array cell, share zone) without this script needing to know their names.
+func _owning_zone() -> Node:
 	var node: Node = get_parent()
 	while node:
-		if node.name.begins_with("ShareZone_"):
-			return node as Control
+		if node.get("flow") != null:
+			return node
 		node = node.get_parent()
 	return null
 
 func _can_drop_data(_pos: Vector2, data: Variant) -> bool:
-	return data is Dictionary and data.get("item", false) and _share_zone() != null
+	return data is Dictionary and data.get("item", false) and _owning_zone() != null
 
 func _drop_data(_pos: Vector2, data: Variant) -> void:
-	var zone := _share_zone()
+	var zone := _owning_zone()
 	if zone:
 		zone.flow.drop_into(zone.name, data.source_node as Control)

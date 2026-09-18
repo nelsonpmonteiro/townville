@@ -175,28 +175,37 @@ func _initialize() -> void:
 	flow.advance_dialogue()  # skip typewriter
 	expect(not flow.is_typing and flow.dialogue_text.visible_ratio == 1.0, "tap while typing → full text")
 	flow.advance_dialogue()  # → exercise
-	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_in", "dialogue dismissed → EXERCISE phase 1 basket_in")
+	expect(flow.exercise.mode == "basket_in", "dialogue dismissed → EXERCISE phase 1 basket_in")
 	expect(not flow.dialogue_screen.visible and flow.exercise_screen.visible, "dialogue hidden, exercise visible (no overlap)")
-	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "basket pre-filled 4, pool has 6 draggable eggs (target 3 + 3 extra, so clicking isn't just 'clear the pool')")
-	expect(flow.basket_counter.text == "Basket: 4/7", "basket counter shows current/target")
-	expect(flow.source_title.text == "Nest: 6", "pool label is themed with live count, not 'New items'")
+	# Mae: a=4, b=3, answer=7. Needed = answer - a = 3, pool = needed + POOL_EXTRA(3) = 6.
+	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "basket pre-filled 4, pool has 6 draggable eggs (3 needed + 3 extra, so dragging everything overshoots)")
+	expect(flow.basket_counter.text == "Basket", "basket label is plain, no live count")
+	expect(flow.source_title.text == "Nest", "pool label is themed and plain, no live count — child must count the pictures")
 	# wrong drop target does nothing
 	flow.debug_drag_one("TrayDropZone")
 	expect(flow.basket_count == 4, "dropping outside the basket is ignored")
-	# Overshoot: dragging past the target (7) is an active wrong answer, auto-resolved
-	# without needing to press Done, and the exercise resets (pool refills).
+	# No auto-resolve: the child can drag past the target and it's still
+	# EXERCISE until they press Done — free experimentation, not a trap.
 	for i in 4: flow.debug_drag_one("BasketDropZone")
-	expect(flow.basket_count == 8 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target auto-resolves as wrong (overshoot)")
-	await create_timer(2.0).timeout
-	expect(flow.state_name() == "exercise" and flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "overshoot reset: basket back to start, pool refilled")
-	var addition_feedback_before: int = flow.pop_events
-	var basket_in_noise_before: int = flow.pop_events
-	for i in 3: flow.debug_drag_one("BasketDropZone")
-	expect(flow.pop_events - addition_feedback_before == 3, "every item added to the basket emits placement sound and count feedback")
-	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3 and flow.state_name() == "exercise", "3 drags in → basket 7/7, 3 extra still in pool, still in EXERCISE until Done")
-	expect(flow.basket_row.visible and not flow.addition_summary.visible and not flow.equation_label.visible, "live result stays only inside the basket square; no duplicate summary/equation during dragging")
+	expect(flow.basket_count == 8 and flow.state_name() == "exercise", "dragging past the target does NOT auto-resolve — child can keep adjusting")
 	flow.debug_done()
-	expect(flow.state_name() == "exercise" and not flow.basket_row.visible and flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "Done replaces basket UI with equation as a separate second stage")
+	expect(flow.state_name() == "feedback" and not flow.last_correct, "pressing Done at the wrong count (8) is caught at submit time")
+	await create_timer(2.0).timeout
+	expect(flow.state_name() == "exercise" and flow.hint_label.visible, "wrong feedback returns to the SAME exercise with hint tier 1")
+	# _open_exercise() resets the layout back to its starting state (basket
+	# 4, pool 6) on every wrong attempt, so undo the freshly-reset basket
+	# back down from there rather than relying on the pre-reset counts.
+	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "wrong attempt resets the layout back to its starting counts")
+	var addition_feedback_before: int = flow.pop_events
+	for i in 4: flow.debug_drag_one("BasketDropZone")
+	expect(flow.basket_count == 8, "re-overshoot after the reset")
+	flow.debug_drag_one_from(flow.basket_items, "SourceDropZone")
+	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3, "dragging a basket item back to the pool undoes one addition")
+	expect(flow.pop_events - addition_feedback_before == 4, "every item added to the basket emits placement sound feedback")
+	expect(flow.state_name() == "exercise", "still in EXERCISE until Done — no auto-resolve on reaching the target either")
+	expect(flow.basket_row.visible and not flow.addition_summary.visible and not flow.equation_label.visible, "no numeric summary/equation shown while still dragging")
+	flow.debug_done()
+	expect(flow.state_name() == "exercise" and not flow.basket_row.visible and flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "Done at the correct count reveals the equation as a second stage")
 	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
@@ -205,38 +214,48 @@ func _initialize() -> void:
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "map" and world.get_phase("mae") == 1, "feedback auto-dismiss → MAP, phase advanced to 2")
 
-	# phase 2 basket_out with a WRONG attempt first — dragging out past the
-	# target (7) is now an active wrong answer, auto-resolved as soon as the
-	# count crosses below the target (no need to press Done for overshoot).
+	# phase 2 basket_out: same free-drag, submit-to-validate mechanic, reversed.
 	flow.start(mae)
 	flow.advance_dialogue(); flow.advance_dialogue()
 	expect(flow.exercise.mode == "basket_out" and flow.basket_count == 9, "phase 2: 9 eggs in basket, drag out")
-	expect(flow.basket_counter.text == "Basket: 9/7", "basket_out counter also shows current/target")
+	expect(flow.basket_counter.text == "Basket", "basket_out basket label is also plain, no live count")
 	var subtraction_feedback_before: int = flow.pop_events
 	flow.debug_drag_one("TrayDropZone")
 	flow.debug_drag_one("TrayDropZone")
-	expect(flow.pop_events - subtraction_feedback_before == 2, "every item removed from the basket emits placement sound and count feedback")
-	expect(flow.basket_count == 7 and flow.state_name() == "exercise", "2 out → 7/7, still in EXERCISE until Done")
-	expect(flow.tray_label.text == "Grandma Rose: 2/2", "removal tray shows live count/target, not just disappearing items")
+	expect(flow.pop_events - subtraction_feedback_before == 2, "every item removed from the basket emits placement sound feedback")
+	expect(flow.basket_count == 7 and flow.state_name() == "exercise", "2 out → 7 left, still in EXERCISE until Done")
+	expect(flow.tray_label.text == "Grandma Rose", "removal tray label is plain too, no running count")
 	expect(flow.basket_row.visible and not flow.equation_label.visible, "subtraction stays live in basket/tray squares until Done")
-	flow.debug_drag_one("TrayDropZone")  # 3rd out → 6, undershoots target → auto wrong
-	expect(flow.basket_count == 6 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target (too many out) auto-resolves as wrong")
-	await create_timer(2.0).timeout
-	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_out" and flow.basket_count == 9, "overshoot reset: basket back to starting count of 9")
-	expect(flow.hint_label.visible and flow.hint_label.text.contains("one egg out first"), "tier-1 hint shown after 1st wrong")
-	flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone")  # 3 out → 6, wrong again
-	expect((flow.pop_events - basket_in_noise_before) >= 3 and flow.state_name() == "feedback", "2nd wrong attempt registered immediately on overshoot")
-	await create_timer(2.0).timeout
-	expect((flow.basket_zone.get_child(0).get_node("Ghost") as Label).visible, "tier-2 ghost numeral after 2nd wrong")
-	for i in 2: flow.debug_drag_one("TrayDropZone")
-	expect(flow.basket_count == 7 and flow.basket_row.visible and not flow.equation_label.visible, "2 out → 7/7, live interaction stays in basket squares until Done")
+	flow.debug_drag_one("TrayDropZone")  # 3rd out → 6, undershoots — but no auto-resolve
+	expect(flow.basket_count == 6 and flow.state_name() == "exercise", "dragging past the target does NOT auto-resolve for subtraction either")
+	flow.debug_drag_one_from(flow.tray_items, "BasketDropZone")  # drag one back from tray to basket (undo)
+	expect(flow.basket_count == 7 and flow.tray_items.get_child_count() == 2, "dragging a tray item back to the basket undoes one removal")
 	flow.debug_done()
-	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "Done replaces basket UI with equation as a separate second stage")
+	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "Done at the correct count reveals the equation as a second stage")
 	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
 	await create_timer(2.0).timeout
 	expect(world.get_phase("mae") == 2, "phase 2 done")
+
+	# Hint button (phases 1-2): opt-in only, tracked per exercise.
+	flow.start(mae)
+	flow.advance_dialogue(); flow.advance_dialogue()
+	expect(flow.exercise.mode == "array", "phase 3 is multiplication (array) — hint button hidden for this mode")
+	expect(not flow.hint_btn.visible, "hint button only shows for basket phases 1-2")
+	# Temporarily rewind to phase 1 just to exercise the hint button on a
+	# basket exercise, then restore phase 2 (Mae's real progress at this
+	# point in the suite) so the phase 3/4 tests below continue correctly.
+	world.npc_phase["mae"] = 0
+	flow.start(mae)
+	flow.advance_dialogue(); flow.advance_dialogue()
+	expect(flow.hint_btn.visible and not flow.hint_btn.disabled, "hint button visible and enabled at the start of a basket exercise")
+	expect(flow.hints_used_this_exercise == 0, "no hints used yet")
+	flow.debug_hint()
+	expect(flow.hints_used_this_exercise == 1 and flow.hint_btn.disabled, "requesting a hint increments the per-exercise counter and disables re-request")
+	expect(flow.hint_label.visible, "hint text shown on request")
+	expect(flow.basket_items.get_child(0).get_node_or_null("CountBadge") != null, "hint numbers the pictured basket items for counting support")
+	world.npc_phase["mae"] = 2
 
 	# phase 3 multiplication: build the array physically, no typed answer
 	flow.start(mae)
