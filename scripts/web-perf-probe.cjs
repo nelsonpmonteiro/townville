@@ -258,12 +258,85 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   check('player moves again after loop', s2.tile[0] !== s.tile[0] || s2.tile[1] !== s.tile[1], `${s.tile}→${s2.tile}`);
   await page.screenshot({ path: '/tmp/tv-after-loop.png' });
 
+  // ---------- Volume popover: real clicks + real slider drags ----------
+  let rv = await rects(page);
+  check('speaker icon present in the HUD', !!rv.volume_button);
+  await clickRect(page, rv.volume_button);
+  s = await state(page);
+  check('clicking the speaker opens the volume panel', s.audio.panel_open === true);
+  await page.screenshot({ path: '/tmp/tv-volume-panel.png' });
+  rv = await rects(page);
+  check('panel exposes two separate sliders', !!rv.volume_music_slider && !!rv.volume_sfx_slider);
+  // Drag the MUSIC knob to the far left; SFX must not move with it.
+  const sfxBefore = s.audio.sfx;
+  {
+    const r = rv.volume_music_slider;
+    const a = await toPage(page, r[0] + r[2] / 2, r[1] + r[3] / 2);
+    const b = await toPage(page, r[0] + 2, r[1] + r[3] / 2);
+    await page.mouse.move(a.x, a.y); await page.mouse.down();
+    await page.mouse.move(b.x, b.y); await page.mouse.up(); await sleep(300);
+  }
+  s = await state(page);
+  check('dragging the music slider lowers music only',
+    s.audio.music < 0.2 && Math.abs(s.audio.sfx - sfxBefore) < 0.001,
+    `music=${s.audio.music} sfx=${s.audio.sfx}`);
+  const musicAfter = s.audio.music;
+  // ...and the mirror case on the SFX knob.
+  {
+    const r = rv.volume_sfx_slider;
+    const a = await toPage(page, r[0] + r[2] / 2, r[1] + r[3] / 2);
+    const b = await toPage(page, r[0] + 2, r[1] + r[3] / 2);
+    await page.mouse.move(a.x, a.y); await page.mouse.down();
+    await page.mouse.move(b.x, b.y); await page.mouse.up(); await sleep(300);
+  }
+  s = await state(page);
+  check('dragging the sfx slider lowers effects only',
+    s.audio.sfx < 0.2 && Math.abs(s.audio.music - musicAfter) < 0.001,
+    `music=${s.audio.music} sfx=${s.audio.sfx}`);
+  // Restore audible levels and confirm music is actually running.
+  await cmd(page, 'volume_set 0.5 0.8'); await sleep(300);
+  s = await state(page);
+  check('background music is playing', s.audio.music_playing === true);
+  await clickRect(page, (await rects(page)).volume_button);
+  s = await state(page);
+  check('clicking the speaker again closes the panel', s.audio.panel_open === false);
+
   // ---------- F1 editor still works ----------
   await page.keyboard.press('F1'); await sleep(400); s = await state(page);
   check('F1 → editor + grid', s.edit_mode && s.grid_visible);
   await page.screenshot({ path: '/tmp/tv-editor.png' });
   await page.keyboard.press('F1'); await sleep(300); s = await state(page);
   check('F1 again → grid hidden', !s.edit_mode && !s.grid_visible);
+
+  // ---------- Restart button: confirm modal, cancel is safe, confirm reboots ----------
+  let rrs = await rects(page);
+  check('restart icon present in the top-left', !!rrs.restart_button,
+    rrs.restart_button ? `at ${rrs.restart_button[0]},${rrs.restart_button[1]}` : '');
+  check('restart icon is actually top-left', rrs.restart_button[0] < 240 && rrs.restart_button[1] < 160);
+  await clickRect(page, rrs.restart_button);
+  s = await state(page);
+  check('clicking restart opens the confirm modal (does NOT restart)',
+    s.restart_modal_open === true && s.seen_onboarding === true);
+  await page.screenshot({ path: '/tmp/tv-restart-modal.png' });
+  rrs = await rects(page);
+  check('modal offers confirm and cancel', !!rrs.restart_confirm && !!rrs.restart_cancel);
+  // Cancel must leave the session exactly as it was.
+  const phasesBefore = JSON.stringify(s.phases);
+  await clickRect(page, rrs.restart_cancel);
+  s = await state(page);
+  check('Cancel closes the modal and keeps progress',
+    s.restart_modal_open === false && s.seen_onboarding === true &&
+    JSON.stringify(s.phases) === phasesBefore);
+  // Confirm wipes the session and drops the player back on onboarding.
+  await clickRect(page, (await rects(page)).restart_button);
+  await sleep(200);
+  await clickRect(page, (await rects(page)).restart_confirm);
+  s = await waitState(page, s => s.onboarding && s.onboarding.active, 8000, 'restart -> onboarding');
+  check('Confirm restarts the session back to onboarding',
+    s.onboarding.active === true && s.seen_onboarding === false &&
+    Object.values(s.phases).every(p => p === 0),
+    `phases=${JSON.stringify(s.phases)}`);
+  await page.screenshot({ path: '/tmp/tv-restart-onboarding.png' });
 
   const errs = logs.filter(l => /error|pageerror/i.test(l) && !/GL Driver/.test(l));
   console.log(`FPS idle=${R.fps_idle} moving=${R.fps_moving}  console_errors=${errs.length}`);

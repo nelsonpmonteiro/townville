@@ -6,6 +6,9 @@ const PlayerScript = preload("res://scripts/player.gd")
 const MapEditorScript = preload("res://scripts/editor/simple_map_editor.gd")
 const InteractionFlowScript = preload("res://scripts/ui/interaction_flow.gd")
 const OnboardingScript = preload("res://scripts/ui/onboarding.gd")
+const VolumeControlScript = preload("res://scripts/ui/volume_control.gd")
+const MusicPlayerScript = preload("res://scripts/ui/music_player.gd")
+const RestartControlScript = preload("res://scripts/ui/restart_control.gd")
 
 var world
 var player
@@ -25,6 +28,9 @@ var hud_layer: CanvasLayer
 var flow: CanvasLayer
 var building_progress := {}  # building_id -> Label overlay
 var onboarding: CanvasLayer
+var volume_control: CanvasLayer
+var restart_control: CanvasLayer
+var music_player: AudioStreamPlayer
 
 func _ready() -> void:
 	build_world()
@@ -64,6 +70,8 @@ func _publish_js_state() -> void:
 		"walkable": _walkable_rows(),
 		"onboarding": onboarding.debug_state() if onboarding else {},
 		"seen_onboarding": OnboardingScript.has_seen_onboarding(),
+		"audio": _audio_state(),
+		"restart_modal_open": restart_control.modal_open if restart_control else false,
 	}
 	JavaScriptBridge.eval("window.__townville_state=" + JSON.stringify(d) + ";", true)
 	# Command channel for the browser probe: window.__townville_cmd = "..."
@@ -99,21 +107,54 @@ func _run_probe_cmd(cmd: String) -> void:
 				r["submit"] = _rect(flow.submit_btn)
 			if flow and flow.state == flow.State.DIALOGUE:
 				r["dialogue_box"] = _rect(flow.dialogue_screen.get_node("DialogueBox"))
+			if volume_control:
+				r["volume_button"] = _rect(volume_control.button)
+				if volume_control.panel_open:
+					r["volume_music_slider"] = _rect(volume_control.music_slider)
+					r["volume_sfx_slider"] = _rect(volume_control.sfx_slider)
+			if restart_control:
+				r["restart_button"] = _rect(restart_control.button)
+				if restart_control.modal_open:
+					r["restart_confirm"] = _rect(restart_control.confirm_button)
+					r["restart_cancel"] = _rect(restart_control.cancel_button)
 			JavaScriptBridge.eval("window.__townville_rects=" + JSON.stringify(r) + ";", true)
 		"drag_one":
 			flow.debug_drag_one(parts[1])
 		"done":
 			flow.debug_done()
+		"hint":
+			flow.debug_hint()
 		"submit":
 			flow.debug_submit(parts[1])
 		"advance":
 			flow.advance_dialogue()
 		"onboard_reset":
 			OnboardingScript.reset_save()
+		"volume_toggle":
+			if volume_control:
+				volume_control.toggle_panel()
+		"volume_set":
+			# volume_set <music 0..1> <sfx 0..1>
+			if volume_control and parts.size() >= 3:
+				volume_control.set_levels(float(parts[1]), float(parts[2]))
 
 func _rect(c: Control) -> Array:
 	var g := c.get_global_rect()
 	return [g.position.x, g.position.y, g.size.x, g.size.y]
+
+## Volume popover + bus levels, exposed so the browser probe can verify that the
+## two sliders move their own bus and nothing else.
+func _audio_state() -> Dictionary:
+	if not volume_control:
+		return {}
+	return {
+		"panel_open": volume_control.panel_open,
+		"music": volume_control.music_level,
+		"sfx": volume_control.sfx_level,
+		"music_db": AudioServer.get_bus_volume_db(maxi(AudioServer.get_bus_index("Music"), 0)),
+		"sfx_db": AudioServer.get_bus_volume_db(maxi(AudioServer.get_bus_index("SFX"), 0)),
+		"music_playing": music_player.is_music_playing() if music_player else false,
+	}
 
 func build_world() -> void:
 	if built:
@@ -291,6 +332,19 @@ func add_hud() -> void:
 	dialogue_label.visible = false
 	layer.add_child(dialogue_label)
 	_build_info_tooltip(layer)
+	_build_audio()
+
+## Background music + the volume popover live outside the HUD layer so they stay
+## reachable while the HUD is hidden (onboarding, map editor).
+func _build_audio() -> void:
+	music_player = MusicPlayerScript.new()
+	add_child(music_player)
+	volume_control = VolumeControlScript.new()
+	volume_control.name = "VolumeControl"
+	add_child(volume_control)
+	restart_control = RestartControlScript.new()
+	restart_control.name = "RestartControl"
+	add_child(restart_control)
 
 ## Bottom-right "?" icon button that opens/closes a tooltip panel with the
 ## movement/interact instructions and the journey goal — replaces the two
@@ -384,8 +438,15 @@ func _maybe_start_onboarding() -> void:
 	add_child(onboarding)
 	if OnboardingScript.has_seen_onboarding():
 		return
+	# Hide the HUD *and* the volume popover behind the title cards, but leave the
+	# music player running so the farm theme plays under the onboarding.
 	if hud_layer: hud_layer.visible = false
-	onboarding.finished.connect(func(): if hud_layer: hud_layer.visible = true)
+	if volume_control: volume_control.visible = false
+	if restart_control: restart_control.visible = false
+	onboarding.finished.connect(func():
+		if hud_layer: hud_layer.visible = true
+		if volume_control: volume_control.visible = true
+		if restart_control: restart_control.visible = true)
 	onboarding.start()
 
 # --- Building progress overlay: "1/4" … "4/4 ✓" above each NPC's building ---
@@ -466,7 +527,17 @@ func _process(_delta: float) -> void:
 	else:
 		prompt_label.text = ""
 
+## Mouse gestures unlock web audio too — the whole basket UI is click-driven,
+## so a player who never touches the keyboard still gets music.
+func _input(event: InputEvent) -> void:
+	if music_player and event is InputEventMouseButton and event.pressed:
+		music_player.kickstart()
+
 func _unhandled_key_input(event: InputEvent) -> void:
+	# Browsers keep the audio context suspended until the first real user
+	# gesture, so the music started at _ready() is silent until one arrives.
+	if event.pressed and music_player:
+		music_player.kickstart()
 	if event.pressed and not event.echo and event.keycode == KEY_HOME:
 		_toggle_fps()
 		get_viewport().set_input_as_handled()
@@ -476,6 +547,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			map_editor.toggle()
 			if hud_layer:
 				hud_layer.visible = not map_editor.edit_mode
+			if volume_control:
+				volume_control.visible = not map_editor.edit_mode
+			if restart_control:
+				restart_control.visible = not map_editor.edit_mode
 		get_viewport().set_input_as_handled()
 		return
 	if map_editor and map_editor.edit_mode:

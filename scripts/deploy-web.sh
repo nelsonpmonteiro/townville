@@ -13,7 +13,7 @@ echo "== 0. static UI glyph guard"
 python3 "$ROOT/scripts/check-ui-glyphs.py"
 
 echo "== 1. headless suites"
-for t in tests/test_runner.gd tests/test_editor_delete.gd tests/test_editor_move.gd tests/test_depth_order.gd; do
+for t in tests/test_runner.gd tests/test_editor_delete.gd tests/test_editor_move.gd tests/test_depth_order.gd tests/test_audio.gd tests/test_restart.gd; do
   "$GODOT" --headless --path "$ROOT/godot" --script "$t" 2>&1 | grep -qE "ALL TESTS PASSED" && echo "   $t OK" || { echo "   $t FAILED"; exit 1; }
 done
 
