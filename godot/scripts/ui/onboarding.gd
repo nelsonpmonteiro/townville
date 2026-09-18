@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Onboarding - Title -> 3 How-to-Play cards -> fade -> map.
+## Onboarding - Title -> 2 How-to-Play cards -> fade -> map.
 ## Enter/Space/Right advances; Left/Backspace returns; taps use the visible controls.
 ## Runs as an overlay over the already-built world so the farm art is the title background.
 
@@ -8,7 +8,6 @@ const DirectionKeysScript := preload("res://scripts/ui/direction_keys.gd")
 const CARDS := [
 	["", "Use these keys to walk around Townville!"],
 	["[ E ]", "Walk up to a friend and press E to talk!"],
-	["LOCKED  ->  OPEN", "Help everyone solve their problems to unlock the whole farm!"],
 ]
 
 signal finished

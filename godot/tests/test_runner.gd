@@ -278,13 +278,12 @@ func _initialize() -> void:
 	ob.advance()
 	expect(ob.card_text.text.contains("press E"), "card 2 = interaction")
 	ob.back()
-	expect(ob.step == 0 and ob.direction_keys.visible, "Back returns to the previous onboarding card")
+	expect(ob.card_text.text.contains("these keys") and ob.direction_keys.visible, "Back returns to the previous onboarding card")
 	ob.advance()
+	expect(ob.next_button.text == "Play", "interaction card is now the final onboarding card")
 	ob.advance()
-	expect(ob.card_text.text.contains("unlock the whole farm"), "card 3 = goal")
-	ob.advance()
-	await create_timer(0.8).timeout
-	expect(not ob.active and not ob.visible, "after card 3 → fade out, inactive")
+	await create_timer(0.6).timeout
+	expect(not ob.active and not ob.visible, "after card 2 → fade out, inactive")
 	expect(OnboardScript.has_seen_onboarding(), "onboarding flag persisted to user://save_data.cfg")
 	ob.queue_free()
 	OnboardScript.reset_save()

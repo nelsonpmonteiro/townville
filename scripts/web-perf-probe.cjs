@@ -103,11 +103,8 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await page.keyboard.press('ArrowRight'); await sleep(250); s = await state(page);
   check('Right → card 2 interaction', /press E/.test(s.onboarding.card_text));
   await page.screenshot({ path: '/tmp/tv-onboard-card2.png' });
-  await page.keyboard.press('Space'); await sleep(250); s = await state(page);
-  check('Space → card 3 goal', /unlock the whole farm/.test(s.onboarding.card_text));
-  await page.screenshot({ path: '/tmp/tv-onboard-card3.png' });
-  await page.keyboard.press('Enter'); await sleep(900); s = await state(page);
-  check('card 3 tap → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
+  await page.keyboard.press('Space'); await sleep(900); s = await state(page);
+  check('final card → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
   await hold(page, 'ArrowRight', 400); s = await state(page);
   check('player at spawn moves after onboarding', s.tile[0] > t0[0], `${t0}→${s.tile}`);
 
