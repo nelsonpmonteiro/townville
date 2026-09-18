@@ -28,11 +28,11 @@ export interface WorldProp {
 export const BLOCKING_PROP_TYPES: PropType[] = ['tree', 'stone', 'well'];
 
 export const WORLD1_PROPS: WorldProp[] = [
-  { type: 'tree', col: 9, row: 5, targetHeightTiles: 2.3 },
+  { type: 'tree', col: 9, row: 4, targetHeightTiles: 2.3 },
   { type: 'tree', col: 21, row: 4, targetHeightTiles: 2.3 },
   { type: 'tree', col: 29, row: 10, targetHeightTiles: 2.3 },
   { type: 'bush', col: 3, row: 10, targetHeightTiles: 0.65 },
-  { type: 'bush', col: 10, row: 12, targetHeightTiles: 0.65 },
+  { type: 'bush', col: 10, row: 11, targetHeightTiles: 0.65 },
   { type: 'bush', col: 23, row: 15, targetHeightTiles: 0.65 },
   { type: 'bush', col: 19, row: 20, targetHeightTiles: 0.65 },
   { type: 'flower-yellow', col: 9, row: 13, targetHeightTiles: 0.4 },

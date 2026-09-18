@@ -12,7 +12,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'intro.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'Hi! Welcome to the farm! I'm Mae, and I take care of the chickens here.',
+      text: "Hi! Welcome to the farm! I'm Mae, and I take care of the chickens here.",
       next: 'intro.02',
     },
     'intro.02': {
@@ -39,7 +39,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'knows.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'That's great! Then you can help me right now!',
+      text: "That's great! Then you can help me right now!",
       next: 'quest_start',
     },
 
@@ -48,7 +48,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'unsure.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'Don't worry! I\'ll teach you. Counting is easy and fun!',
+      text: "Don't worry! I'll teach you. Counting is easy and fun!",
       next: 'teach.01',
     },
 
@@ -57,7 +57,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'teach.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'Counting is when we say how many things we have: 1, 2, 3, 4, 5... Let\'s practice!',
+      text: "Counting is when we say how many things we have: 1, 2, 3, 4, 5... Let\'s practice!",
       next: 'quest_start',
     },
 
@@ -66,7 +66,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'quest_start',
       type: 'end',
       speaker: 'Mae',
-      text: 'Let\'s go! Count how many chickens you see in the coop.',
+      text: "Let\'s go! Count how many chickens you see in the coop.",
     },
 
     // Success response
@@ -74,7 +74,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'success.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'That's right! You counted perfectly! 🎉',
+      text: "That's right! You counted perfectly! 🎉",
       next: 'success.02',
     },
     'success.02': {
@@ -96,7 +96,7 @@ export const MAE_PHASE_1: DialogueTree = {
       id: 'failure.01',
       type: 'text',
       speaker: 'Mae',
-      text: 'Hmm, that\'s not quite it... Let\'s try again, take your time.',
+      text: "Hmm, that\'s not quite it... Let\'s try again, take your time.",
       next: 'failure.02',
     },
     'failure.02': {

@@ -268,31 +268,33 @@ export default function App() {
             buildingStates={buildingStates}
           />
         </Animated.View>
+
+        {/* Dialogue System — nested inside the viewport container (not a
+            sibling of it) so the overlay's inset:0 centers against the
+            actual game viewport, not the browser window / letterbox. */}
+        {flow.kind === 'dialogue' && dialogueNode && (
+          <DialogueBox
+            node={dialogueNode}
+            onChoice={(nextNodeId) => dispatch({ type: 'ADVANCE', nodeId: nextNodeId })}
+            onNext={() => {
+              if (dialogueNode.next) dispatch({ type: 'ADVANCE', nodeId: dialogueNode.next });
+              else if (dialogueNode.type === 'end') dispatch({ type: 'ADVANCE', nodeId: dialogueNode.id });
+            }}
+            onSkip={() => dispatch({ type: 'CLOSE' })}
+          />
+        )}
+
+        {/* Quest System */}
+        {flow.kind === 'quest' && (
+          <QuestUI
+            quest={flow.quest}
+            onSubmit={(_answer, isCorrect) => dispatch({ type: 'ANSWER', correct: isCorrect })}
+            onCancel={() => dispatch({ type: 'CLOSE' })}
+            attempts={flow.attempts}
+            maxAttempts={flow.quest.maxAttempts ?? DEFAULT_MAX_ATTEMPTS}
+          />
+        )}
       </View>
-
-      {/* Dialogue System */}
-      {flow.kind === 'dialogue' && dialogueNode && (
-        <DialogueBox
-          node={dialogueNode}
-          onChoice={(nextNodeId) => dispatch({ type: 'ADVANCE', nodeId: nextNodeId })}
-          onNext={() => {
-            if (dialogueNode.next) dispatch({ type: 'ADVANCE', nodeId: dialogueNode.next });
-            else if (dialogueNode.type === 'end') dispatch({ type: 'ADVANCE', nodeId: dialogueNode.id });
-          }}
-          onSkip={() => dispatch({ type: 'CLOSE' })}
-        />
-      )}
-
-      {/* Quest System */}
-      {flow.kind === 'quest' && (
-        <QuestUI
-          quest={flow.quest}
-          onSubmit={(_answer, isCorrect) => dispatch({ type: 'ANSWER', correct: isCorrect })}
-          onCancel={() => dispatch({ type: 'CLOSE' })}
-          attempts={flow.attempts}
-          maxAttempts={flow.quest.maxAttempts ?? DEFAULT_MAX_ATTEMPTS}
-        />
-      )}
     </View>
   );
 }

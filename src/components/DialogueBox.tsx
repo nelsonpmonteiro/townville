@@ -1,10 +1,14 @@
-// DialogueBox component - displays NPC dialogue with typewriter effect
+// DialogueBox component - displays NPC dialogue with typewriter effect.
+// Per HERMES-dialogue-spec: centers inside the game VIEWPORT (not the
+// window), bottom-anchored, dims the map behind it, and exposes exactly
+// one gesture (tap the box) — no other tappable element on screen besides
+// the choice buttons that appear once the text has finished typing.
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Platform } from 'react-native';
-import { DialogueNode, DialogueChoice } from '../types/dialogue';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { DialogueNode } from '../types/dialogue';
 import { crossShadow } from '../utils/shadow';
 
-const TILE_SIZE = 48;
+const TYPEWRITER_SPEED_MS = 35;
 
 interface Props {
   node: DialogueNode;
@@ -13,26 +17,33 @@ interface Props {
   onSkip: () => void;
 }
 
-export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
+// Simple hash → consistent accent color per NPC (same approach as
+// NPCPlaceholder), used for the box border, speaker name, and portrait —
+// stands in for the world/NPC theme color until real art ships.
+function hashStringToHue(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  return Math.abs(hash % 360);
+}
+
+export default function DialogueBox({ node, onChoice, onNext }: Props) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const [charIndex, setCharIndex] = useState(0);
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  // Bounce animation for continue indicator (▼)
+  const accentColor = `hsl(${hashStringToHue(node.speaker)}, 55%, 45%)`;
+
+  // Bounce animation for continue indicator (▼) — only relevant once it's
+  // showing, but harmless to keep running.
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: -6,
-          duration: 400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: false,
-        }),
+        Animated.timing(bounceAnim, { toValue: -6, duration: 400, useNativeDriver: false }),
+        Animated.timing(bounceAnim, { toValue: 0, duration: 400, useNativeDriver: false }),
       ])
     );
     loop.start();
@@ -45,7 +56,7 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
       const timer = setTimeout(() => {
         setDisplayedText(node.text.slice(0, charIndex + 1));
         setCharIndex(charIndex + 1);
-      }, 30); // 30ms per character
+      }, TYPEWRITER_SPEED_MS);
       return () => clearTimeout(timer);
     } else {
       setIsComplete(true);
@@ -65,124 +76,140 @@ export default function DialogueBox({ node, onChoice, onNext, onSkip }: Props) {
     setIsComplete(true);
   };
 
-  const handleContinue = () => {
+  // The single gesture on the whole dialogue screen: 1st tap while typing
+  // reveals the full line; 2nd tap (already complete, no choices) advances.
+  // On the final 'end' node, onNext() itself decides whether to advance to
+  // another line or exit into the activity (see gameFlow.onAdvance).
+  const handleAdvance = () => {
     if (!isComplete) {
       handleSkipTypewriter();
     } else if (!node.choices) {
-      // Advance both 'text' nodes (has next) and 'end' nodes (flow decides)
       onNext();
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Dialogue box */}
-      <View style={styles.box}>
-        {/* Speaker name */}
-        <View style={styles.header}>
-          <Text style={styles.speaker}>{node.speaker}</Text>
-          <Pressable onPress={onSkip} style={styles.skipButton}>
-            <Text style={styles.skipText}>Skip ✕</Text>
-          </Pressable>
+    // Overlay: fills the existing viewport container (a child of it, not a
+    // new full-screen fixed layer) so it stays centered under letterboxing.
+    <View style={styles.overlay} pointerEvents="box-none">
+      <View style={styles.dim} pointerEvents="none" />
+      <Pressable onPress={handleAdvance} style={[styles.box, { borderColor: accentColor }]}>
+        {/* NPC portrait placeholder — fixed 100px, initial-on-color circle */}
+        <View style={[styles.portrait, { backgroundColor: accentColor }]}>
+          <Text style={styles.portraitInitial}>{node.speaker.charAt(0).toUpperCase()}</Text>
         </View>
 
-        {/* Dialogue text */}
-        <Pressable onPress={handleContinue} style={styles.textArea}>
+        <View style={styles.content}>
+          <Text style={[styles.speaker, { color: accentColor }]}>{node.speaker}</Text>
           <Text style={styles.text}>{displayedText}</Text>
-          {isComplete && !node.choices && (
-            <Animated.Text style={[styles.continueIndicator, { transform: [{ translateY: bounceAnim }] }]}>▼</Animated.Text>
-          )}
-        </Pressable>
 
-        {/* Choices (for questions) */}
-        {isComplete && node.choices && (
-          <View style={styles.choicesContainer}>
-            {node.choices.map((choice, index) => (
-              <Pressable
-                key={index}
-                style={styles.choiceButton}
-                onPress={() => onChoice(choice.next, choice.isCorrect)}
-              >
-                <Text style={styles.choiceText}>{choice.text}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </View>
+          {isComplete && !node.choices && (
+            <Animated.Text
+              style={[styles.continueIndicator, { transform: [{ translateY: bounceAnim }] }]}
+            >
+              ▼
+            </Animated.Text>
+          )}
+
+          {/* Choices only render once the typewriter finishes, so they
+              never visually compete with text still being revealed. */}
+          {isComplete && node.choices && (
+            <View style={styles.choicesContainer}>
+              {node.choices.map((choice, index) => (
+                <Pressable
+                  key={index}
+                  style={[styles.choiceButton, { backgroundColor: accentColor }]}
+                  onPress={() => onChoice(choice.next, choice.isCorrect)}
+                >
+                  <Text style={styles.choiceText}>{choice.text}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     position: 'absolute',
-    bottom: 40,
-    left: 40,
-    right: 40,
-    zIndex: 100,
+    inset: 0,
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 32,
+    zIndex: 100,
+  },
+  dim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   box: {
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    borderRadius: 16,
-    padding: 24,
-    maxWidth: 800,
-    width: '100%',
-    borderWidth: 3,
-    borderColor: '#4a90e2',
-    ...crossShadow('0px 4px 8px rgba(0, 0, 0, 0.5)', {
+    width: '88%',
+    maxWidth: 640,
+    backgroundColor: '#FFF8EC', // warm cream, matches the game palette
+    borderRadius: 20,
+    borderWidth: 4,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+    ...crossShadow('0px 6px 12px rgba(0, 0, 0, 0.25)', {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.5,
-      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
     }),
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  portrait: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+  },
+  portraitInitial: {
+    color: '#fff',
+    fontSize: 44,
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+    position: 'relative',
   },
   speaker: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4a90e2',
-  },
-  skipButton: {
-    padding: 8,
-  },
-  skipText: {
-    color: '#999',
-    fontSize: 14,
-  },
-  textArea: {
-    minHeight: 80,
+    fontWeight: '800',
+    marginBottom: 6,
   },
   text: {
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#fff',
+    fontSize: 22,
+    lineHeight: 30,
+    color: '#3A2E1F',
   },
   continueIndicator: {
-    fontSize: 24,
-    color: '#4a90e2',
-    textAlign: 'right',
-    marginTop: 8,
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    fontSize: 18,
+    color: '#3A2E1F',
   },
   choicesContainer: {
-    marginTop: 20,
-    gap: 12,
+    marginTop: 16,
+    gap: 10,
   },
   choiceButton: {
-    backgroundColor: '#2c3e50',
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#4a90e2',
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   choiceText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
   },
 });

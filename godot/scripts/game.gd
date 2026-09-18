@@ -56,6 +56,7 @@ func _publish_js_state() -> void:
 		"grid_visible": grid_visible,
 		"flow": flow.debug_state() if flow else {},
 		"phases": world.npc_phase if world else {},
+		"npcs": _npc_tiles(),
 		"onboarding": onboarding.debug_state() if onboarding else {},
 		"seen_onboarding": OnboardingScript.has_seen_onboarding(),
 	}
@@ -328,6 +329,13 @@ func _on_phase_completed(npc_id: String, _phase: int) -> void:
 func _on_world_completed() -> void:
 	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown…"
 	dialogue_label.visible = true
+
+func _npc_tiles() -> Dictionary:
+	var d := {}
+	if world:
+		for n in world.NPCS:
+			d[n.id] = [n.tile.x, n.tile.y]
+	return d
 
 func _npc_by_id(id: String) -> Dictionary:
 	for n in world.NPCS:

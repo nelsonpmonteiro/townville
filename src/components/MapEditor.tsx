@@ -1,7 +1,11 @@
 // Map Editor - drag assets to correct positions
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, ImageStyle } from 'react-native';
 import { WorldMap, Building, EventPoint } from '../data/worldMaps';
+
+// react-native-web forwards DOM mouse events to <View>, but RN's ViewProps
+// doesn't declare them. Route through this helper so the editor typechecks.
+const webMouse = (h: Record<string, unknown>) => h as object;
 
 const TILE_SIZE = 48;
 const CHUNK_SIZE = 480;
@@ -202,8 +206,7 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
               borderColor: 'rgba(255, 255, 255, 0.1)',
               zIndex: 2,
             }}
-            onMouseDown={() => handleTileMouseDown(col, row)}
-            onMouseEnter={() => handleTileMouseEnter(col, row)}
+            {...webMouse({ onMouseDown: () => handleTileMouseDown(col, row), onMouseEnter: () => handleTileMouseEnter(col, row) })}
           />
         );
       }
@@ -218,12 +221,12 @@ export default function MapEditor({ world, onSave, onClose }: Props) {
 
     return (
       <>
-        <Image source={chunks.a1} style={[styles.chunk, { left: 0, top: 0 }]} />
-        <Image source={chunks.b1} style={[styles.chunk, { left: 480, top: 0 }]} />
-        <Image source={chunks.c1} style={[styles.chunk, { left: 960, top: 0 }]} />
-        <Image source={chunks.a2} style={[styles.chunk, { left: 0, top: 480 }]} />
-        <Image source={chunks.b2} style={[styles.chunk, { left: 480, top: 480 }]} />
-        <Image source={chunks.c2} style={[styles.chunk, { left: 960, top: 480 }]} />
+        <Image source={chunks.a1} style={[styles.chunk as ImageStyle, { left: 0, top: 0 }]} />
+        <Image source={chunks.b1} style={[styles.chunk as ImageStyle, { left: 480, top: 0 }]} />
+        <Image source={chunks.c1} style={[styles.chunk as ImageStyle, { left: 960, top: 0 }]} />
+        <Image source={chunks.a2} style={[styles.chunk as ImageStyle, { left: 0, top: 480 }]} />
+        <Image source={chunks.b2} style={[styles.chunk as ImageStyle, { left: 480, top: 480 }]} />
+        <Image source={chunks.c2} style={[styles.chunk as ImageStyle, { left: 960, top: 480 }]} />
       </>
     );
   };
@@ -258,13 +261,13 @@ ${buildingsCode}
 `;
 
     console.log('='.repeat(80));
-    console.log('POSIÇÕES E COLISÕES SALVAS - COPIE O CÓDIGO ABAIXO:');
+    console.log('POSITIONS AND COLLISIONS SAVED - COPY THE CODE BELOW:');
     console.log('='.repeat(80));
     console.log(fullCode);
     console.log('='.repeat(80));
     
     // Show visual feedback
-    alert('✅ Código copiado para o console!\n\nAbra o console do navegador (F12) e copie o código.');
+    alert('✅ Code copied to console!\n\nOpen the browser console (F12) and copy the code.');
   };
 
   return (
@@ -285,7 +288,7 @@ ${buildingsCode}
             style={[styles.button, editMode === 'collision' && styles.activeButton]}
             onPress={() => setEditMode('collision')}
           >
-            <Text style={styles.buttonText}>🚧 Colisão</Text>
+            <Text style={styles.buttonText}>🚧 Collision</Text>
           </Pressable>
         </View>
 
@@ -296,13 +299,13 @@ ${buildingsCode}
               style={[styles.button, paintMode === '#' && styles.activeButton]}
               onPress={() => setPaintMode('#')}
             >
-              <Text style={styles.buttonText}>🚫 Bloquear</Text>
+              <Text style={styles.buttonText}>🚫 Block</Text>
             </Pressable>
             <Pressable
               style={[styles.button, paintMode === '.' && styles.activeButton]}
               onPress={() => setPaintMode('.')}
             >
-              <Text style={styles.buttonText}>✅ Liberar</Text>
+              <Text style={styles.buttonText}>✅ Allow</Text>
             </Pressable>
           </View>
         )}
@@ -324,9 +327,8 @@ ${buildingsCode}
       {/* Map canvas */}
       <View
         style={styles.canvas}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        {...webMouse({ onMouseMove: handleMouseMove, onMouseUp: handleMouseUp })}
+        {...webMouse({ onMouseLeave: handleMouseUp })}
       >
         {/* Map background (chunks) */}
         {renderMapBackground()}
@@ -354,7 +356,7 @@ ${buildingsCode}
                   opacity: dragging?.id === building.id ? 0.7 : 1,
                 },
               ]}
-              onMouseDown={(e) => handleBuildingDragStart(building, e)}
+              {...webMouse({ onMouseDown: (e: unknown) => handleBuildingDragStart(building, e as never) })}
             >
               <Text style={styles.label}>{building.sprite}</Text>
               <Text style={styles.coords}>
@@ -380,7 +382,7 @@ ${buildingsCode}
                   opacity: dragging?.id === ep.id ? 0.7 : 1,
                 },
               ]}
-              onMouseDown={(e) => handleEventPointDragStart(ep, e)}
+              {...webMouse({ onMouseDown: (e: unknown) => handleEventPointDragStart(ep, e as never) })}
             >
               <Text style={styles.epCoords}>
                 {ep.npcId}
@@ -396,22 +398,22 @@ ${buildingsCode}
         {editMode === 'assets' ? (
           <>
             <Text style={styles.instructionText}>
-              🏠 MODO ASSETS: Arraste prédios roxos e event points dourados
+              🏠 ASSETS MODE: Drag purple buildings and gold event points
             </Text>
             <Text style={styles.instructionText}>
-              💾 Clique em "Salvar" e copie o código do console
+              💾 Click "Save" and copy the code from the console
             </Text>
           </>
         ) : (
           <>
             <Text style={styles.instructionText}>
-              🚧 MODO COLISÃO: Clique e arraste para pintar tiles
+              🚧 COLLISION MODE: Click and drag to paint tiles
             </Text>
             <Text style={styles.instructionText}>
-              🚫 VERMELHO = Bloqueado (#) | ✅ VERDE = Andável (.)
+              🚫 RED = Blocked (#) | ✅ GREEN = Walkable (.)
             </Text>
             <Text style={styles.instructionText}>
-              💾 Clique em "Salvar" para exportar a matriz de colisão
+              💾 Click "Save" to export the collision matrix
             </Text>
           </>
         )}
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'move',
+    ...({ cursor: 'move' } as object),
     zIndex: 100,
   },
   label: {
@@ -510,7 +512,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'move',
+    ...({ cursor: 'move' } as object),
     zIndex: 101,
   },
   epCoords: {
