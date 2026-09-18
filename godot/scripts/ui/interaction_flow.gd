@@ -106,6 +106,9 @@ var feedback_added_items: HFlowContainer
 signal phase_completed(npc_id: String, phase: int)
 signal world_completed
 
+## One ending per session (see _maybe_finish_world).
+var ending_shown := false
+
 static func _panel_style(bg: Color, border: Color = Color("#3a2a1a")) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -1170,8 +1173,7 @@ func _complete_exercise() -> void:
 	world.advance_phase(npc.id)
 	phase_completed.emit(npc.id, done_phase)
 	set_state(State.MAP)
-	if exercise.get("final", false) and world.is_world_complete():
-		world_completed.emit()
+	_maybe_finish_world()
 
 func _resolve(correct: bool) -> void:
 	last_correct = correct
@@ -1197,11 +1199,30 @@ func _resolve(correct: bool) -> void:
 		# would let set_state(MAP) immediately hide the ending dialogue that
 		# the listener just opened.
 		set_state(State.MAP)
-		if exercise.get("final", false) and world.is_world_complete():
-			world_completed.emit()
+		_maybe_finish_world()
 	else:
 		_open_exercise()
 		_apply_hints()
+
+## The ending is a one-shot celebration for finishing the WHOLE farm.
+##
+## Two separate bugs used to fire it repeatedly:
+##   1. it keyed off Old Mac's "final" exercise alone, so finishing him while
+##      other NPCs were unfinished (or revisiting him) replayed the ending;
+##   2. nothing recorded that it had already been shown, so every later
+##      completion — including the last phase of any NPC after a restart —
+##      could emit it again.
+##
+## Now it needs the whole world complete AND fires at most once per session.
+## A restart rebuilds the scene with a fresh WorldData and a fresh flow, so
+## this flag resets exactly when the progress it guards resets.
+func _maybe_finish_world() -> void:
+	if ending_shown:
+		return
+	if not world.is_world_complete():
+		return
+	ending_shown = true
+	world_completed.emit()
 
 func _apply_hints() -> void:
 	if wrong_attempts >= 1:

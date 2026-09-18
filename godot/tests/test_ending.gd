@@ -125,6 +125,24 @@ func _initialize() -> void:
 	expect(flow.state == flow.State.DIALOGUE,
 		"an NPC can still be talked to after the ending (world not locked)")
 
+	# --- never replays: finishing another phase later must not re-open it ---
+	# Mae's last phase is rolled back and replayed while the farm is otherwise
+	# complete; the ending already happened, so it must stay closed.
+	game.world.npc_phase["mae"] = 3
+	flow.start(mae)
+	flow.advance_dialogue(); flow.advance_dialogue()
+	await process_frame
+	if flow.state == flow.State.EXERCISE:
+		var mae_each: int = int(flow.exercise.answer)
+		if flow.share_zones.size() > 0:
+			for group_index in flow.share_zones.size():
+				for _i in mae_each:
+					flow.drop_into("ShareZone_%d" % group_index, flow.visual_source_items.get_child(0))
+			flow._on_done()
+			flow._on_done()
+			await process_frame
+	expect(ending_emissions[0] == 1, "the ending never replays once it has been shown")
+
 	game.queue_free()
 	await process_frame
 	print("ALL TESTS PASSED" if failures == 0 else "TEST FAILURES: %d" % failures)
