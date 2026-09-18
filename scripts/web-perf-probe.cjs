@@ -47,13 +47,37 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   const logs = [];
   page.on('console', m => logs.push(`[${m.type()}] ${m.text()}`));
   page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
-  await page.goto('http://localhost:8090/index.html', { waitUntil: 'load' });
-  await page.waitForTimeout(12000);
   const R = {};
   const check = (name, ok, extra = '') => { R[name] = ok; console.log((ok ? 'PASS' : 'FAIL') + ': ' + name + (extra ? '  ' + extra : '')); };
 
-  R.fps_idle = +(await rafFps(page, 3)).toFixed(1);
+  // ---------- Onboarding on a genuinely fresh state (?reset=1 deletes user://save_data.cfg) ----------
+  await page.goto('http://localhost:8090/index.html?reset=1', { waitUntil: 'load' });
+  await page.waitForTimeout(12000);
   let s = await state(page);
+  check('fresh load → onboarding title screen', s.onboarding.active && s.onboarding.title_visible && !s.seen_onboarding);
+  await page.screenshot({ path: '/tmp/tv-onboard-title.png' });
+  const t0 = s.tile.slice();
+  await hold(page, 'ArrowRight', 500); s = await state(page);
+  check('movement blocked under onboarding (key consumed as "advance")', s.tile[0] === t0[0] && s.tile[1] === t0[1] && s.onboarding.step === 0);
+  check('card 1 movement', /arrow keys/.test(s.onboarding.card_text));
+  await page.mouse.click(480, 320); await sleep(250); s = await state(page);
+  check('tap → card 2 interaction', /press E/.test(s.onboarding.card_text));
+  await page.screenshot({ path: '/tmp/tv-onboard-card2.png' });
+  await page.keyboard.press('Space'); await sleep(250); s = await state(page);
+  check('any key → card 3 goal', /unlock the whole farm/.test(s.onboarding.card_text));
+  await page.mouse.click(480, 320); await sleep(900); s = await state(page);
+  check('card 3 tap → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
+  await hold(page, 'ArrowRight', 400); s = await state(page);
+  check('player at spawn moves after onboarding', s.tile[0] > t0[0], `${t0}→${s.tile}`);
+
+  // ---------- Repeat visit: no ?reset → straight to map ----------
+  await page.goto('http://localhost:8090/index.html', { waitUntil: 'load' });
+  await page.waitForTimeout(12000);
+  s = await state(page);
+  check('repeat launch skips onboarding', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
+
+  R.fps_idle = +(await rafFps(page, 3)).toFixed(1);
+  s = await state(page);
   check('boot in MAP, grid hidden', s.flow.state === 'map' && !s.grid_visible, `tile=${s.tile}`);
   await page.$('canvas').then(c => c.click({ position: { x: 480, y: 320 } }));
   await hold(page, 'ArrowRight', 700);

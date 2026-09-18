@@ -5,6 +5,7 @@ const MapRendererScript = preload("res://scripts/map_renderer.gd")
 const PlayerScript = preload("res://scripts/player.gd")
 const MapEditorScript = preload("res://scripts/editor/simple_map_editor.gd")
 const InteractionFlowScript = preload("res://scripts/ui/interaction_flow.gd")
+const OnboardingScript = preload("res://scripts/ui/onboarding.gd")
 
 var world
 var player
@@ -19,10 +20,12 @@ var hud_layer: CanvasLayer
 # Interaction flow (dialogue → exercise → feedback), one screen at a time
 var flow: CanvasLayer
 var building_progress := {}  # building_id -> Label overlay
+var onboarding: CanvasLayer
 
 func _ready() -> void:
 	build_world()
 	_install_js_bridge()
+	_maybe_start_onboarding()
 	if "--capture" in OS.get_cmdline_user_args():
 		capture_after_render.call_deferred()
 
@@ -53,6 +56,8 @@ func _publish_js_state() -> void:
 		"grid_visible": grid_visible,
 		"flow": flow.debug_state() if flow else {},
 		"phases": world.npc_phase if world else {},
+		"onboarding": onboarding.debug_state() if onboarding else {},
+		"seen_onboarding": OnboardingScript.has_seen_onboarding(),
 	}
 	JavaScriptBridge.eval("window.__townville_state=" + JSON.stringify(d) + ";", true)
 	# Command channel for the browser probe: window.__townville_cmd = "..."
@@ -88,6 +93,8 @@ func _run_probe_cmd(cmd: String) -> void:
 			flow.debug_submit(parts[1])
 		"advance":
 			flow.advance_dialogue()
+		"onboard_reset":
+			OnboardingScript.reset_save()
 
 func _rect(c: Control) -> Array:
 	var g := c.get_global_rect()
@@ -266,7 +273,25 @@ func add_interaction_flow() -> void:
 	_build_building_progress()
 
 func is_input_locked() -> bool:
-	return flow != null and flow.is_locked()
+	return (flow != null and flow.is_locked()) or (onboarding != null and onboarding.active)
+
+# --- Onboarding: first launch only (user://save_data.cfg). Fresh-state test:
+#     desktop  --reset-save   |   web  index.html?reset=1
+func _maybe_start_onboarding() -> void:
+	var reset := "--reset-save" in OS.get_cmdline_user_args()
+	if OS.has_feature("web"):
+		var q = JavaScriptBridge.eval("/[?&]reset=1/.test(location.search)?1:0", true)
+		reset = reset or (q is float and q > 0) or (q is int and q > 0)
+	if reset:
+		OnboardingScript.reset_save()
+	onboarding = OnboardingScript.new()
+	onboarding.name = "Onboarding"
+	add_child(onboarding)
+	if OnboardingScript.has_seen_onboarding():
+		return
+	if hud_layer: hud_layer.visible = false
+	onboarding.finished.connect(func(): if hud_layer: hud_layer.visible = true)
+	onboarding.start()
 
 # --- Building progress overlay: "1/4" … "4/4 ✓" above each NPC's building ---
 func _build_building_progress() -> void:
@@ -337,6 +362,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if map_editor and map_editor.edit_mode:
+		return
+	if onboarding and onboarding.active:
 		return
 	if not (event.pressed and not event.echo):
 		return

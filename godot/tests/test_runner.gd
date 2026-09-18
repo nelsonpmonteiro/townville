@@ -206,6 +206,28 @@ func _initialize() -> void:
 	flow.queue_free()
 	world.npc_phase.clear()
 
+	# --- Onboarding: first launch shows title + 3 cards, flag persists, repeat skips ---
+	var OnboardScript = load("res://scripts/ui/onboarding.gd")
+	OnboardScript.reset_save()
+	expect(not OnboardScript.has_seen_onboarding(), "fresh state: onboarding not seen")
+	var ob = OnboardScript.new()
+	root.add_child(ob)
+	await process_frame
+	ob.start()
+	expect(ob.active and ob.title_box.visible and not ob.card_box.visible, "title screen first")
+	ob.advance()
+	expect(ob.card_box.visible and ob.card_text.text.contains("arrow keys"), "card 1 = movement")
+	ob.advance()
+	expect(ob.card_text.text.contains("press E"), "card 2 = interaction")
+	ob.advance()
+	expect(ob.card_text.text.contains("unlock the whole farm"), "card 3 = goal")
+	ob.advance()
+	await create_timer(0.8).timeout
+	expect(not ob.active and not ob.visible, "after card 3 → fade out, inactive")
+	expect(OnboardScript.has_seen_onboarding(), "onboarding flag persisted to user://save_data.cfg")
+	ob.queue_free()
+	OnboardScript.reset_save()
+
 	var movement_path := "res://scripts/player_movement.gd"
 	expect(FileAccess.file_exists(movement_path), "player movement implementation exists")
 	if FileAccess.file_exists(movement_path):
