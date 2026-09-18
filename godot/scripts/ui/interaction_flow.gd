@@ -65,7 +65,10 @@ var basket_counter: Label
 var tray_zone: PanelContainer
 var tray_items: HBoxContainer
 var tray_label: Label
-var equation_label: Label          # words-first + number sentence, shown on reaching target
+var equation_label: Label          # number sentence for subtraction/multiplication/division
+var addition_summary: HBoxContainer # visual existing-items + added-items feedback
+var addition_existing_items: HFlowContainer
+var addition_added_items: HFlowContainer
 var done_btn: Button               # basket modes: child submits when finished
 var text_row: VBoxContainer        # text layout root
 var answer_input: LineEdit
@@ -88,6 +91,9 @@ var bump_events := 0
 var feedback_screen: Control
 var result_label: Label
 var result_icon: Label
+var feedback_addition_summary: HBoxContainer
+var feedback_existing_items: HFlowContainer
+var feedback_added_items: HFlowContainer
 
 signal phase_completed(npc_id: String, phase: int)
 signal world_completed
@@ -343,6 +349,53 @@ func _build_exercise() -> void:
 	equation_label.visible = false
 	v.add_child(equation_label)
 
+	addition_summary = HBoxContainer.new()
+	addition_summary.name = "AdditionVisualSummary"
+	addition_summary.alignment = BoxContainer.ALIGNMENT_CENTER
+	addition_summary.add_theme_constant_override("separation", 14)
+	addition_summary.visible = false
+	v.add_child(addition_summary)
+
+	var existing_group := VBoxContainer.new()
+	existing_group.alignment = BoxContainer.ALIGNMENT_CENTER
+	addition_summary.add_child(existing_group)
+	var existing_title := Label.new()
+	existing_title.text = "Already in the basket"
+	existing_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	existing_title.add_theme_font_size_override("font_size", 15)
+	existing_group.add_child(existing_title)
+	var existing_panel := PanelContainer.new()
+	existing_panel.custom_minimum_size = Vector2(260, 58)
+	existing_panel.add_theme_stylebox_override("panel", _panel_style(Color("#6b4a2b"), Color("#a77a4b")))
+	existing_group.add_child(existing_panel)
+	addition_existing_items = HFlowContainer.new()
+	addition_existing_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	addition_existing_items.add_theme_constant_override("h_separation", 4)
+	existing_panel.add_child(addition_existing_items)
+
+	var plus := Label.new()
+	plus.text = "+"
+	plus.add_theme_font_size_override("font_size", 32)
+	plus.add_theme_color_override("font_color", Color("#ffd75a"))
+	addition_summary.add_child(plus)
+
+	var added_group := VBoxContainer.new()
+	added_group.alignment = BoxContainer.ALIGNMENT_CENTER
+	addition_summary.add_child(added_group)
+	var added_title := Label.new()
+	added_title.text = "Added now"
+	added_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	added_title.add_theme_font_size_override("font_size", 15)
+	added_group.add_child(added_title)
+	var added_panel := PanelContainer.new()
+	added_panel.custom_minimum_size = Vector2(260, 58)
+	added_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
+	added_group.add_child(added_panel)
+	addition_added_items = HFlowContainer.new()
+	addition_added_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	addition_added_items.add_theme_constant_override("h_separation", 4)
+	added_panel.add_child(addition_added_items)
+
 	done_btn = Button.new()
 	done_btn.name = "DoneButton"
 	done_btn.text = "Done!"
@@ -533,6 +586,9 @@ func _open_exercise() -> void:
 	hint_label.text = ""
 	equation_label.visible = false
 	equation_label.text = ""
+	addition_summary.visible = false
+	_clear(addition_existing_items)
+	_clear(addition_added_items)
 	_clear(basket_items); _clear(source_items); _clear(tray_items); _clear(icon_grid)
 	_clear_visual()
 	icon_grid.visible = false
@@ -593,14 +649,12 @@ func _update_basket_counter() -> void:
 
 func _show_equation() -> void:
 	var mode: String = exercise.get("mode", "")
+	if mode == "basket_in":
+		_show_addition_summary(int(exercise.a), int(exercise.b))
+		return
 	var words := ""
 	var symbols := ""
-	if mode == "basket_in":
-		var start: int = int(exercise.a)
-		var added: int = int(exercise.b)
-		words = "%s had %d %s.\n%s added %d more." % [npc.display_name, start, _item_plural(), npc.display_name, added]
-		symbols = "%d + %d = %d" % [start, added, int(exercise.answer)]
-	elif mode == "basket_out":
+	if mode == "basket_out":
 		var start: int = int(exercise.start)
 		var removed: int = int(exercise.get("remove", start - int(exercise.answer)))
 		words = "%s had %d %s.\n%s gave %d away." % [npc.display_name, start, _item_plural(), npc.display_name, removed]
@@ -609,6 +663,17 @@ func _show_equation() -> void:
 		return
 	equation_label.text = words + "\n" + symbols
 	equation_label.visible = true
+
+func _show_addition_summary(existing: int, added: int) -> void:
+	_clear(addition_existing_items)
+	_clear(addition_added_items)
+	var icon: String = ITEM_ICONS.get(npc.item, "")
+	for i in existing:
+		addition_existing_items.add_child(_make_item(icon, false, 32))
+	for i in added:
+		addition_added_items.add_child(_make_item(icon, false, 32))
+	equation_label.visible = false
+	addition_summary.visible = true
 
 func _item_plural() -> String:
 	var item: String = npc.get("item", "items")
@@ -825,13 +890,56 @@ func _build_feedback() -> void:
 	result_label.custom_minimum_size = Vector2(560, 0)
 	v.add_child(result_label)
 
+	feedback_addition_summary = HBoxContainer.new()
+	feedback_addition_summary.alignment = BoxContainer.ALIGNMENT_CENTER
+	feedback_addition_summary.add_theme_constant_override("separation", 12)
+	feedback_addition_summary.visible = false
+	v.add_child(feedback_addition_summary)
+	var existing_group := VBoxContainer.new()
+	feedback_addition_summary.add_child(existing_group)
+	var existing_title := Label.new()
+	existing_title.text = "Already in the basket"
+	existing_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	existing_group.add_child(existing_title)
+	feedback_existing_items = HFlowContainer.new()
+	feedback_existing_items.custom_minimum_size = Vector2(220, 34)
+	feedback_existing_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	existing_group.add_child(feedback_existing_items)
+	var plus := Label.new()
+	plus.text = "+"
+	plus.add_theme_font_size_override("font_size", 28)
+	plus.add_theme_color_override("font_color", Color("#ffd75a"))
+	feedback_addition_summary.add_child(plus)
+	var added_group := VBoxContainer.new()
+	feedback_addition_summary.add_child(added_group)
+	var added_title := Label.new()
+	added_title.text = "Added now"
+	added_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	added_group.add_child(added_title)
+	feedback_added_items = HFlowContainer.new()
+	feedback_added_items.custom_minimum_size = Vector2(220, 34)
+	feedback_added_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	added_group.add_child(feedback_added_items)
+
 func _resolve(correct: bool) -> void:
 	last_correct = correct
 	set_state(State.FEEDBACK)
+	feedback_addition_summary.visible = false
+	_clear(feedback_existing_items)
+	_clear(feedback_added_items)
 	if correct:
 		result_icon.text = "OK"
 		result_icon.add_theme_color_override("font_color", Color("#ffd75a"))
-		result_label.text = exercise.success
+		if exercise.get("mode", "") == "basket_in":
+			result_label.text = "Great! You combined both groups."
+			var icon: String = ITEM_ICONS.get(npc.item, "")
+			for i in int(exercise.a):
+				feedback_existing_items.add_child(_make_item(icon, false, 28))
+			for i in int(exercise.b):
+				feedback_added_items.add_child(_make_item(icon, false, 28))
+			feedback_addition_summary.visible = true
+		else:
+			result_label.text = exercise.success
 	else:
 		wrong_attempts += 1
 		result_icon.text = "X"

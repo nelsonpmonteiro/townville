@@ -188,10 +188,12 @@ func _initialize() -> void:
 	expect(flow.state_name() == "exercise" and flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "overshoot reset: basket back to start, pool refilled")
 	for i in 3: flow.debug_drag_one("BasketDropZone")
 	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3 and flow.state_name() == "exercise", "3 drags in → basket 7/7, 3 extra still in pool, still in EXERCISE until Done")
-	expect(flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "reaching target shows words-first + number sentence before Done")
+	expect(flow.addition_summary.visible and flow.addition_existing_items.get_child_count() == 4 and flow.addition_added_items.get_child_count() == 3, "reaching target shows the original and added quantities as two visual icon groups")
+	expect(not flow.equation_label.visible, "addition feedback does not reveal the result as a numeric equation")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "Done with 7 → FEEDBACK correct")
-	expect(flow.result_label.text == "Seven eggs! That's a great morning for the hens.", "success line from script")
+	expect(flow.feedback_addition_summary.visible and flow.feedback_existing_items.get_child_count() == 4 and flow.feedback_added_items.get_child_count() == 3, "correct feedback repeats the two visual groups instead of a numeric result")
+	expect(not flow.result_label.text.contains("7") and not flow.result_label.text.contains("Seven"), "addition result text does not reveal the total")
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "map" and world.get_phase("mae") == 1, "feedback auto-dismiss → MAP, phase advanced to 2")
 
