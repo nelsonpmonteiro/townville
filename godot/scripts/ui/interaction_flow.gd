@@ -30,6 +30,8 @@ const ITEM_ICONS := {
 }
 const FEEDBACK_SECONDS := 1.8
 const TYPE_SPEED := 0.035
+const HAPPY_FACE := "res://assets/ui/feedback/happy-face.png"
+const SAD_FACE := "res://assets/ui/feedback/sad-face.png"
 const POOL_EXTRA := 3  # draggable pool always has this many more than strictly needed
 const POOL_LABELS := {
 	"egg": "Nest", "carrot": "Feed Bin", "hay bale": "Field", "chick": "Yard",
@@ -93,7 +95,7 @@ var bump_events := 0
 
 var feedback_screen: Control
 var result_label: Label
-var result_icon: Label
+var result_icon: TextureRect
 var feedback_addition_summary: HBoxContainer
 var feedback_existing_items: HFlowContainer
 var feedback_added_items: HFlowContainer
@@ -985,9 +987,12 @@ func _build_feedback() -> void:
 	var v := VBoxContainer.new()
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(v)
-	result_icon = Label.new()
-	result_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	result_icon.add_theme_font_size_override("font_size", 40)
+	result_icon = TextureRect.new()
+	result_icon.custom_minimum_size = Vector2(56, 56)
+	result_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	result_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	result_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	result_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(result_icon)
 	result_label = Label.new()
 	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1034,13 +1039,11 @@ func _resolve(correct: bool) -> void:
 	_clear(feedback_existing_items)
 	_clear(feedback_added_items)
 	if correct:
-		result_icon.text = "OK"
-		result_icon.add_theme_color_override("font_color", Color("#ffd75a"))
+		result_icon.texture = load(HAPPY_FACE) as Texture2D
 		result_label.text = exercise.success
 	else:
 		wrong_attempts += 1
-		result_icon.text = "X"
-		result_icon.add_theme_color_override("font_color", Color("#ff7f7f"))
+		result_icon.texture = load(SAD_FACE) as Texture2D
 		result_label.text = "Not quite - let's try again!"
 	await get_tree().create_timer(FEEDBACK_SECONDS).timeout
 	if state != State.FEEDBACK:
