@@ -8,15 +8,15 @@ const SPAWN := Vector2i(15, 6)
 
 var id: String = "world1"
 
-# 8 World 1 NPCs — full script per NPC-teaching-plan.md spec.
+# 8 World 1 NPCs - full script per NPC-teaching-plan.md spec.
 # Positions follow the 30x20 grid, each NPC on a reachable tile.
 # Sprites: current PixelLab pixel art for all 8 characters.
 #
 # Quest types:
-#   "numberpad"  — type the answer (addition, subtraction, counting, sequence)
-#   "compare"    — choose which group has more (tap A or B)
-#   "compare_equal" — choose which group (may be equal)
-#   "compare_length" — which object is taller/longer
+#   "numberpad"  - type the answer (addition, subtraction, counting, sequence)
+#   "compare"    - choose which group has more (tap A or B)
+#   "compare_equal" - choose which group (may be equal)
+#   "compare_length" - which object is taller/longer
 #
 # Interaction flow: intro → quest_start (show problem) → player answers → success → complete
 #                                                         → failure (retry, max 3)
@@ -34,18 +34,18 @@ const NPCS_TEMPLATE := [
 			{"phase": 1, "mode": "basket_in", "a": 4, "b": 3, "answer": 7,
 				"setup": "I collected 4 eggs from the nesting boxes this morning. Then I found 3 more behind the hay! Drag them into my basket so we know the total.",
 				"success": "Seven eggs! That's a great morning for the hens.",
-				"hint1": "Let's count together — how many are already in the basket?"},
+				"hint1": "Let's count together - how many are already in the basket?"},
 			{"phase": 2, "mode": "basket_out", "start": 9, "remove": 2, "answer": 7, "tray": "Grandma Rose",
 				"setup": "I have 9 eggs in my basket, but 2 of them are for Grandma Rose's baking. Drag 2 eggs out so I know how many are left for selling.",
-				"success": "Seven left to sell — perfect!",
+				"success": "Seven left to sell - perfect!",
 				"hint1": "Try taking just one egg out first, then count what's left."},
 			{"phase": 3, "mode": "text", "answer": 12, "grid": [3, 4],
 				"setup": "Each of my 3 hens laid 4 eggs today. How many eggs is that in total?",
-				"success": "Twelve eggs — you did that fast!",
+				"success": "Twelve eggs - you did that fast!",
 				"hint1": "Try adding 4 three times: 4 + 4 + 4."},
 			{"phase": 4, "mode": "text", "answer": 3, "grid": [4, 3], "groups": 4,
 				"setup": "I have 12 eggs and want to put the same number in each of my 4 baskets. How many eggs go in each basket?",
-				"success": "Three in each basket — nice and even!",
+				"success": "Three in each basket - nice and even!",
 				"hint1": "Try sharing them out one at a time, basket by basket."}
 		]
 	},
@@ -57,7 +57,7 @@ const NPCS_TEMPLATE := [
 		"building": "stable",
 		"item": "carrot",
 		"container": "feed basket",
-		"intro": "*Neigh!* I'm Chester the horse. Well — I'm his stable hand, but he does the talking.",
+		"intro": "*Neigh!* I'm Chester the horse. Well - I'm his stable hand, but he does the talking.",
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 5, "b": 6, "answer": 11,
 				"setup": "Chester ate 5 carrots this morning, and I'm bringing him 6 more for lunch. Drag them all into his feed basket.",
@@ -65,15 +65,15 @@ const NPCS_TEMPLATE := [
 				"hint1": "Count the carrots already there, then add the new ones."},
 			{"phase": 2, "mode": "basket_out", "start": 10, "remove": 4, "answer": 6, "tray": "Old Mac's pony",
 				"setup": "Chester's basket has 10 carrots, but 4 need to go to Old Mac's pony too. Drag 4 out.",
-				"success": "Six carrots left for Chester — just right.",
+				"success": "Six carrots left for Chester - just right.",
 				"hint1": "Take away one carrot at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 6, "grid": [2, 3],
 				"setup": "Chester eats 3 flakes of hay, 2 times a day. How many flakes does he eat in one day?",
-				"success": "Six flakes — Chester's schedule, all figured out!",
+				"success": "Six flakes - Chester's schedule, all figured out!",
 				"hint1": "Try adding 3 two times: 3 + 3."},
 			{"phase": 4, "mode": "text", "answer": 5, "grid": [3, 5], "groups": 3,
-				"setup": "I have 15 carrots to split evenly between Chester and the two ponies next door — 3 animals total. How many carrots does each one get?",
-				"success": "Five each — everybody's fed fair and square.",
+				"setup": "I have 15 carrots to split evenly between Chester and the two ponies next door - 3 animals total. How many carrots does each one get?",
+				"success": "Five each - everybody's fed fair and square.",
 				"hint1": "Try giving one carrot to each animal, then another round, and see how far you get."}
 		]
 	},
@@ -89,19 +89,19 @@ const NPCS_TEMPLATE := [
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 6, "b": 5, "answer": 11,
 				"setup": "I stacked 6 hay bales this morning, and just brought in 5 more from the field. Drag them all onto the cart.",
-				"success": "Eleven bales — that'll last us a while!",
+				"success": "Eleven bales - that'll last us a while!",
 				"hint1": "Count what's on the cart first, then add the new bales."},
 			{"phase": 2, "mode": "basket_out", "start": 14, "remove": 6, "answer": 8, "tray": "Stable",
 				"setup": "I've got 14 bales on the cart, but 6 need to go over to the Stable for Chester. Drag 6 off.",
-				"success": "Eight bales staying right here — good count.",
+				"success": "Eight bales staying right here - good count.",
 				"hint1": "Try removing one bale at a time and counting what's left."},
 			{"phase": 3, "mode": "text", "answer": 20, "grid": [4, 5],
 				"setup": "Each row in my field has 5 pumpkins, and I've got 4 rows planted. How many pumpkins is that altogether?",
-				"success": "Twenty pumpkins — that's a whole lot of pie!",
+				"success": "Twenty pumpkins - that's a whole lot of pie!",
 				"hint1": "Try adding 5 four times."},
 			{"phase": 4, "mode": "text", "answer": 6, "grid": [3, 6], "groups": 3,
 				"setup": "I picked 18 pumpkins and want to load them equally onto 3 wagons. How many pumpkins per wagon?",
-				"success": "Six per wagon — perfectly balanced loads.",
+				"success": "Six per wagon - perfectly balanced loads.",
 				"hint1": "Try handing out pumpkins one at a time to each wagon."}
 		]
 	},
@@ -121,15 +121,15 @@ const NPCS_TEMPLATE := [
 				"hint1": "Count the chicks already in, then add the ones you found."},
 			{"phase": 2, "mode": "basket_out", "start": 8, "remove": 3, "answer": 5, "tray": "Mama hen",
 				"setup": "I have 8 chicks in the basket, but 3 are ready to go live with their mama hen. Drag 3 out.",
-				"success": "Five still here with us — the others are happy with mama.",
+				"success": "Five still here with us - the others are happy with mama.",
 				"hint1": "Take one chick out at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 8, "grid": [4, 2],
 				"setup": "Each hen has 2 chicks following her, and I count 4 hens. How many chicks is that in total?",
-				"success": "Eight little chicks — quite the parade!",
+				"success": "Eight little chicks - quite the parade!",
 				"hint1": "Try adding 2 four times."},
 			{"phase": 4, "mode": "text", "answer": 5, "grid": [2, 5], "groups": 2,
 				"setup": "I have 10 chicks and want to put the same number in each of my 2 coop pens. How many chicks in each pen?",
-				"success": "Five in each pen — nice and cozy.",
+				"success": "Five in each pen - nice and cozy.",
 				"hint1": "Try sharing them out one at a time between the two pens."}
 		]
 	},
@@ -141,23 +141,23 @@ const NPCS_TEMPLATE := [
 		"building": "clinic",
 		"item": "bandage",
 		"container": "medical basket",
-		"intro": "Welcome to the clinic! Every patient gets counted here — supplies too.",
+		"intro": "Welcome to the clinic! Every patient gets counted here - supplies too.",
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 5, "b": 6, "answer": 11,
 				"setup": "I have 5 bandages ready, and just restocked 6 more from the supply closet. Drag them all into my medical basket.",
-				"success": "Eleven bandages — fully stocked for whatever comes in!",
+				"success": "Eleven bandages - fully stocked for whatever comes in!",
 				"hint1": "Count what's in the basket, then add the new ones."},
 			{"phase": 2, "mode": "basket_out", "start": 10, "remove": 4, "answer": 6, "tray": "Chester's checkup",
 				"setup": "I have 10 treats for good patients, but I just used 4 on Chester's checkup. Drag 4 out.",
-				"success": "Six treats left — plenty for the next visit.",
+				"success": "Six treats left - plenty for the next visit.",
 				"hint1": "Take one treat out at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 6, "grid": [3, 2],
 				"setup": "Each of my 3 animal patients today needs 2 check-up stickers. How many stickers do I need in total?",
-				"success": "Six stickers — every patient gets their reward!",
+				"success": "Six stickers - every patient gets their reward!",
 				"hint1": "Try adding 2 three times."},
 			{"phase": 4, "mode": "text", "answer": 3, "grid": [4, 3], "groups": 4,
 				"setup": "I have 12 treats and want to give the same number to each of my 4 furry patients today. How many treats per patient?",
-				"success": "Three each — every patient gets a fair share!",
+				"success": "Three each - every patient gets a fair share!",
 				"hint1": "Try handing out treats one at a time to each patient."}
 		]
 	},
@@ -173,19 +173,19 @@ const NPCS_TEMPLATE := [
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 7, "b": 5, "answer": 12,
 				"setup": "I picked 7 tomatoes this morning, and just found 5 more hiding under the leaves. Drag them all into my basket.",
-				"success": "Twelve tomatoes — perfect for tonight's sauce!",
+				"success": "Twelve tomatoes - perfect for tonight's sauce!",
 				"hint1": "Count what's in the basket, then add the new tomatoes."},
 			{"phase": 2, "mode": "basket_out", "start": 13, "remove": 5, "answer": 8, "tray": "Sam's bakery",
 				"setup": "My basket has 13 tomatoes, but 5 are going to Sam's bakery in town. Drag 5 out.",
-				"success": "Eight tomatoes staying with me — plenty for us.",
+				"success": "Eight tomatoes staying with me - plenty for us.",
 				"hint1": "Take away one tomato at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 12, "grid": [4, 3],
 				"setup": "I planted 4 flower pots, with 3 flowers in each. How many flowers is that in total?",
-				"success": "Twelve flowers — my garden's never looked prettier!",
+				"success": "Twelve flowers - my garden's never looked prettier!",
 				"hint1": "Try adding 3 four times."},
 			{"phase": 4, "mode": "text", "answer": 4, "grid": [4, 4], "groups": 4,
 				"setup": "I picked 16 flowers and want to make equal bouquets for my 4 neighbors. How many flowers in each bouquet?",
-				"success": "Four flowers each — every bouquet just as lovely.",
+				"success": "Four flowers each - every bouquet just as lovely.",
 				"hint1": "Try handing out flowers one at a time to each neighbor's bunch."}
 		]
 	},
@@ -197,23 +197,23 @@ const NPCS_TEMPLATE := [
 		"building": "",
 		"item": "nail",
 		"container": "toolbox",
-		"intro": "Hey! I'm Billy. This fence won't fix itself — want to help me count supplies?",
+		"intro": "Hey! I'm Billy. This fence won't fix itself - want to help me count supplies?",
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 6, "b": 4, "answer": 10,
 				"setup": "I've got 6 nails in my toolbox, and Old Mac just gave me 4 more. Drag them all into the box.",
-				"success": "Ten nails — enough to finish this fence!",
+				"success": "Ten nails - enough to finish this fence!",
 				"hint1": "Count what's in the box, then add the new nails."},
 			{"phase": 2, "mode": "basket_out", "start": 9, "remove": 3, "answer": 6, "tray": "Scrap pile",
 				"setup": "I have 9 planks stacked up, but 3 are warped and need to go to the scrap pile. Drag 3 out.",
-				"success": "Six good planks left — plenty to work with.",
+				"success": "Six good planks left - plenty to work with.",
 				"hint1": "Take one plank out at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 12, "grid": [3, 4],
 				"setup": "Each fence section needs 4 nails, and I'm building 3 sections today. How many nails do I need in total?",
-				"success": "Twelve nails — exactly enough, nothing wasted!",
+				"success": "Twelve nails - exactly enough, nothing wasted!",
 				"hint1": "Try adding 4 three times."},
 			{"phase": 4, "mode": "text", "answer": 3, "grid": [5, 3], "groups": 5,
 				"setup": "I have 15 nails and need to split them evenly across 5 fence posts. How many nails per post?",
-				"success": "Three per post — the fence is going to be so sturdy!",
+				"success": "Three per post - the fence is going to be so sturdy!",
 				"hint1": "Try handing out nails one at a time to each post."}
 		]
 	},
@@ -229,27 +229,27 @@ const NPCS_TEMPLATE := [
 		"exercises": [
 			{"phase": 1, "mode": "basket_in", "a": 4, "b": 5, "answer": 9,
 				"setup": "I found 4 old keys in the shed, and just discovered 5 more in the workbench drawer. Drag them all into my keyring basket.",
-				"success": "Nine keys — one of these has got to open the gate!",
+				"success": "Nine keys - one of these has got to open the gate!",
 				"hint1": "Count what's in the basket, then add the new keys."},
 			{"phase": 2, "mode": "basket_out", "start": 11, "remove": 5, "answer": 6, "tray": "Rusty pile",
 				"setup": "I've got 11 tools in my belt, but 5 are too rusty to use. Drag 5 out.",
-				"success": "Six good tools left — enough to fix this old gate.",
+				"success": "Six good tools left - enough to fix this old gate.",
 				"hint1": "Take one tool out at a time and count what's left."},
 			{"phase": 3, "mode": "text", "answer": 12, "grid": [4, 3],
 				"setup": "The gate has 4 hinges, and each one needs 3 screws. How many screws do I need in total?",
-				"success": "Twelve screws — the gate's going to swing perfectly!",
+				"success": "Twelve screws - the gate's going to swing perfectly!",
 				"hint1": "Try adding 3 four times."},
 			{"phase": 4, "mode": "text", "answer": 5, "grid": [4, 5], "groups": 4, "final": true,
 				"setup": "I have 20 screws and want to split them evenly across the gate's 4 hinges for spares. How many screws per hinge?",
-				"success": "Five spares per hinge — this gate isn't going anywhere for a long while! Welcome to Downtown.",
+				"success": "Five spares per hinge - this gate isn't going anywhere for a long while! Welcome to Downtown.",
 				"hint1": "Try handing out screws one at a time to each hinge."}
 		]
 	}
 ]
 
-# Building footprints — layout from the latest user spec (30x20 grid, exact
+# Building footprints - layout from the latest user spec (30x20 grid, exact
 # col/row per building). Sprites unchanged (current PixelLab pixel art).
-# Buildings — exactly as exported from the in-game Map Editor
+# Buildings - exactly as exported from the in-game Map Editor
 # (townville_map_export.json): the 4 originals at their edited positions plus
 # the 2 placed in the editor (second Garden, second Clinic).
 const BUILDINGS := [
@@ -314,7 +314,7 @@ var path_mask: Array[Array] = []
 var NPCS: Array = []
 
 func _init() -> void:
-	# Deep-duplicate the template so each NPC dict is a fresh, WRITABLE copy —
+	# Deep-duplicate the template so each NPC dict is a fresh, WRITABLE copy -
 	# dictionaries nested inside a `const` array are read-only in Godot 4, so
 	# the map editor could never persist a dragged NPC's new tile without this.
 	NPCS = NPCS_TEMPLATE.duplicate(true)
@@ -414,7 +414,7 @@ func get_adjacent_npc_quest(tile: Vector2i) -> Dictionary:
 
 # --- Prop definitions per world ---
 
-# World 1 props — exactly the 50 placed in the in-game Map Editor
+# World 1 props - exactly the 50 placed in the in-game Map Editor
 # (townville_map_export.json). Edit them in the editor, not here.
 const WORLD1_PROPS := [
 	{"id": "flower-pot", "display_name": "Flower Pot", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(24, 12)},
@@ -469,7 +469,7 @@ const WORLD1_PROPS := [
 	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(10, 7)},
 ]
 
-# Fine-detail clutter — repositioned for the new 30x20 layout, each entry
+# Fine-detail clutter - repositioned for the new 30x20 layout, each entry
 # within Chebyshev distance<=1 of the path network, clustered near the POI
 # it belongs to (never scattered in open unreachable grass).
 const WORLD1_GRASS_CLUTTER := [
@@ -505,7 +505,7 @@ const WORLD1_FARM_CLUTTER := [
 ]
 
 # Ground decals painted directly on the path (cart tracks, footprints, puddles)
-# — purely flat, rendered just above the tilemap, always sit ON walkable path
+# - purely flat, rendered just above the tilemap, always sit ON walkable path
 # tiles so the player actually walks over them.
 const WORLD1_PATH_DECALS := [
 	{"id": "cart-tracks", "sprite_path": "res://assets/scenery/world1/clutter/cart-tracks.png", "tile": Vector2i(10, 5)},

@@ -5,9 +5,9 @@ extends CanvasLayer
 
 const SAVE_PATH := "user://save_data.cfg"
 const CARDS := [
-	["⬆ ⬅ ⬇ ➡", "Use the arrow keys to walk around Townville!"],
+	["UP  LEFT  DOWN  RIGHT", "Use the arrow keys to walk around Townville!"],
 	["[ E ]", "Walk up to a friend and press E to talk!"],
-	["🔒 → 🔓", "Help everyone solve their problems to unlock the whole farm!"],
+	["LOCKED  ->  OPEN", "Help everyone solve their problems to unlock the whole farm!"],
 ]
 
 signal finished
@@ -141,7 +141,7 @@ func _show() -> void:
 		card_text.text = CARDS[step][1]
 		var dots := ""
 		for i in CARDS.size():
-			dots += ("●" if i == step else "○") + "  "
+			dots += ("*" if i == step else "-") + "  "
 		card_dots.text = dots + "    tap to continue"
 
 func advance() -> void:

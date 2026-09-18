@@ -9,17 +9,20 @@ GODOT="${GODOT:-/Users/nelsonmonteiro/Applications/Godot.app/Contents/MacOS/Godo
 OUT=/tmp/townville-web
 PORT="${PORT:-8090}"
 
-echo "== 0. headless suites"
+echo "== 0. static UI glyph guard"
+python3 "$ROOT/scripts/check-ui-glyphs.py"
+
+echo "== 1. headless suites"
 for t in tests/test_runner.gd tests/test_editor_delete.gd tests/test_editor_move.gd; do
   "$GODOT" --headless --path "$ROOT/godot" --script "$t" 2>&1 | grep -qE "ALL TESTS PASSED" && echo "   $t OK" || { echo "   $t FAILED"; exit 1; }
 done
 
-echo "== 1. export (preset 'Web': runnable, desktop VRAM only, no PWA, no GDExtension)"
+echo "== 2. export (preset 'Web': runnable, desktop VRAM only, no PWA, no GDExtension)"
 mkdir -p "$OUT"
 "$GODOT" --headless --path "$ROOT/godot" --export-release "Web" "$OUT/index.html" 2>&1 \
   | grep -E "^SCRIPT ERROR|Project export .* failed" | grep -v grass_dirt_tileset && { echo "export errors"; exit 1; } || true
 
-echo "== 2. required files"
+echo "== 3. required files"
 for f in index.html index.js index.wasm index.pck index.audio.worklet.js; do
   [ -s "$OUT/$f" ] || { echo "MISSING $f"; exit 1; }
   printf "   %-26s %8d KB\n" "$f" $(( $(stat -f%z "$OUT/$f") / 1024 ))
@@ -29,7 +32,7 @@ echo "   → $ROOT/dist/ (deploy this whole folder together)"
 
 [ "${1:-}" = "--no-probe" ] && exit 0
 
-echo "== 3. static server on :$PORT"
+echo "== 4. static server on :$PORT"
 if ! curl -s -o /dev/null "http://localhost:$PORT/index.html"; then
   (cd "$ROOT/dist" && python3 -m http.server "$PORT" >/dev/null 2>&1 &)
   sleep 1
@@ -38,5 +41,5 @@ for f in index.wasm index.pck index.js; do
   printf "   %-12s %s\n" "$f" "$(curl -sI "http://localhost:$PORT/$f" | grep -i content-type | tr -d '\r')"
 done
 
-echo "== 4. real-browser acceptance (fps, input, onboarding, NPC loop)"
+echo "== 5. real-browser acceptance (fps, input, onboarding, NPC loop)"
 cd "$ROOT" && node scripts/web-perf-probe.cjs | tail -3

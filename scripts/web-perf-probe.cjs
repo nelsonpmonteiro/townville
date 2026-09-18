@@ -96,11 +96,13 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await hold(page, 'ArrowRight', 500); s = await state(page);
   check('movement blocked under onboarding (key consumed as "advance")', s.tile[0] === t0[0] && s.tile[1] === t0[1] && s.onboarding.step === 0);
   check('card 1 movement', /arrow keys/.test(s.onboarding.card_text));
+  await page.screenshot({ path: '/tmp/tv-onboard-card1.png' });
   await page.mouse.click(480, 320); await sleep(250); s = await state(page);
   check('tap → card 2 interaction', /press E/.test(s.onboarding.card_text));
   await page.screenshot({ path: '/tmp/tv-onboard-card2.png' });
   await page.keyboard.press('Space'); await sleep(250); s = await state(page);
   check('any key → card 3 goal', /unlock the whole farm/.test(s.onboarding.card_text));
+  await page.screenshot({ path: '/tmp/tv-onboard-card3.png' });
   await page.mouse.click(480, 320); await sleep(900); s = await state(page);
   check('card 3 tap → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
   await hold(page, 'ArrowRight', 400); s = await state(page);
@@ -136,11 +138,13 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   check('at least one NPC reachable from spawn', !!mae, npcName ? `using ${npcName}` : '');
   s = await walkTo(page, goal);
   check('walked next to NPC', Math.max(Math.abs(s.tile[0] - mae[0]), Math.abs(s.tile[1] - mae[1])) === 1, `tile=${s.tile} mae=${mae}`);
+  await page.screenshot({ path: '/tmp/tv-map-prompt.png' });
 
   // ---------- Phase 1: basket_in, REAL mouse drags ----------
   await page.keyboard.press('KeyE'); await sleep(300);
   s = await waitState(page, s => s.flow.state === 'dialogue', 3000, 'dialogue');
   check('E → DIALOGUE (typewriter running)', s.flow.is_typing === true || s.flow.dialogue_text.length > 0);
+  await page.screenshot({ path: '/tmp/tv-dialogue.png' });
   const tileBefore = s.tile.slice();
   await hold(page, 'ArrowRight', 500);
   s = await state(page);
@@ -149,10 +153,11 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await clickRect(page, rr.dialogue_box);            // click while typing → full text
   await sleep(200); s = await state(page);
   check('click while typing → full text', s.flow.is_typing === false);
+  await page.screenshot({ path: '/tmp/tv-dialogue-complete.png' });
   await clickRect(page, rr.dialogue_box);            // click again → exercise
   s = await waitState(page, s => s.flow.state === 'exercise', 3000, 'exercise');
-  const ex1 = { a: s.flow.basket_count, b: s.flow.source_left };
-  check('dialogue dismissed → EXERCISE basket_in', s.flow.mode === 'basket_in' && ex1.a > 0 && ex1.b > 0, JSON.stringify(ex1));
+  const ex1 = { a: s.flow.basket_count, b: s.flow.target - s.flow.basket_count };
+  check('dialogue dismissed -> EXERCISE basket_in', s.flow.mode === 'basket_in' && ex1.a > 0 && ex1.b > 0, JSON.stringify(ex1));
   await page.screenshot({ path: '/tmp/tv-ex-basket-in.png' });
   for (let i = 0; i < ex1.b; i++) {
     rr = await rects(page);
@@ -160,7 +165,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
     await realDrag(page, rr.item0, rr.basket);
   }
   s = await state(page);
-  check(`${ex1.b} REAL mouse drags into basket → ${ex1.a + ex1.b}`, s.flow.basket_count === ex1.a + ex1.b && s.flow.source_left === 0, `basket=${s.flow.basket_count} left=${s.flow.source_left}`);
+  check(`${ex1.b} REAL mouse drags into basket -> ${s.flow.target}`, s.flow.basket_count === s.flow.target, `basket=${s.flow.basket_count} target=${s.flow.target} left=${s.flow.source_left}`);
   rr = await rects(page); await clickRect(page, rr.done);
   s = await waitState(page, s => s.flow.state === 'feedback', 3000, 'feedback');
   check('Done → FEEDBACK correct', s.flow.last_correct === true, s.flow.result_text);
@@ -232,6 +237,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   // ---------- F1 editor still works ----------
   await page.keyboard.press('F1'); await sleep(400); s = await state(page);
   check('F1 → editor + grid', s.edit_mode && s.grid_visible);
+  await page.screenshot({ path: '/tmp/tv-editor.png' });
   await page.keyboard.press('F1'); await sleep(300); s = await state(page);
   check('F1 again → grid hidden', !s.edit_mode && !s.grid_visible);
 

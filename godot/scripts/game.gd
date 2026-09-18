@@ -247,7 +247,7 @@ func add_hud() -> void:
 	hud_layer = layer
 	var instructions := Label.new()
 	instructions.position = Vector2(18, 16)
-	instructions.text = "Move: WASD / Arrows  •  Interact: E or Space"
+	instructions.text = "Move: WASD / Arrows  |  Interact: E or Space"
 	instructions.add_theme_font_size_override("font_size", 18)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
 	instructions.add_theme_color_override("font_shadow_color", Color.BLACK)
@@ -335,7 +335,7 @@ func _on_phase_completed(npc_id: String, _phase: int) -> void:
 	var done: int = world.get_phase(npc_id)
 	if bid != "" and building_progress.has(bid):
 		var lbl: Label = building_progress[bid]
-		lbl.text = "%d/4%s" % [done, " ✓" if done >= 4 else ""]
+		lbl.text = "%d/4%s" % [done, " COMPLETE" if done >= 4 else ""]
 		if done >= 4:
 			lbl.add_theme_color_override("font_color", Color("#7fff7f"))
 			var sprite := get_node_or_null("BuildingGroup_%s/Building_%s" % [bid, bid]) as Sprite2D
@@ -343,7 +343,7 @@ func _on_phase_completed(npc_id: String, _phase: int) -> void:
 				sprite.modulate = Color(1.05, 1.05, 0.9)
 
 func _on_world_completed() -> void:
-	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown…"
+	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown..."
 	dialogue_label.visible = true
 
 func _walkable_rows() -> Array:
@@ -381,7 +381,7 @@ func _process(_delta: float) -> void:
 	if nearby:
 		var ph: int = world.get_phase(nearby.id)
 		if ph >= 4:
-			prompt_label.text = "[E] Talk to " + nearby.display_name + "  (done ✓)"
+			prompt_label.text = "[E] Talk to " + nearby.display_name + "  (complete)"
 		else:
 			prompt_label.text = "[E] Talk to " + nearby.display_name + "  (%d/4)" % ph
 	else:

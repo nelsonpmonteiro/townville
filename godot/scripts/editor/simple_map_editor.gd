@@ -590,7 +590,7 @@ func _build_ui() -> void:
 
 func _build_item_panel(parent: Node, title: String, ids: Array, images: Dictionary, buttons: Dictionary, callback: Callable) -> void:
 	var sep = Label.new()
-	sep.text = "— " + title + " —"
+	sep.text = "-- " + title + " --"
 	sep.add_theme_color_override("font_color", Color("#888"))
 	parent.add_child(sep)
 	var flow = HFlowContainer.new()
@@ -693,7 +693,7 @@ func save_map(path: String) -> void:
 		f.close()
 	_download_json(text)
 	if status_label:
-		status_label.text = "Saved %d new, %d moved, %d deleted + terrain → also downloaded townville_map_export.json" % [data.entities.size(), data.moved_existing.size(), deleted_existing.size()]
+		status_label.text = "Saved %d new, %d moved, %d deleted + terrain; also downloaded townville_map_export.json" % [data.entities.size(), data.moved_existing.size(), deleted_existing.size()]
 
 # Reapplies a previously saved map: new props/buildings/npcs placed through
 # the editor, plus any terrain/collision edits (path_mask/walkable). Safe to

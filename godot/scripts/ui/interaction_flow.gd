@@ -192,7 +192,7 @@ func _build_dialogue() -> void:
 	v.add_child(dialogue_text)
 
 	advance_hint = Label.new()
-	advance_hint.text = "▼  E / click to continue"
+	advance_hint.text = "E / click to continue"
 	advance_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	advance_hint.add_theme_color_override("font_color", Color("#a0c0ff"))
 	v.add_child(advance_hint)
@@ -575,14 +575,14 @@ func _resolve(correct: bool) -> void:
 	last_correct = correct
 	set_state(State.FEEDBACK)
 	if correct:
-		result_icon.text = "★"
+		result_icon.text = "OK"
 		result_icon.add_theme_color_override("font_color", Color("#ffd75a"))
 		result_label.text = exercise.success
 	else:
 		wrong_attempts += 1
-		result_icon.text = "✕"
+		result_icon.text = "X"
 		result_icon.add_theme_color_override("font_color", Color("#ff7f7f"))
-		result_label.text = "Not quite — let's try again!"
+		result_label.text = "Not quite - let's try again!"
 	await get_tree().create_timer(FEEDBACK_SECONDS).timeout
 	if state != State.FEEDBACK:
 		return
@@ -605,7 +605,7 @@ func _apply_hints() -> void:
 		match exercise.mode:
 			"basket_in":
 				var ghost := basket_zone.get_child(0).get_node("Ghost") as Label
-				ghost.text = "○ ".repeat(exercise.answer).strip_edges()
+				ghost.text = "O ".repeat(exercise.answer).strip_edges()
 				ghost.add_theme_font_size_override("font_size", 22)
 				ghost.visible = true
 			"basket_out":
@@ -636,6 +636,7 @@ func debug_state() -> Dictionary:
 		"phase": exercise.get("phase", 0),
 		"mode": exercise.get("mode", ""),
 		"basket_count": basket_count,
+		"target": int(exercise.get("answer", basket_count)),
 		"source_left": source_items.get_child_count() if source_items else 0,
 		"tray_count": tray_items.get_child_count() if tray_items else 0,
 		"wrong_attempts": wrong_attempts,
