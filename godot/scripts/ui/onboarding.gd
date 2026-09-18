@@ -107,16 +107,21 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("#1e1a16f2"); sb.border_color = Color("#c9a36b")
-	sb.set_border_width_all(3); sb.set_corner_radius_all(12); sb.set_content_margin_all(28)
+	sb.set_border_width_all(3); sb.set_corner_radius_all(12); sb.set_content_margin_all(22)
 	panel.add_theme_stylebox_override("panel", sb)
-	panel.custom_minimum_size = Vector2(620, 0)
+	# SHRINK_CENTER (not the container default FILL) makes the card a compact
+	# box centered on screen instead of stretching edge-to-edge — it must
+	# look like a dialog floating over the map, not a full-width banner.
+	panel.custom_minimum_size = Vector2(480, 0)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	card_box.add_child(panel)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 18)
+	v.add_theme_constant_override("separation", 12)
 	panel.add_child(v)
 	card_icon = Label.new()
 	card_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_icon.add_theme_font_size_override("font_size", 56)
+	card_icon.add_theme_font_size_override("font_size", 40)
 	card_icon.add_theme_color_override("font_color", Color("#ffd75a"))
 	v.add_child(card_icon)
 	var direction_holder := CenterContainer.new()
@@ -127,27 +132,27 @@ func _ready() -> void:
 	card_text = Label.new()
 	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	card_text.custom_minimum_size = Vector2(560, 0)
-	card_text.add_theme_font_size_override("font_size", 26)
+	card_text.custom_minimum_size = Vector2(430, 0)
+	card_text.add_theme_font_size_override("font_size", 20)
 	v.add_child(card_text)
 	card_dots = Label.new()
 	card_dots.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_dots.add_theme_font_size_override("font_size", 18)
+	card_dots.add_theme_font_size_override("font_size", 16)
 	card_dots.add_theme_color_override("font_color", Color("#a0c0ff"))
 	v.add_child(card_dots)
 	var controls := HBoxContainer.new()
 	controls.alignment = BoxContainer.ALIGNMENT_CENTER
-	controls.add_theme_constant_override("separation", 16)
+	controls.add_theme_constant_override("separation", 14)
 	v.add_child(controls)
 	back_button = Button.new()
 	back_button.text = "Back"
-	back_button.custom_minimum_size = Vector2(120, 42)
+	back_button.custom_minimum_size = Vector2(104, 38)
 	_apply_button_style(back_button)
 	back_button.pressed.connect(back)
 	controls.add_child(back_button)
 	next_button = Button.new()
 	next_button.text = "Next"
-	next_button.custom_minimum_size = Vector2(120, 42)
+	next_button.custom_minimum_size = Vector2(104, 38)
 	_apply_button_style(next_button)
 	next_button.pressed.connect(advance)
 	controls.add_child(next_button)
