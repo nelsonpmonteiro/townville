@@ -681,7 +681,10 @@ func _open_array(icon: String) -> void:
 	var dimensions: Array = exercise.get("grid", [1, 1])
 	var rows: int = int(dimensions[0])
 	var columns: int = int(dimensions[1])
-	visual_source_title.visible = true
+	# No count above the pool: "Field to place: 20" hands over the answer,
+	# since the whole exercise is working out that 4 rows x 5 = 20. The label
+	# is revealed only when the child asks for a hint (see _apply_hints).
+	visual_source_title.visible = false
 	visual_source_panel.visible = true
 	visual_source_title.text = "%s to place: %d" % [POOL_LABELS.get(npc.item, "Items"), rows * columns]
 	for i in rows * columns:
@@ -720,9 +723,11 @@ func _open_share(icon: String) -> void:
 	var groups: int = int(exercise.get("groups", 1))
 	var per_group: int = int(exercise.get("answer", 0))
 	var total: int = groups * per_group
-	visual_source_title.visible = true
+	# No redundant "To share: N" label: the exercise's own setup text already
+	# states the total (e.g. "I have 12 eggs to share..."), so repeating the
+	# number above the pool is noise, not new information.
+	visual_source_title.visible = false
 	visual_source_panel.visible = true
-	visual_source_title.text = "To share: %d" % total
 	for i in total:
 		visual_source_items.add_child(_make_item(icon, true, 32))
 	for i in groups:

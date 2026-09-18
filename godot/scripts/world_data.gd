@@ -44,7 +44,7 @@ const NPCS_TEMPLATE := [
 				"success": "Twelve eggs - you did that fast!",
 				"hint1": "Try adding 4 three times: 4 + 4 + 4."},
 			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4, "group_names": ["Basket 1", "Basket 2", "Basket 3", "Basket 4"],
-				"setup": "I have 12 eggs and want to put the same number in each of my 4 baskets. How many eggs go in each basket?",
+				"setup": "I have 12 eggs to share equally between 4 baskets. Can you put the same number of eggs in each basket?",
 				"success": "Three in each basket - nice and even!",
 				"hint1": "Try sharing them out one at a time, basket by basket."}
 		]
@@ -72,7 +72,7 @@ const NPCS_TEMPLATE := [
 				"success": "Six flakes - Chester's schedule, all figured out!",
 				"hint1": "Try adding 3 two times: 3 + 3."},
 			{"phase": 4, "mode": "share", "answer": 5, "grid": [3, 5], "groups": 3, "group_names": ["Chester", "Pony 1", "Pony 2"],
-				"setup": "I have 15 carrots to split evenly between Chester and the two ponies next door - 3 animals total. How many carrots does each one get?",
+				"setup": "I have 15 carrots to share equally between Chester and the two ponies next door. Can you put the same number of carrots with each one?",
 				"success": "Five each - everybody's fed fair and square.",
 				"hint1": "Try giving one carrot to each animal, then another round, and see how far you get."}
 		]
@@ -100,7 +100,7 @@ const NPCS_TEMPLATE := [
 				"success": "Twenty pumpkins - that's a whole lot of pie!",
 				"hint1": "Try adding 5 four times."},
 			{"phase": 4, "mode": "share", "answer": 6, "grid": [3, 6], "groups": 3, "group_names": ["Wagon 1", "Wagon 2", "Wagon 3"],
-				"setup": "I picked 18 pumpkins and want to load them equally onto 3 wagons. How many pumpkins per wagon?",
+				"setup": "I picked 18 pumpkins to share equally between 3 wagons. Can you put the same number of pumpkins on each wagon?",
 				"success": "Six per wagon - perfectly balanced loads.",
 				"hint1": "Try handing out pumpkins one at a time to each wagon."}
 		]
@@ -128,7 +128,7 @@ const NPCS_TEMPLATE := [
 				"success": "Eight little chicks - quite the parade!",
 				"hint1": "Try adding 2 four times."},
 			{"phase": 4, "mode": "share", "answer": 5, "grid": [2, 5], "groups": 2, "group_names": ["Coop 1", "Coop 2"],
-				"setup": "I have 10 chicks and want to put the same number in each of my 2 coop pens. How many chicks in each pen?",
+				"setup": "I have 10 chicks to share equally between my 2 coop pens. Can you put the same number of chicks in each pen?",
 				"success": "Five in each pen - nice and cozy.",
 				"hint1": "Try sharing them out one at a time between the two pens."}
 		]
@@ -156,7 +156,7 @@ const NPCS_TEMPLATE := [
 				"success": "Six stickers - every patient gets their reward!",
 				"hint1": "Try adding 2 three times."},
 			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4, "group_names": ["Pet 1", "Pet 2", "Pet 3", "Pet 4"],
-				"setup": "I have 12 treats and want to give the same number to each of my 4 furry patients today. How many treats per patient?",
+				"setup": "I have 12 treats to share equally between my 4 furry patients today. Can you put the same number of treats with each patient?",
 				"success": "Three each - every patient gets a fair share!",
 				"hint1": "Try handing out treats one at a time to each patient."}
 		]
@@ -184,7 +184,7 @@ const NPCS_TEMPLATE := [
 				"success": "Twelve flowers - my garden's never looked prettier!",
 				"hint1": "Try adding 3 four times."},
 			{"phase": 4, "mode": "share", "answer": 4, "grid": [4, 4], "groups": 4, "group_names": ["Neighbor 1", "Neighbor 2", "Neighbor 3", "Neighbor 4"],
-				"setup": "I picked 16 flowers and want to make equal bouquets for my 4 neighbors. How many flowers in each bouquet?",
+				"setup": "I picked 16 flowers to share equally between 4 neighbors' bouquets. Can you put the same number of flowers in each bouquet?",
 				"success": "Four flowers each - every bouquet just as lovely.",
 				"hint1": "Try handing out flowers one at a time to each neighbor's bunch."}
 		]
@@ -212,7 +212,7 @@ const NPCS_TEMPLATE := [
 				"success": "Twelve nails - exactly enough, nothing wasted!",
 				"hint1": "Try adding 4 three times."},
 			{"phase": 4, "mode": "share", "answer": 3, "grid": [5, 3], "groups": 5, "group_names": ["Post 1", "Post 2", "Post 3", "Post 4", "Post 5"],
-				"setup": "I have 15 nails and need to split them evenly across 5 fence posts. How many nails per post?",
+				"setup": "I have 15 nails to share equally between 5 fence posts. Can you put the same number of nails on each post?",
 				"success": "Three per post - the fence is going to be so sturdy!",
 				"hint1": "Try handing out nails one at a time to each post."}
 		]
@@ -240,7 +240,7 @@ const NPCS_TEMPLATE := [
 				"success": "Twelve screws - the gate's going to swing perfectly!",
 				"hint1": "Try adding 3 four times."},
 			{"phase": 4, "mode": "share", "answer": 5, "grid": [4, 5], "groups": 4, "group_names": ["Hinge 1", "Hinge 2", "Hinge 3", "Hinge 4"], "final": true,
-				"setup": "I have 20 screws and want to split them evenly across the gate's 4 hinges for spares. How many screws per hinge?",
+				"setup": "I have 20 screws to share equally between the gate's 4 hinges. Can you put the same number of screws on each hinge?",
 				"success": "Five spares per hinge - this gate isn't going anywhere for a long while! Welcome to Downtown.",
 				"hint1": "Try handing out screws one at a time to each hinge."}
 		]
