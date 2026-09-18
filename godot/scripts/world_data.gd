@@ -26,152 +26,224 @@ const NPCS_TEMPLATE := [
 		"display_name": "Mae",
 		"sprite_path": "res://assets/characters/world1/mae-idle.png",
 		"tile": Vector2i(4, 4),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Oh! So glad you arrived! The storm messed everything up. I collected 4 eggs this morning, then found 3 more behind the hay! Can you help me count how many I have in total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Mae collected 4 eggs in the morning.\nThen she found 3 more behind the hay!\nHow many eggs does she have now?",
-			"correct_answer": 7,
-			"hints": ["Count the 4 eggs she already had, then add 3 more: 4, 5, 6, 7.", "4 + 3: count up from 4 — 5, 6, 7.", "There are 7 eggs in total."],
-			"success": "Seven eggs! That's a great morning for the hens.",
-			"failure": "Hmm, not quite. Let's try counting again — 4 plus 3 more.",
-			"complete": "The henhouse is looking better already. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/egg.png", "count": 7}
-		}
+		"building": "henhouse",
+		"item": "egg",
+		"container": "basket",
+		"intro": "Oh! So glad you arrived! The storm messed everything up around the henhouse.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 4, "b": 3, "answer": 7,
+				"setup": "I collected 4 eggs from the nesting boxes this morning. Then I found 3 more behind the hay! Drag them into my basket so we know the total.",
+				"success": "Seven eggs! That's a great morning for the hens.",
+				"hint1": "Let's count together — how many are already in the basket?"},
+			{"phase": 2, "mode": "basket_out", "start": 9, "remove": 2, "answer": 7, "tray": "Grandma Rose",
+				"setup": "I have 9 eggs in my basket, but 2 of them are for Grandma Rose's baking. Drag 2 eggs out so I know how many are left for selling.",
+				"success": "Seven left to sell — perfect!",
+				"hint1": "Try taking just one egg out first, then count what's left."},
+			{"phase": 3, "mode": "text", "answer": 12, "grid": [3, 4],
+				"setup": "Each of my 3 hens laid 4 eggs today. How many eggs is that in total?",
+				"success": "Twelve eggs — you did that fast!",
+				"hint1": "Try adding 4 three times: 4 + 4 + 4."},
+			{"phase": 4, "mode": "text", "answer": 3, "grid": [4, 3], "groups": 4,
+				"setup": "I have 12 eggs and want to put the same number in each of my 4 baskets. How many eggs go in each basket?",
+				"success": "Three in each basket — nice and even!",
+				"hint1": "Try sharing them out one at a time, basket by basket."}
+		]
 	},
 	{
 		"id": "chester",
 		"display_name": "Chester",
 		"sprite_path": "res://assets/characters/world1/chester-idle.png",
 		"tile": Vector2i(14, 4),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "*Neigh!* I'm Chester the horse. Chester ate 5 carrots this morning, and I'm bringing him 6 more for lunch. Can you help me count the total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Chester ate 5 carrots this morning.\nNow I'm bringing him 6 more for lunch.\nHow many carrots is that in total?",
-			"correct_answer": 11,
-			"hints": ["Count the 5 carrots he already ate, then add 6 more: 5, 6, 7, 8, 9, 10, 11.", "5 + 6: count up from 5 — 6, 7, 8, 9, 10, 11.", "There are 11 carrots altogether."],
-			"success": "Chester's going to be one happy horse! Eleven carrots total.",
-			"failure": "Hmm, let's try again. 5 carrots plus 6 more — count them up.",
-			"complete": "The stable is looking better already. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/carrot.png", "count": 11}
-		}
+		"building": "stable",
+		"item": "carrot",
+		"container": "feed basket",
+		"intro": "*Neigh!* I'm Chester the horse. Well — I'm his stable hand, but he does the talking.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 5, "b": 6, "answer": 11,
+				"setup": "Chester ate 5 carrots this morning, and I'm bringing him 6 more for lunch. Drag them all into his feed basket.",
+				"success": "Chester's going to be one happy horse!",
+				"hint1": "Count the carrots already there, then add the new ones."},
+			{"phase": 2, "mode": "basket_out", "start": 10, "remove": 4, "answer": 6, "tray": "Old Mac's pony",
+				"setup": "Chester's basket has 10 carrots, but 4 need to go to Old Mac's pony too. Drag 4 out.",
+				"success": "Six carrots left for Chester — just right.",
+				"hint1": "Take away one carrot at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 6, "grid": [2, 3],
+				"setup": "Chester eats 3 flakes of hay, 2 times a day. How many flakes does he eat in one day?",
+				"success": "Six flakes — Chester's schedule, all figured out!",
+				"hint1": "Try adding 3 two times: 3 + 3."},
+			{"phase": 4, "mode": "text", "answer": 5, "grid": [3, 5], "groups": 3,
+				"setup": "I have 15 carrots to split evenly between Chester and the two ponies next door — 3 animals total. How many carrots does each one get?",
+				"success": "Five each — everybody's fed fair and square.",
+				"hint1": "Try giving one carrot to each animal, then another round, and see how far you get."}
+		]
 	},
 	{
 		"id": "farmer-joe",
 		"display_name": "Farmer Joe",
 		"sprite_path": "res://assets/characters/world1/farmer-joe-idle.png",
 		"tile": Vector2i(24, 4),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Hey there! I'm Farmer Joe. I'm building a new barn and I need help with calculations. I stacked 6 hay bales this morning, and just brought in 5 more from the field! Can you help me count the total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Joe stacked 6 hay bales this morning.\nThen he brought in 5 more from the field!\nHow many hay bales does he have now?",
-			"correct_answer": 11,
-			"hints": ["Count the 6 bales he already stacked, then add 5 more: 6, 7, 8, 9, 10, 11.", "6 + 5: count up from 6 — 7, 8, 9, 10, 11.", "There are 11 bales in total."],
-			"success": "Eleven bales — that'll last us a while!",
-			"failure": "Hmm, let's try again. 6 bales plus 5 more — count them up.",
-			"complete": "Stop by the barn anytime for more math help!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/hay-bale.png", "count": 11}
-		}
+		"building": "barn",
+		"item": "hay bale",
+		"container": "cart",
+		"intro": "Hey there! I'm Farmer Joe. I'm fixing up the barn and I could use a sharp counter.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 6, "b": 5, "answer": 11,
+				"setup": "I stacked 6 hay bales this morning, and just brought in 5 more from the field. Drag them all onto the cart.",
+				"success": "Eleven bales — that'll last us a while!",
+				"hint1": "Count what's on the cart first, then add the new bales."},
+			{"phase": 2, "mode": "basket_out", "start": 14, "remove": 6, "answer": 8, "tray": "Stable",
+				"setup": "I've got 14 bales on the cart, but 6 need to go over to the Stable for Chester. Drag 6 off.",
+				"success": "Eight bales staying right here — good count.",
+				"hint1": "Try removing one bale at a time and counting what's left."},
+			{"phase": 3, "mode": "text", "answer": 20, "grid": [4, 5],
+				"setup": "Each row in my field has 5 pumpkins, and I've got 4 rows planted. How many pumpkins is that altogether?",
+				"success": "Twenty pumpkins — that's a whole lot of pie!",
+				"hint1": "Try adding 5 four times."},
+			{"phase": 4, "mode": "text", "answer": 6, "grid": [3, 6], "groups": 3,
+				"setup": "I picked 18 pumpkins and want to load them equally onto 3 wagons. How many pumpkins per wagon?",
+				"success": "Six per wagon — perfectly balanced loads.",
+				"hint1": "Try handing out pumpkins one at a time to each wagon."}
+		]
 	},
 	{
 		"id": "lily",
 		"display_name": "Lily",
 		"sprite_path": "res://assets/characters/world1/lily-idle.png",
 		"tile": Vector2i(4, 7),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Hi! I'm Lily. I found 3 baby chicks by the fence, and 4 more near the barn! Can you help me count how many chicks I have in total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Lily found 3 baby chicks by the fence.\nThen she found 4 more near the barn!\nHow many chicks does she have now?",
-			"correct_answer": 7,
-			"hints": ["Count the 3 chicks she already found, then add 4 more: 3, 4, 5, 6, 7.", "3 + 4: count up from 3 — 4, 5, 6, 7.", "There are 7 chicks in total."],
-			"success": "Seven little chicks, all safe and sound!",
-			"failure": "Hmm, that's not quite it. Let's try counting again — 3 plus 4 more.",
-			"complete": "Come back anytime — the chicks always need counting!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/chick.png", "count": 7}
-		}
+		"building": "coop",
+		"item": "chick",
+		"container": "coop basket",
+		"intro": "Hi! I'm Lily. The chicks got out during the storm and I'm rounding them up.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 3, "b": 4, "answer": 7,
+				"setup": "I found 3 baby chicks by the fence, and 4 more near the barn! Drag them all into the coop basket to keep them safe.",
+				"success": "Seven little chicks, all safe and sound!",
+				"hint1": "Count the chicks already in, then add the ones you found."},
+			{"phase": 2, "mode": "basket_out", "start": 8, "remove": 3, "answer": 5, "tray": "Mama hen",
+				"setup": "I have 8 chicks in the basket, but 3 are ready to go live with their mama hen. Drag 3 out.",
+				"success": "Five still here with us — the others are happy with mama.",
+				"hint1": "Take one chick out at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 8, "grid": [4, 2],
+				"setup": "Each hen has 2 chicks following her, and I count 4 hens. How many chicks is that in total?",
+				"success": "Eight little chicks — quite the parade!",
+				"hint1": "Try adding 2 four times."},
+			{"phase": 4, "mode": "text", "answer": 5, "grid": [2, 5], "groups": 2,
+				"setup": "I have 10 chicks and want to put the same number in each of my 2 coop pens. How many chicks in each pen?",
+				"success": "Five in each pen — nice and cozy.",
+				"hint1": "Try sharing them out one at a time between the two pens."}
+		]
 	},
 	{
 		"id": "vera",
 		"display_name": "Dr. Vera",
 		"sprite_path": "res://assets/characters/world1/vera-idle.png",
 		"tile": Vector2i(24, 7),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Welcome to the clinic! I have 5 bandages ready, and just restocked 6 more from the supply closet. Can you help me count how many I have in total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Vera has 5 bandages ready.\nShe just restocked 6 more from the supply closet!\nHow many bandages does she have now?",
-			"correct_answer": 11,
-			"hints": ["Count the 5 bandages she already had, then add 6 more: 5, 6, 7, 8, 9, 10, 11.", "5 + 6: count up from 5 — 6, 7, 8, 9, 10, 11.", "There are 11 bandages in total."],
-			"success": "Eleven bandages — fully stocked for whatever comes in!",
-			"failure": "Hmm, not quite. Let's try counting again — 5 plus 6 more.",
-			"complete": "The clinic is always open — come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/bandage.png", "count": 11}
-		}
+		"building": "clinic",
+		"item": "bandage",
+		"container": "medical basket",
+		"intro": "Welcome to the clinic! Every patient gets counted here — supplies too.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 5, "b": 6, "answer": 11,
+				"setup": "I have 5 bandages ready, and just restocked 6 more from the supply closet. Drag them all into my medical basket.",
+				"success": "Eleven bandages — fully stocked for whatever comes in!",
+				"hint1": "Count what's in the basket, then add the new ones."},
+			{"phase": 2, "mode": "basket_out", "start": 10, "remove": 4, "answer": 6, "tray": "Chester's checkup",
+				"setup": "I have 10 treats for good patients, but I just used 4 on Chester's checkup. Drag 4 out.",
+				"success": "Six treats left — plenty for the next visit.",
+				"hint1": "Take one treat out at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 6, "grid": [3, 2],
+				"setup": "Each of my 3 animal patients today needs 2 check-up stickers. How many stickers do I need in total?",
+				"success": "Six stickers — every patient gets their reward!",
+				"hint1": "Try adding 2 three times."},
+			{"phase": 4, "mode": "text", "answer": 3, "grid": [4, 3], "groups": 4,
+				"setup": "I have 12 treats and want to give the same number to each of my 4 furry patients today. How many treats per patient?",
+				"success": "Three each — every patient gets a fair share!",
+				"hint1": "Try handing out treats one at a time to each patient."}
+		]
 	},
 	{
 		"id": "grandma-rose",
 		"display_name": "Grandma Rose",
 		"sprite_path": "res://assets/characters/world1/grandma-rose-idle.png",
 		"tile": Vector2i(25, 14),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Well hello, dear! I picked 7 tomatoes this morning, and just found 5 more hiding under the leaves! Can you help me count the total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Grandma Rose picked 7 tomatoes this morning.\nThen she found 5 more hiding under the leaves!\nHow many tomatoes does she have now?",
-			"correct_answer": 12,
-			"hints": ["Count the 7 tomatoes she already picked, then add 5 more: 7, 8, 9, 10, 11, 12.", "7 + 5: count up from 7 — 8, 9, 10, 11, 12.", "There are 12 tomatoes in total."],
-			"success": "Twelve tomatoes — perfect for tonight's sauce!",
-			"failure": "Hmm, not quite. Let's try again — 7 plus 5 more tomatoes.",
-			"complete": "The garden always needs a careful observer. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/tomato.png", "count": 12}
-		}
+		"building": "garden",
+		"item": "tomato",
+		"container": "basket",
+		"intro": "Well hello, dear! The garden always needs a careful pair of eyes.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 7, "b": 5, "answer": 12,
+				"setup": "I picked 7 tomatoes this morning, and just found 5 more hiding under the leaves. Drag them all into my basket.",
+				"success": "Twelve tomatoes — perfect for tonight's sauce!",
+				"hint1": "Count what's in the basket, then add the new tomatoes."},
+			{"phase": 2, "mode": "basket_out", "start": 13, "remove": 5, "answer": 8, "tray": "Sam's bakery",
+				"setup": "My basket has 13 tomatoes, but 5 are going to Sam's bakery in town. Drag 5 out.",
+				"success": "Eight tomatoes staying with me — plenty for us.",
+				"hint1": "Take away one tomato at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 12, "grid": [4, 3],
+				"setup": "I planted 4 flower pots, with 3 flowers in each. How many flowers is that in total?",
+				"success": "Twelve flowers — my garden's never looked prettier!",
+				"hint1": "Try adding 3 four times."},
+			{"phase": 4, "mode": "text", "answer": 4, "grid": [4, 4], "groups": 4,
+				"setup": "I picked 16 flowers and want to make equal bouquets for my 4 neighbors. How many flowers in each bouquet?",
+				"success": "Four flowers each — every bouquet just as lovely.",
+				"hint1": "Try handing out flowers one at a time to each neighbor's bunch."}
+		]
 	},
 	{
 		"id": "billy",
 		"display_name": "Billy",
 		"sprite_path": "res://assets/characters/world1/billy-idle.png",
 		"tile": Vector2i(15, 10),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Hey! I'm Billy. I've got 6 nails in my toolbox, and Old Mac just gave me 4 more! Can you help me count how many nails I have now?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Billy has 6 nails in his toolbox.\nOld Mac just gave him 4 more!\nHow many nails does Billy have now?",
-			"correct_answer": 10,
-			"hints": ["Count the 6 nails he already had, then add 4 more: 6, 7, 8, 9, 10.", "6 + 4: count up from 6 — 7, 8, 9, 10.", "There are 10 nails in total."],
-			"success": "Ten nails — enough to finish this fence!",
-			"failure": "Hmm, let's try again. 6 nails plus 4 more — count them up.",
-			"complete": "I'll be right here at the gate. Come back anytime!",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/nail.png", "count": 10}
-		}
+		"building": "",
+		"item": "nail",
+		"container": "toolbox",
+		"intro": "Hey! I'm Billy. This fence won't fix itself — want to help me count supplies?",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 6, "b": 4, "answer": 10,
+				"setup": "I've got 6 nails in my toolbox, and Old Mac just gave me 4 more. Drag them all into the box.",
+				"success": "Ten nails — enough to finish this fence!",
+				"hint1": "Count what's in the box, then add the new nails."},
+			{"phase": 2, "mode": "basket_out", "start": 9, "remove": 3, "answer": 6, "tray": "Scrap pile",
+				"setup": "I have 9 planks stacked up, but 3 are warped and need to go to the scrap pile. Drag 3 out.",
+				"success": "Six good planks left — plenty to work with.",
+				"hint1": "Take one plank out at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 12, "grid": [3, 4],
+				"setup": "Each fence section needs 4 nails, and I'm building 3 sections today. How many nails do I need in total?",
+				"success": "Twelve nails — exactly enough, nothing wasted!",
+				"hint1": "Try adding 4 three times."},
+			{"phase": 4, "mode": "text", "answer": 3, "grid": [5, 3], "groups": 5,
+				"setup": "I have 15 nails and need to split them evenly across 5 fence posts. How many nails per post?",
+				"success": "Three per post — the fence is going to be so sturdy!",
+				"hint1": "Try handing out nails one at a time to each post."}
+		]
 	},
 	{
 		"id": "old-mac",
 		"display_name": "Old Mac",
 		"sprite_path": "res://assets/characters/world1/old-mac-idle.png",
 		"tile": Vector2i(15, 19),
-		"ccss": "2.OA.A.1",
-		"skill": "Addition",
-		"dialogue": "Hmm. You're doing well with addition! Let me test you one more time. I found 4 old keys in the shed, and just discovered 5 more in the workbench drawer. Can you help me count how many keys I have in total?",
-		"quest": {
-			"type": "numberpad",
-			"problem": "Old Mac found 4 old keys in the shed.\nThen he discovered 5 more in the workbench drawer!\nHow many keys does he have now?",
-			"correct_answer": 9,
-			"hints": ["Count the 4 keys he already found, then add 5 more: 4, 5, 6, 7, 8, 9.", "4 + 5: count up from 4 — 5, 6, 7, 8, 9.", "There are 9 keys in total."],
-			"success": "Nine keys — one of these has got to open the gate! Welcome to Downtown.",
-			"failure": "Hmm, not quite. Let's try again — 4 keys plus 5 more.",
-			"complete": "The gate is open. Welcome to the city, kid.",
-			"visual": {"icon": "res://assets/scenery/world1/clutter/key.png", "count": 9}
-		}
+		"building": "",
+		"item": "key",
+		"container": "keyring basket",
+		"intro": "Hmm. So you're the one everybody's talking about. This gate's been stuck since the storm.",
+		"exercises": [
+			{"phase": 1, "mode": "basket_in", "a": 4, "b": 5, "answer": 9,
+				"setup": "I found 4 old keys in the shed, and just discovered 5 more in the workbench drawer. Drag them all into my keyring basket.",
+				"success": "Nine keys — one of these has got to open the gate!",
+				"hint1": "Count what's in the basket, then add the new keys."},
+			{"phase": 2, "mode": "basket_out", "start": 11, "remove": 5, "answer": 6, "tray": "Rusty pile",
+				"setup": "I've got 11 tools in my belt, but 5 are too rusty to use. Drag 5 out.",
+				"success": "Six good tools left — enough to fix this old gate.",
+				"hint1": "Take one tool out at a time and count what's left."},
+			{"phase": 3, "mode": "text", "answer": 12, "grid": [4, 3],
+				"setup": "The gate has 4 hinges, and each one needs 3 screws. How many screws do I need in total?",
+				"success": "Twelve screws — the gate's going to swing perfectly!",
+				"hint1": "Try adding 3 four times."},
+			{"phase": 4, "mode": "text", "answer": 5, "grid": [4, 5], "groups": 4, "final": true,
+				"setup": "I have 20 screws and want to split them evenly across the gate's 4 hinges for spares. How many screws per hinge?",
+				"success": "Five spares per hinge — this gate isn't going anywhere for a long while! Welcome to Downtown.",
+				"hint1": "Try handing out screws one at a time to each hinge."}
+		]
 	}
 ]
 
@@ -299,13 +371,32 @@ func get_adjacent_npc(tile: Vector2i) -> Dictionary:
 
 func interaction_text(tile: Vector2i) -> String:
 	var npc := get_adjacent_npc(tile)
-	return npc.get("dialogue", "") if npc else ""
+	return npc.get("intro", "") if npc else ""
 
+# Per-NPC progress: npc_id -> next phase index (0..4). 4 == all done.
+var npc_phase := {}
+
+func get_phase(npc_id: String) -> int:
+	return int(npc_phase.get(npc_id, 0))
+
+func advance_phase(npc_id: String) -> void:
+	npc_phase[npc_id] = min(get_phase(npc_id) + 1, 4)
+
+func is_npc_complete(npc_id: String) -> bool:
+	return get_phase(npc_id) >= 4
+
+func get_current_exercise(npc: Dictionary) -> Dictionary:
+	if npc.is_empty() or not npc.has("exercises"):
+		return {}
+	var idx := get_phase(npc.id)
+	var list: Array = npc.exercises
+	if idx >= list.size():
+		return {}
+	return list[idx]
+
+# Kept for the test-suite / editor: returns the NPC's *current* exercise.
 func get_adjacent_npc_quest(tile: Vector2i) -> Dictionary:
-	var npc := get_adjacent_npc(tile)
-	if npc and npc.has("quest"):
-		return npc.quest
-	return {}
+	return get_current_exercise(get_adjacent_npc(tile))
 
 # --- Prop definitions per world ---
 

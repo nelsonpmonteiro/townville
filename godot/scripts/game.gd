@@ -4,6 +4,7 @@ const WorldDataScript = preload("res://scripts/world_data.gd")
 const MapRendererScript = preload("res://scripts/map_renderer.gd")
 const PlayerScript = preload("res://scripts/player.gd")
 const MapEditorScript = preload("res://scripts/editor/simple_map_editor.gd")
+const InteractionFlowScript = preload("res://scripts/ui/interaction_flow.gd")
 
 var world
 var player
@@ -15,23 +16,9 @@ var map_editor: Node2D
 var map_renderer_node: Node2D
 var hud_layer: CanvasLayer
 
-# Quest UI
-var quest_panel: PanelContainer
-var quest_title: Label
-var quest_problem: Label
-var quest_visual: HBoxContainer
-var quest_input: LineEdit
-var quest_submit: Button
-var quest_feedback: Label
-var quest_hint: Label
-var quest_close: Button
-
-# Quest state
-var quest_state = "idle"  # idle dialogue quest_active success complete
-var active_quest = {}
-var active_npc = {}
-var attempt_count = 0
-var max_attempts = 3
+# Interaction flow (dialogue → exercise → feedback), one screen at a time
+var flow: CanvasLayer
+var building_progress := {}  # building_id -> Label overlay
 
 func _ready() -> void:
 	build_world()
@@ -62,13 +49,49 @@ func _publish_js_state() -> void:
 	var d := {
 		"fps": Engine.get_frames_per_second(),
 		"tile": [t.x, t.y],
-		"quest_state": quest_state,
-		"dialogue_visible": dialogue_label.visible if dialogue_label else false,
-		"dialogue_text": dialogue_label.text if dialogue_label else "",
 		"edit_mode": map_editor.edit_mode if map_editor else false,
 		"grid_visible": grid_visible,
+		"flow": flow.debug_state() if flow else {},
+		"phases": world.npc_phase if world else {},
 	}
 	JavaScriptBridge.eval("window.__townville_state=" + JSON.stringify(d) + ";", true)
+	# Command channel for the browser probe: window.__townville_cmd = "..."
+	var cmd = JavaScriptBridge.eval("(function(){var c=window.__townville_cmd||'';window.__townville_cmd='';return c;})()", true)
+	if cmd is String and not cmd.is_empty():
+		_run_probe_cmd(cmd)
+
+func _run_probe_cmd(cmd: String) -> void:
+	var parts := cmd.split(" ")
+	match parts[0]:
+		"rects":
+			# publish screen rects of the drag targets so the probe can do REAL mouse drags
+			var r := {}
+			if flow and flow.state == flow.State.EXERCISE:
+				var src: HBoxContainer = flow.source_items if flow.exercise.mode == "basket_in" else flow.basket_items
+				var i := 0
+				for ch in src.get_children():
+					if ch.get_script() == flow.DragItemScript:
+						r["item%d" % i] = _rect(ch); i += 1
+				r["basket"] = _rect(flow.basket_zone)
+				r["tray"] = _rect(flow.tray_zone)
+				r["done"] = _rect(flow.done_btn)
+				r["input"] = _rect(flow.answer_input)
+				r["submit"] = _rect(flow.submit_btn)
+			if flow and flow.state == flow.State.DIALOGUE:
+				r["dialogue_box"] = _rect(flow.dialogue_screen.get_node("DialogueBox"))
+			JavaScriptBridge.eval("window.__townville_rects=" + JSON.stringify(r) + ";", true)
+		"drag_one":
+			flow.debug_drag_one(parts[1])
+		"done":
+			flow.debug_done()
+		"submit":
+			flow.debug_submit(parts[1])
+		"advance":
+			flow.advance_dialogue()
+
+func _rect(c: Control) -> Array:
+	var g := c.get_global_rect()
+	return [g.position.x, g.position.y, g.size.x, g.size.y]
 
 func build_world() -> void:
 	if built:
@@ -90,7 +113,7 @@ func build_world() -> void:
 	add_child(player)
 	player.setup(world)
 	add_hud()
-	add_quest_ui()
+	add_interaction_flow()
 	add_map_editor()
 
 func add_map_editor() -> void:
@@ -233,91 +256,77 @@ func add_hud() -> void:
 	dialogue_label.visible = false
 	layer.add_child(dialogue_label)
 
-func add_quest_ui() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "QuestUI"
-	add_child(layer)
+func add_interaction_flow() -> void:
+	flow = InteractionFlowScript.new()
+	flow.name = "InteractionFlow"
+	flow.world = world
+	add_child(flow)
+	flow.phase_completed.connect(_on_phase_completed)
+	flow.world_completed.connect(_on_world_completed)
+	_build_building_progress()
 
-	quest_panel = PanelContainer.new()
-	quest_panel.position = Vector2(240, 180)
-	quest_panel.size = Vector2(480, 420)
-	quest_panel.visible = false
-	layer.add_child(quest_panel)
+func is_input_locked() -> bool:
+	return flow != null and flow.is_locked()
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	quest_panel.add_child(vbox)
+# --- Building progress overlay: "1/4" … "4/4 ✓" above each NPC's building ---
+func _build_building_progress() -> void:
+	for b in world.BUILDINGS:
+		var group := get_node_or_null("BuildingGroup_" + b.id)
+		if group == null:
+			continue
+		var lbl := Label.new()
+		lbl.name = "Progress"
+		lbl.text = "0/4"
+		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_color_override("font_color", Color("#ffd75a"))
+		lbl.add_theme_color_override("font_shadow_color", Color.BLACK)
+		lbl.add_theme_constant_override("shadow_offset_x", 1)
+		lbl.add_theme_constant_override("shadow_offset_y", 1)
+		lbl.position = Vector2(-14, -10)
+		lbl.z_index = 7
+		group.add_child(lbl)
+		building_progress[b.id] = lbl
 
-	quest_title = Label.new()
-	quest_title.add_theme_font_size_override("font_size", 22)
-	quest_title.add_theme_color_override("font_color", Color("#fff2a8"))
-	quest_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(quest_title)
+func _on_phase_completed(npc_id: String, _phase: int) -> void:
+	var npc := _npc_by_id(npc_id)
+	var bid: String = npc.get("building", "")
+	var done: int = world.get_phase(npc_id)
+	if bid != "" and building_progress.has(bid):
+		var lbl: Label = building_progress[bid]
+		lbl.text = "%d/4%s" % [done, " ✓" if done >= 4 else ""]
+		if done >= 4:
+			lbl.add_theme_color_override("font_color", Color("#7fff7f"))
+			var sprite := get_node_or_null("BuildingGroup_%s/Building_%s" % [bid, bid]) as Sprite2D
+			if sprite:
+				sprite.modulate = Color(1.05, 1.05, 0.9)
 
-	quest_problem = Label.new()
-	quest_problem.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	quest_problem.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	quest_problem.add_theme_font_size_override("font_size", 18)
-	quest_problem.add_theme_color_override("font_color", Color.WHITE)
-	quest_problem.custom_minimum_size = Vector2(440, 60)
-	vbox.add_child(quest_problem)
+func _on_world_completed() -> void:
+	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown…"
+	dialogue_label.visible = true
 
-	quest_visual = HBoxContainer.new()
-	quest_visual.alignment = BoxContainer.ALIGNMENT_CENTER
-	quest_visual.add_theme_constant_override("separation", 12)
-	vbox.add_child(quest_visual)
-
-	var input_row := HBoxContainer.new()
-	input_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	input_row.add_theme_constant_override("separation", 8)
-	vbox.add_child(input_row)
-
-	quest_input = LineEdit.new()
-	quest_input.placeholder_text = "Type your answer..."
-	quest_input.custom_minimum_size = Vector2(160, 36)
-	quest_input.max_length = 6
-	input_row.add_child(quest_input)
-
-	quest_submit = Button.new()
-	quest_submit.text = "Submit"
-	quest_submit.custom_minimum_size = Vector2(80, 36)
-	input_row.add_child(quest_submit)
-	quest_submit.pressed.connect(_on_quest_submit)
-
-	quest_feedback = Label.new()
-	quest_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	quest_feedback.add_theme_font_size_override("font_size", 16)
-	quest_feedback.visible = false
-	vbox.add_child(quest_feedback)
-
-	quest_hint = Label.new()
-	quest_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	quest_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	quest_hint.add_theme_color_override("font_color", Color("#a0c0ff"))
-	quest_hint.visible = false
-	quest_hint.custom_minimum_size = Vector2(440, 30)
-	vbox.add_child(quest_hint)
-
-	quest_close = Button.new()
-	quest_close.text = "Close"
-	quest_close.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(quest_close)
-	quest_close.pressed.connect(_close_quest)
+func _npc_by_id(id: String) -> Dictionary:
+	for n in world.NPCS:
+		if n.id == id:
+			return n
+	return {}
 
 func _process(_delta: float) -> void:
 	if player == null:
 		return
 	_publish_js_state()
 	fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	if is_input_locked():
+		prompt_label.text = ""
+		return
 	var nearby: Dictionary = world.get_adjacent_npc(player.current_tile())
-	if nearby and quest_state == "idle":
-		prompt_label.text = "[E] Talk to " + nearby.display_name
-	elif nearby and quest_state == "dialogue":
-		prompt_label.text = "[E] Start Quest"
+	if nearby:
+		var ph: int = world.get_phase(nearby.id)
+		if ph >= 4:
+			prompt_label.text = "[E] Talk to " + nearby.display_name + "  (done ✓)"
+		else:
+			prompt_label.text = "[E] Talk to " + nearby.display_name + "  (%d/4)" % ph
 	else:
 		prompt_label.text = ""
-		if quest_state == "idle":
-			dialogue_label.visible = false
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.pressed and not event.echo and event.keycode == KEY_F1:
@@ -329,161 +338,21 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if map_editor and map_editor.edit_mode:
 		return
-	if event.pressed and not event.echo and (event.keycode == KEY_E or event.keycode == KEY_SPACE):
-		if quest_state == "quest_active" or quest_state == "success":
-			return
-		if quest_state == "idle":
-			var nearby: Dictionary = world.get_adjacent_npc(player.current_tile())
-			if nearby:
-				dialogue_label.text = nearby.get("dialogue", "")
-				dialogue_label.visible = true
-				active_npc = nearby
-				quest_state = "dialogue"
-				prompt_label.text = "[E] Start Quest"
-				get_viewport().set_input_as_handled()
-		elif quest_state == "dialogue":
-			_start_quest()
+	if not (event.pressed and not event.echo):
+		return
+	var is_interact: bool = event.keycode == KEY_E or event.keycode == KEY_SPACE or event.keycode == KEY_ENTER
+	if flow.state == flow.State.DIALOGUE and is_interact:
+		flow.advance_dialogue()
+		get_viewport().set_input_as_handled()
+		return
+	if flow.state != flow.State.MAP:
+		return
+	if is_interact:
+		var nearby: Dictionary = world.get_adjacent_npc(player.current_tile())
+		if nearby:
+			dialogue_label.visible = false
+			flow.start(nearby)
 			get_viewport().set_input_as_handled()
-
-func _start_quest() -> void:
-	if active_npc.has("quest"):
-		active_quest = active_npc.quest
-	else:
-		active_quest = world.get_adjacent_npc_quest(player.current_tile())
-	if active_quest.is_empty():
-		quest_state = "idle"
-		return
-
-	attempt_count = 0
-	quest_state = "quest_active"
-	dialogue_label.visible = false
-	quest_panel.visible = true
-	quest_title.text = active_npc.display_name + "  —  " + active_npc.get("skill", "")
-	quest_problem.text = active_quest.get("problem", "")
-	quest_feedback.visible = false
-	quest_hint.visible = false
-	_build_quest_visual()
-	quest_input.text = ""
-	quest_input.grab_focus()
-
-func _build_quest_visual() -> void:
-	for child in quest_visual.get_children():
-		child.queue_free()
-
-	var qtype: String = active_quest.get("type", "numberpad")
-	var visual: Dictionary = active_quest.get("visual", {})
-
-	if qtype == "compare":
-		# Two columns with repeated sprites
-		var va := _make_group_box("Pile A", visual.get("icon_a", ""), visual.get("count_a", 1))
-		quest_visual.add_child(va)
-		var vb := _make_group_box("Pile B", visual.get("icon_b", ""), visual.get("count_b", 1))
-		quest_visual.add_child(vb)
-	elif qtype == "compare_length":
-		var va := _make_group_box("A", visual.get("icon_a", ""), 1)
-		quest_visual.add_child(va)
-		var vb := _make_group_box("B", visual.get("icon_b", ""), 1)
-		quest_visual.add_child(vb)
-	elif qtype == "numberpad":
-		var icon_path: String = visual.get("icon", "")
-		var count: int = visual.get("count", 1)
-		for i in count:
-			if not icon_path.is_empty():
-				var tex = load(icon_path) as Texture2D
-				if tex:
-					var s := Sprite2D.new()
-					s.texture = tex
-					s.scale = Vector2.ONE * 0.8
-					quest_visual.add_child(s)
-
-func _make_group_box(title: String, icon_path: String, count: int) -> VBoxContainer:
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	var title_l := Label.new()
-	title_l.text = title
-	title_l.add_theme_color_override("font_color", Color("#fff2a8"))
-	title_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title_l)
-	for i in count:
-		if not icon_path.is_empty():
-			var tex = load(icon_path) as Texture2D
-			if tex:
-				var s := Sprite2D.new()
-				s.texture = tex
-				s.scale = Vector2.ONE * 0.7
-				box.add_child(s)
-	return box
-
-func _on_quest_submit() -> void:
-	var answer = quest_input.text.strip_edges()
-	if answer.is_empty():
-		return
-
-	var correct = active_quest.get("correct_answer", "")
-	var correct_str: String = str(correct).to_lower()
-	var answer_lower: String = answer.to_lower()
-
-	# Check compare_length (options: Sunflower/Carrot or A/B)
-	var qtype: String = active_quest.get("type", "numberpad")
-	if qtype == "compare_length":
-		var opts = active_quest.get("options", [])
-		if opts.size() >= 2:
-			if answer == "A" or answer == "1":
-				answer_lower = opts[0].to_lower()
-			elif answer == "B" or answer == "2":
-				answer_lower = opts[1].to_lower()
-
-	if answer_lower == correct_str:
-		_on_correct()
-	else:
-		attempt_count += 1
-		_on_wrong()
-
-func _on_correct() -> void:
-	quest_state = "success"
-	quest_input.editable = false
-	quest_submit.disabled = true
-	quest_feedback.visible = true
-	quest_feedback.add_theme_color_override("font_color", Color("#7fff7f"))
-	var success_text: String = active_quest.get("success", "Correct!")
-	quest_feedback.text = success_text.replace("{answer}", quest_input.text)
-	quest_close.text = "Continue"
-
-func _on_wrong() -> void:
-	quest_feedback.visible = true
-	quest_feedback.add_theme_color_override("font_color", Color("#ff7f7f"))
-	quest_feedback.text = active_quest.get("failure", "Not quite, try again.")
-
-	if attempt_count >= max_attempts:
-		quest_hint.visible = true
-		var hints: Array = active_quest.get("hints", [])
-		if hints.size() > 0:
-			quest_hint.text = "Hint: " + hints[min(attempt_count - 1, hints.size() - 1)]
-		quest_close.text = "Try Again"
-	else:
-		quest_hint.visible = false
-		quest_close.text = "Retry"
-
-func _close_quest() -> void:
-	if quest_state == "success":
-		# Show completion text
-		dialogue_label.text = active_quest.get("complete", "Great job!")
-		dialogue_label.visible = true
-		quest_panel.visible = false
-		quest_state = "idle"
-		active_npc = {}
-		active_quest = {}
-		quest_input.editable = true
-		quest_submit.disabled = false
-	else:
-		# Retry or close
-		quest_panel.visible = false
-		quest_state = "idle"
-		dialogue_label.visible = false
-		active_npc = {}
-		active_quest = {}
-		quest_input.editable = true
-		quest_submit.disabled = false
 
 func capture_after_render() -> void:
 	await get_tree().process_frame

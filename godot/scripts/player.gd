@@ -63,6 +63,10 @@ func _physics_process(delta: float) -> void:
 		return
 	if get_parent() and get_parent().has_method("is_map_editor_active") and get_parent().is_map_editor_active():
 		return
+	# Movement only in the MAP state — never underneath an open dialogue/exercise.
+	if get_parent() and get_parent().has_method("is_input_locked") and get_parent().is_input_locked():
+		update_animation(Vector2.ZERO)
+		return
 	var direction := Vector2.ZERO
 	direction.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
 	direction.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
