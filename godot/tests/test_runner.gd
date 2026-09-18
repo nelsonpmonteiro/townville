@@ -9,6 +9,17 @@ func expect(condition: bool, message: String) -> void:
 		failures += 1
 		push_error("FAIL: " + message)
 
+func has_sequential_count_badges(container: Control) -> bool:
+	if container == null:
+		return true
+	var expected := 1
+	for child in container.get_children():
+		var badge := child.get_node_or_null("CountBadge") as Label
+		if badge == null or badge.text != str(expected):
+			return false
+		expected += 1
+	return true
+
 func write_json(path: String, value: Variant) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(value, "  "))
@@ -166,6 +177,43 @@ func _initialize() -> void:
 	await process_frame
 	var mae: Dictionary = world.NPCS[0]
 	expect(flow.state_name() == "map" and not flow.is_locked(), "flow boots in MAP, input unlocked")
+
+	# Every basket exercise shares the same move/renumber path. Exercise all
+	# 8 NPCs in both directions and validate after EACH drop (including undo)
+	# so labels always match current container position with no gaps/repeats.
+	for basket_npc in world.NPCS:
+		var npc_id: String = basket_npc.id
+		world.npc_phase[npc_id] = 0
+		flow.start(basket_npc)
+		flow.advance_dialogue(); flow.advance_dialogue()
+		flow.debug_hint()
+		var addition_numbers_ok := has_sequential_count_badges(flow.source_items) and has_sequential_count_badges(flow.basket_items)
+		var needed: int = int(flow.exercise.answer) - int(flow.exercise.a)
+		for i in needed:
+			flow.debug_drag_one("BasketDropZone")
+			addition_numbers_ok = addition_numbers_ok and has_sequential_count_badges(flow.source_items) and has_sequential_count_badges(flow.basket_items)
+		flow.debug_drag_one_from(flow.basket_items, "SourceDropZone")
+		addition_numbers_ok = addition_numbers_ok and has_sequential_count_badges(flow.source_items) and has_sequential_count_badges(flow.basket_items)
+		flow.debug_drag_one("BasketDropZone")
+		addition_numbers_ok = addition_numbers_ok and has_sequential_count_badges(flow.source_items) and has_sequential_count_badges(flow.basket_items)
+		expect(addition_numbers_ok, "%s phase 1 renumbers source and basket after every forward/reverse drop" % npc_id)
+
+		world.npc_phase[npc_id] = 1
+		flow.start(basket_npc)
+		flow.advance_dialogue(); flow.advance_dialogue()
+		flow.debug_hint()
+		var subtraction_numbers_ok := has_sequential_count_badges(flow.basket_items) and has_sequential_count_badges(flow.tray_items)
+		var remove_count: int = int(flow.exercise.remove)
+		for i in remove_count:
+			flow.debug_drag_one("TrayDropZone")
+			subtraction_numbers_ok = subtraction_numbers_ok and has_sequential_count_badges(flow.basket_items) and has_sequential_count_badges(flow.tray_items)
+		flow.debug_drag_one_from(flow.tray_items, "BasketDropZone")
+		subtraction_numbers_ok = subtraction_numbers_ok and has_sequential_count_badges(flow.basket_items) and has_sequential_count_badges(flow.tray_items)
+		flow.debug_drag_one("TrayDropZone")
+		subtraction_numbers_ok = subtraction_numbers_ok and has_sequential_count_badges(flow.basket_items) and has_sequential_count_badges(flow.tray_items)
+		expect(subtraction_numbers_ok, "%s phase 2 renumbers basket and tray after every forward/reverse drop" % npc_id)
+	world.npc_phase.clear()
+
 	flow.start(mae)
 	expect(flow.state_name() == "dialogue" and flow.is_locked(), "E next to NPC → DIALOGUE, movement locked")
 	expect(flow.dialogue_screen.visible and not flow.exercise_screen.visible and not flow.feedback_screen.visible, "only DialogueScreen visible")
