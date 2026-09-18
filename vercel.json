@@ -1,0 +1,37 @@
+{
+  "buildCommand": null,
+  "installCommand": null,
+  "framework": null,
+  "outputDirectory": "public",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/index\\.wasm",
+      "headers": [
+        { "key": "Content-Type", "value": "application/wasm" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/index\\.pck",
+      "headers": [
+        { "key": "Content-Type", "value": "application/octet-stream" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/index\\.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/index\\.html",
+      "headers": [
+        { "key": "Content-Type", "value": "text/html; charset=utf-8" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}

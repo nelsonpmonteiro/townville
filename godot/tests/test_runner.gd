@@ -113,7 +113,7 @@ func _initialize() -> void:
 	expect(world.walkable.size() == 20 and world.walkable[0].size() == 30, "collision matrix is the single 30x20 map source")
 	expect(world.SPAWN == Vector2i(16, 18), "player starts at the south/bottom gate entrance")
 	expect(world.is_walkable(world.SPAWN), "spawn is walkable")
-	expect(world.is_walkable(world.SPAWN + Vector2i(1, 0)), "player can walk east from spawn")
+	expect(world.is_walkable(world.SPAWN + Vector2i(0, -1)), "player can walk north from spawn (toward farm)")
 	expect(not world.is_walkable(Vector2i(-1, 8)), "left world boundary blocks movement")
 	expect(not world.is_walkable(Vector2i(30, 8)), "right world boundary blocks movement")
 	expect(not world.is_walkable(Vector2i(0, 0)), "blocked matrix tile rejects movement")
@@ -123,7 +123,9 @@ func _initialize() -> void:
 	var adjacent_npc = world.get_adjacent_npc(world.NPCS[0].tile + Vector2i(1, 0))
 	expect(adjacent_npc.size() > 0, "NPC adjacent detection works")
 	expect(world.interaction_text(world.NPCS[0].tile + Vector2i(1, 0)).length() > 0, "NPC interaction returns dialogue")
-	expect(not world.get_adjacent_npc(world.SPAWN).size(), "no NPC near spawn")
+	# Old Mac stands at the bottom gate entrance (diagonally adjacent to spawn),
+	# so a fresh player sees the gate NPC immediately.
+	expect(world.get_adjacent_npc(world.SPAWN).size() > 0, "gate NPC (Old Mac) is adjacent to the entrance spawn")
 
 	# --- Exercise script: 4 phases × 8 NPCs, values from TOWNVILLE-w1-exercise-script.md ---
 	var expected := {

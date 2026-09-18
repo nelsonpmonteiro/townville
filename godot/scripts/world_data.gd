@@ -221,7 +221,7 @@ const NPCS_TEMPLATE := [
 		"id": "old-mac",
 		"display_name": "Old Mac",
 		"sprite_path": "res://assets/characters/world1/old-mac-idle.png",
-		"tile": Vector2i(14, 19),
+		"tile": Vector2i(16, 19),
 		"building": "",
 		"item": "key",
 		"container": "keyring basket",
