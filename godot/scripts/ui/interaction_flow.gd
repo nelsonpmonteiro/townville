@@ -29,6 +29,11 @@ const ITEM_ICONS := {
 }
 const FEEDBACK_SECONDS := 1.8
 const TYPE_SPEED := 0.035
+const POOL_EXTRA := 3  # draggable pool always has this many more than strictly needed
+const POOL_LABELS := {
+	"egg": "Nest", "carrot": "Feed Bin", "hay bale": "Field", "chick": "Yard",
+	"bandage": "Supply Closet", "tomato": "Vine", "nail": "Shed", "key": "Drawer",
+}
 
 var state: State = State.MAP
 var world
@@ -51,6 +56,7 @@ var exercise_screen: Control
 var prompt_label: Label
 var hint_label: Label
 var basket_row: HBoxContainer      # basket_in/out layout root
+var source_title: Label
 var source_items: HBoxContainer
 var basket_zone: PanelContainer
 var basket_items: HBoxContainer
@@ -281,6 +287,7 @@ func _build_exercise() -> void:
 	src_title.text = "New items"
 	src_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	src_box.add_child(src_title)
+	source_title = src_title
 	var src_panel := PanelContainer.new()
 	src_panel.custom_minimum_size = Vector2(230, 140)
 	src_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
@@ -394,10 +401,14 @@ func _open_exercise() -> void:
 		"basket_in":
 			tray_zone.visible = false
 			source_items.get_parent().get_parent().visible = true
+			source_title.text = POOL_LABELS.get(npc.item, "Supply")
 			for i in exercise.a:
 				basket_items.add_child(_make_item(icon, false))
 			basket_count = exercise.a
-			for i in exercise.b:
+			# Pool always has more draggable items than strictly needed (b) so
+			# the child must recognize the target, not just clear the screen.
+			var pool_size: int = int(exercise.b) + POOL_EXTRA
+			for i in pool_size:
 				source_items.add_child(_make_item(icon, true))
 			_update_basket_counter()
 		"basket_out":
@@ -415,7 +426,8 @@ func _open_exercise() -> void:
 			answer_input.grab_focus()
 
 func _update_basket_counter() -> void:
-	basket_counter.text = "%s: %d" % [npc.get("container", "Basket").capitalize(), basket_count]
+	var target: int = int(exercise.get("answer", basket_count))
+	basket_counter.text = "%s: %d/%d" % [npc.get("container", "Basket").capitalize(), basket_count, target]
 
 func _make_item(icon_path: String, draggable: bool) -> Control:
 	var item := TextureRect.new()
@@ -441,6 +453,8 @@ func drop_into(zone_name: String, source: Control) -> void:
 		basket_items.add_child(source)
 		basket_count += 1
 		_update_basket_counter()
+		if basket_count > int(exercise.answer):
+			_resolve(false)
 	elif mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
 		source.get_parent().remove_child(source)
 		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -448,6 +462,8 @@ func drop_into(zone_name: String, source: Control) -> void:
 		tray_items.add_child(source)
 		basket_count -= 1
 		_update_basket_counter()
+		if basket_count < int(exercise.answer):
+			_resolve(false)
 
 ## Basket phases: the child presses Done when they think the basket is right.
 ## (Auto-checking on every drop would make a wrong answer impossible and the

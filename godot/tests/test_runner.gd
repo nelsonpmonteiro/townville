@@ -148,31 +148,45 @@ func _initialize() -> void:
 	flow.advance_dialogue()  # → exercise
 	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_in", "dialogue dismissed → EXERCISE phase 1 basket_in")
 	expect(not flow.dialogue_screen.visible and flow.exercise_screen.visible, "dialogue hidden, exercise visible (no overlap)")
-	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 3, "basket pre-filled 4, 3 draggable eggs outside")
+	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "basket pre-filled 4, pool has 6 draggable eggs (target 3 + 3 extra, so clicking isn't just 'clear the pool')")
+	expect(flow.basket_counter.text == "Basket: 4/7", "basket counter shows current/target")
+	expect(flow.source_title.text == "Nest", "pool label is themed, not 'New items'")
 	# wrong drop target does nothing
 	flow.debug_drag_one("TrayDropZone")
 	expect(flow.basket_count == 4, "dropping outside the basket is ignored")
+	# Overshoot: dragging past the target (7) is an active wrong answer, auto-resolved
+	# without needing to press Done, and the exercise resets (pool refills).
+	for i in 4: flow.debug_drag_one("BasketDropZone")
+	expect(flow.basket_count == 8 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target auto-resolves as wrong (overshoot)")
+	await create_timer(2.0).timeout
+	expect(flow.state_name() == "exercise" and flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "overshoot reset: basket back to start, pool refilled")
 	for i in 3: flow.debug_drag_one("BasketDropZone")
-	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 0 and flow.state_name() == "exercise", "3 drags in → basket 7, still in EXERCISE until Done")
+	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3 and flow.state_name() == "exercise", "3 drags in → basket 7/7, 3 extra still in pool, still in EXERCISE until Done")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "Done with 7 → FEEDBACK correct")
 	expect(flow.result_label.text == "Seven eggs! That's a great morning for the hens.", "success line from script")
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "map" and world.get_phase("mae") == 1, "feedback auto-dismiss → MAP, phase advanced to 2")
 
-	# phase 2 basket_out with a WRONG attempt first
+	# phase 2 basket_out with a WRONG attempt first — dragging out past the
+	# target (7) is now an active wrong answer, auto-resolved as soon as the
+	# count crosses below the target (no need to press Done for overshoot).
 	flow.start(mae)
 	flow.advance_dialogue(); flow.advance_dialogue()
 	expect(flow.exercise.mode == "basket_out" and flow.basket_count == 9, "phase 2: 9 eggs in basket, drag out")
-	for i in 3: flow.debug_drag_one("TrayDropZone")  # 3 out instead of 2
-	flow.debug_done()
-	expect(flow.state_name() == "feedback" and not flow.last_correct, "Done with 3 out (6 left) → wrong feedback")
+	expect(flow.basket_counter.text == "Basket: 9/7", "basket_out counter also shows current/target")
+	flow.debug_drag_one("TrayDropZone")
+	flow.debug_drag_one("TrayDropZone")
+	expect(flow.basket_count == 7 and flow.state_name() == "exercise", "2 out → 7/7, still in EXERCISE until Done")
+	flow.debug_drag_one("TrayDropZone")  # 3rd out → 6, undershoots target → auto wrong
+	expect(flow.basket_count == 6 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target (too many out) auto-resolves as wrong")
 	await create_timer(2.0).timeout
-	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_out", "wrong → back to SAME exercise, not map")
+	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_out" and flow.basket_count == 9, "overshoot reset: basket back to starting count of 9")
 	expect(flow.hint_label.visible and flow.hint_label.text.contains("one egg out first"), "tier-1 hint shown after 1st wrong")
-	flow.debug_drag_one("TrayDropZone"); flow.debug_done()  # 1 out → 8 left, wrong again
+	flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone")  # 3 out → 6, wrong again
+	expect(flow.wrong_attempts == 2 and flow.state_name() == "feedback", "2nd wrong attempt registered immediately on overshoot")
 	await create_timer(2.0).timeout
-	expect(flow.wrong_attempts == 2 and (flow.basket_zone.get_child(0).get_node("Ghost") as Label).visible, "tier-2 ghost numeral after 2nd wrong")
+	expect((flow.basket_zone.get_child(0).get_node("Ghost") as Label).visible, "tier-2 ghost numeral after 2nd wrong")
 	for i in 2: flow.debug_drag_one("TrayDropZone")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "2 out → 7 left → correct")
