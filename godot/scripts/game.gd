@@ -107,6 +107,11 @@ func build_world() -> void:
 		return
 	built = true
 	world = WorldDataScript.new()
+	# Depth: buildings, NPCs and the player share z=10 and are Y-sorted by
+	# their ground anchor (building = footprint bottom, characters = tile
+	# center). Walking on the tile ABOVE a building puts the player behind
+	# its roof; walking below puts them in front. Ground/props stay below.
+	y_sort_enabled = true
 
 	var map = MapRendererScript.new()
 	map.name = "Compact32x24Map"
@@ -118,7 +123,7 @@ func build_world() -> void:
 	add_npcs()
 	player = PlayerScript.new()
 	player.name = "Player"
-	player.z_index = 20
+	player.z_index = 10
 	add_child(player)
 	player.setup(world)
 	add_hud()
@@ -154,6 +159,7 @@ func add_buildings() -> void:
 
 		var container := Node2D.new()
 		container.name = "BuildingGroup_" + b.id
+		container.z_index = 10
 		container.position = Vector2(fp_center.x, fp_bottom)
 		container.set_meta("building_id", b.id)
 		container.set_meta("footprint_col", b.footprintCol)
@@ -195,6 +201,7 @@ func add_npcs() -> void:
 
 		var container := Node2D.new()
 		container.name = "NPCGroup_" + npc.id
+		container.z_index = 10
 		container.position = npc_pos
 		container.set_meta("npc_id", npc.id)
 		container.set_meta("tile_x", npc.tile.x)
