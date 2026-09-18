@@ -240,6 +240,30 @@ func _build_dialogue() -> void:
 	advance_hint.add_theme_color_override("font_color", Color("#a0c0ff"))
 	v.add_child(advance_hint)
 
+## End-of-demo message. Deliberately NOT a new screen: it reuses the same
+## dialogue box every NPC uses, so the child reads it as one more moment of a
+## language they already know — not as "the game stopped".
+##
+## No emoji: the Web export's default font renders a party-popper emoji as a
+## tofu box (see scripts/check-ui-glyphs.py). The celebratory flourish is the
+## same happy-face art already used for correct-answer feedback, shown in the
+## portrait slot.
+##
+## The world is NOT locked afterwards — dismissing returns to the map with the
+## player free to walk and revisit any NPC.
+const ENDING_TITLE := "You did it!"
+const ENDING_BODY := "You've helped everyone in Townville today!\n\nMore friends, more farms, and more adventures are on their way. Come back soon!"
+
+func show_ending() -> void:
+	npc = {}
+	exercise = {}
+	set_state(State.DIALOGUE)
+	dialogue_name.text = ENDING_TITLE
+	if ResourceLoader.exists(HAPPY_FACE):
+		dialogue_portrait.texture = load(HAPPY_FACE) as Texture2D
+	dialogue_portrait.visible = true
+	_show_line(ENDING_BODY)
+
 func _show_line(text: String) -> void:
 	dialogue_text.text = text
 	dialogue_text.visible_ratio = 0.0
@@ -779,6 +803,7 @@ func _show_equation() -> void:
 	basket_row.visible = false
 	addition_summary.visible = false
 	hint_label.visible = false
+	hint_btn.visible = false
 	equation_label.text = words + "\n" + symbols
 	equation_label.visible = true
 	done_btn.text = "Continue"
@@ -858,27 +883,37 @@ func drop_into(zone_name: String, source: Control) -> void:
 	# the redesign spec) — the child can add, remove and reconsider freely;
 	# validation only happens when they press Done.
 	if mode == "basket_in" and zone_name == "BasketDropZone" and source.get_parent() == source_items:
-		source.get_parent().remove_child(source)
-		basket_items.add_child(source)
-		basket_count += 1
-		_emit_placement_feedback(basket_zone, basket_count)
+		_move_basket_item(source, basket_items, 1, basket_zone)
 		return
 	if mode == "basket_in" and zone_name == "SourceDropZone" and source.get_parent() == basket_items:
-		source.get_parent().remove_child(source)
-		source_items.add_child(source)
-		basket_count -= 1
+		_move_basket_item(source, source_items, -1)
 		return
 	if mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
-		source.get_parent().remove_child(source)
-		tray_items.add_child(source)
-		basket_count -= 1
-		_emit_placement_feedback(tray_zone, tray_items.get_child_count())
+		_move_basket_item(source, tray_items, -1, tray_zone)
 		return
 	if mode == "basket_out" and zone_name == "BasketDropZone" and source.get_parent() == tray_items:
-		source.get_parent().remove_child(source)
-		basket_items.add_child(source)
-		basket_count += 1
+		_move_basket_item(source, basket_items, 1)
 		return
+
+## Moves a basket-exercise item and refreshes every visible counting badge.
+## Badges are a hint-only aid, but once enabled they must always reflect each
+## item's CURRENT index in its CURRENT container. Renumber all sides after
+## every move so a badge never travels from Vine/Nest/Tray carrying its old
+## number into the destination, and the source never keeps gaps.
+func _move_basket_item(source: Control, destination: Control, count_delta: int, feedback_zone: Control = null) -> void:
+	source.reparent(destination)
+	basket_count += count_delta
+	_renumber_basket_items()
+	if feedback_zone != null:
+		var feedback_count := basket_count if feedback_zone == basket_zone else destination.get_child_count()
+		_emit_placement_feedback(feedback_zone, feedback_count)
+
+func _renumber_basket_items() -> void:
+	if hints_used_this_exercise <= 0:
+		return
+	_number_items(source_items)
+	_number_items(basket_items)
+	_number_items(tray_items)
 
 func _is_share_items_container(node: Node) -> bool:
 	for zone in share_zones:
@@ -1090,9 +1125,12 @@ func _resolve(correct: bool) -> void:
 		var done_phase: int = exercise.phase
 		world.advance_phase(npc.id)
 		phase_completed.emit(npc.id, done_phase)
+		# Back to the map FIRST, then the ending. Emitting before set_state
+		# would let set_state(MAP) immediately hide the ending dialogue that
+		# the listener just opened.
+		set_state(State.MAP)
 		if exercise.get("final", false):
 			world_completed.emit()
-		set_state(State.MAP)
 	else:
 		_open_exercise()
 		_apply_hints()
