@@ -536,6 +536,12 @@ func _make_share_zone(index: int) -> PanelContainer:
 	zone.set_script(DropZoneScript)
 	zone.flow = self
 	share_titles.append(title)
+	# Use the per-group name from the exercise (e.g., "Chester", "Pony 1"),
+	# never the generic "Group N" — the group name IS the subject of the
+	# question, so showing "Group 1" instead of "Chester" loses meaning.
+	if exercise.has("group_names") and index < exercise.group_names.size():
+		title.text = exercise.group_names[index]
+		title.add_theme_color_override("font_color", Color("#f5e9cf"))
 	return zone
 
 func _clear_visual() -> void:
@@ -587,6 +593,7 @@ func _open_exercise() -> void:
 	equation_label.visible = false
 	equation_label.text = ""
 	addition_summary.visible = false
+	done_btn.text = "Done!"
 	_clear(addition_existing_items)
 	_clear(addition_added_items)
 	_clear(basket_items); _clear(source_items); _clear(tray_items); _clear(icon_grid)
@@ -602,6 +609,7 @@ func _open_exercise() -> void:
 	var icon: String = ITEM_ICONS.get(npc.item, "")
 	match mode:
 		"basket_in":
+			prompt_label.text = "%s already has %d %s in the %s. The target is %d. Drag %s from the %s until the %s shows %d." % [npc.display_name, int(exercise.a), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), POOL_LABELS.get(npc.item, "supply").to_lower(), npc.get("container", "basket"), int(exercise.answer)]
 			tray_zone.visible = false
 			source_items.get_parent().get_parent().visible = true
 			for i in exercise.a:
@@ -614,6 +622,7 @@ func _open_exercise() -> void:
 				source_items.add_child(_make_item(icon, true))
 			_update_basket_counter()
 		"basket_out":
+			prompt_label.text = "%s has %d %s in the %s and needs to keep %d. Drag %s out until the %s shows %d." % [npc.display_name, int(exercise.start), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), npc.get("container", "basket"), int(exercise.answer)]
 			tray_zone.visible = true
 			source_items.get_parent().get_parent().visible = false
 			for i in exercise.start:
@@ -644,25 +653,32 @@ func _update_basket_counter() -> void:
 		var removed: int = int(exercise.get("start", basket_count)) - basket_count
 		var remove_target: int = int(exercise.get("remove", removed))
 		tray_label.text = "%s: %d/%d" % [exercise.get("tray", "Out"), removed, remove_target]
-	if basket_count == target:
-		_show_equation()
 
 func _show_equation() -> void:
 	var mode: String = exercise.get("mode", "")
-	if mode == "basket_in":
-		_show_addition_summary(int(exercise.a), int(exercise.b))
-		return
 	var words := ""
 	var symbols := ""
-	if mode == "basket_out":
+	if mode == "basket_in":
+		var start: int = int(exercise.a)
+		var added: int = int(exercise.b)
+		words = "%s had %d %s.\n%s added %d more." % [npc.display_name, start, _item_plural(), npc.display_name, added]
+		symbols = "%d + %d = %d" % [start, added, int(exercise.answer)]
+	elif mode == "basket_out":
 		var start: int = int(exercise.start)
 		var removed: int = int(exercise.get("remove", start - int(exercise.answer)))
 		words = "%s had %d %s.\n%s gave %d away." % [npc.display_name, start, _item_plural(), npc.display_name, removed]
 		symbols = "%d - %d = %d" % [start, removed, int(exercise.answer)]
 	if symbols.is_empty():
 		return
+	# The live operation happens ONLY inside the basket/tray squares. Once the
+	# child confirms the target with Done, replace that interaction with the
+	# abstract equation as a separate second stage — never show both at once.
+	basket_row.visible = false
+	addition_summary.visible = false
 	equation_label.text = words + "\n" + symbols
 	equation_label.visible = true
+	done_btn.text = "Continue"
+	done_btn.visible = true
 
 func _show_addition_summary(existing: int, added: int) -> void:
 	_clear(addition_existing_items)
@@ -740,15 +756,17 @@ func drop_into(zone_name: String, source: Control) -> void:
 		basket_items.add_child(source)
 		basket_count += 1
 		_update_basket_counter()
+		_emit_placement_feedback(basket_zone, basket_count)
 		if basket_count > int(exercise.answer):
 			_resolve(false)
-	elif mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
+		elif mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
 		source.get_parent().remove_child(source)
 		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		source.set_script(null)
 		tray_items.add_child(source)
 		basket_count -= 1
 		_update_basket_counter()
+		_emit_placement_feedback(tray_zone, int(exercise.get("start", basket_count)) - basket_count)
 		if basket_count < int(exercise.answer):
 			_resolve(false)
 
@@ -767,7 +785,12 @@ func _update_share_status(highlight_imbalance: bool) -> bool:
 		var count := items.get_child_count()
 		var wrong := count != expected
 		balanced = balanced and not wrong
-		share_titles[i].text = "Group %d: %d%s" % [i + 1, count, " ?" if highlight_imbalance and wrong else ""]
+		# Keep the subject name (Chester, Pony, etc.) as the group label;
+		# just append the running count so the child sees "Chester: 2" etc.
+		var base_name: String = share_titles[i].text
+		if base_name.contains(":"):
+			base_name = base_name.substr(0, base_name.find(":")).strip_edges()
+		share_titles[i].text = "%s: %d%s" % [base_name, count, " ?" if highlight_imbalance and wrong else ""]
 		share_titles[i].add_theme_color_override("font_color", Color("#ffb0a5") if highlight_imbalance and wrong else Color("#f5e9cf"))
 	if balanced:
 		visual_source_title.visible = false
@@ -818,7 +841,17 @@ func _on_done() -> void:
 			return
 		_resolve(true)
 		return
-	_resolve(basket_count == int(exercise.answer))
+	# Basket phases are deliberately two-stage:
+	# 1) live manipulation/counting inside the basket square;
+	# 2) after Done confirms the target, replace it with the equation.
+	# Continue then advances to the normal success feedback.
+	if equation_label.visible:
+		_resolve(true)
+		return
+	if basket_count != int(exercise.answer):
+		_resolve(false)
+		return
+	_show_equation()
 
 func _digits_only(t: String) -> void:
 	var clean := ""
@@ -930,16 +963,7 @@ func _resolve(correct: bool) -> void:
 	if correct:
 		result_icon.text = "OK"
 		result_icon.add_theme_color_override("font_color", Color("#ffd75a"))
-		if exercise.get("mode", "") == "basket_in":
-			result_label.text = "Great! You combined both groups."
-			var icon: String = ITEM_ICONS.get(npc.item, "")
-			for i in int(exercise.a):
-				feedback_existing_items.add_child(_make_item(icon, false, 28))
-			for i in int(exercise.b):
-				feedback_added_items.add_child(_make_item(icon, false, 28))
-			feedback_addition_summary.visible = true
-		else:
-			result_label.text = exercise.success
+		result_label.text = exercise.success
 	else:
 		wrong_attempts += 1
 		result_icon.text = "X"

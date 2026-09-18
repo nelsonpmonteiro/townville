@@ -4,7 +4,7 @@ class_name WorldData
 const TILE_SIZE := 48
 const COLS := 30
 const ROWS := 20
-const SPAWN := Vector2i(15, 6)
+const SPAWN := Vector2i(16, 18)  # south/bottom gate entrance
 
 var id: String = "world1"
 
@@ -43,7 +43,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Each of my 3 hens laid 4 eggs today. How many eggs is that in total?",
 				"success": "Twelve eggs - you did that fast!",
 				"hint1": "Try adding 4 three times: 4 + 4 + 4."},
-			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4,
+			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4, "group_names": ["Basket 1", "Basket 2", "Basket 3", "Basket 4"],
 				"setup": "I have 12 eggs and want to put the same number in each of my 4 baskets. How many eggs go in each basket?",
 				"success": "Three in each basket - nice and even!",
 				"hint1": "Try sharing them out one at a time, basket by basket."}
@@ -71,7 +71,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Chester eats 3 flakes of hay, 2 times a day. How many flakes does he eat in one day?",
 				"success": "Six flakes - Chester's schedule, all figured out!",
 				"hint1": "Try adding 3 two times: 3 + 3."},
-			{"phase": 4, "mode": "share", "answer": 5, "grid": [3, 5], "groups": 3,
+			{"phase": 4, "mode": "share", "answer": 5, "grid": [3, 5], "groups": 3, "group_names": ["Chester", "Pony 1", "Pony 2"],
 				"setup": "I have 15 carrots to split evenly between Chester and the two ponies next door - 3 animals total. How many carrots does each one get?",
 				"success": "Five each - everybody's fed fair and square.",
 				"hint1": "Try giving one carrot to each animal, then another round, and see how far you get."}
@@ -99,7 +99,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Each row in my field has 5 pumpkins, and I've got 4 rows planted. How many pumpkins is that altogether?",
 				"success": "Twenty pumpkins - that's a whole lot of pie!",
 				"hint1": "Try adding 5 four times."},
-			{"phase": 4, "mode": "share", "answer": 6, "grid": [3, 6], "groups": 3,
+			{"phase": 4, "mode": "share", "answer": 6, "grid": [3, 6], "groups": 3, "group_names": ["Wagon 1", "Wagon 2", "Wagon 3"],
 				"setup": "I picked 18 pumpkins and want to load them equally onto 3 wagons. How many pumpkins per wagon?",
 				"success": "Six per wagon - perfectly balanced loads.",
 				"hint1": "Try handing out pumpkins one at a time to each wagon."}
@@ -127,7 +127,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Each hen has 2 chicks following her, and I count 4 hens. How many chicks is that in total?",
 				"success": "Eight little chicks - quite the parade!",
 				"hint1": "Try adding 2 four times."},
-			{"phase": 4, "mode": "share", "answer": 5, "grid": [2, 5], "groups": 2,
+			{"phase": 4, "mode": "share", "answer": 5, "grid": [2, 5], "groups": 2, "group_names": ["Coop 1", "Coop 2"],
 				"setup": "I have 10 chicks and want to put the same number in each of my 2 coop pens. How many chicks in each pen?",
 				"success": "Five in each pen - nice and cozy.",
 				"hint1": "Try sharing them out one at a time between the two pens."}
@@ -155,7 +155,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Each of my 3 animal patients today needs 2 check-up stickers. How many stickers do I need in total?",
 				"success": "Six stickers - every patient gets their reward!",
 				"hint1": "Try adding 2 three times."},
-			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4,
+			{"phase": 4, "mode": "share", "answer": 3, "grid": [4, 3], "groups": 4, "group_names": ["Pet 1", "Pet 2", "Pet 3", "Pet 4"],
 				"setup": "I have 12 treats and want to give the same number to each of my 4 furry patients today. How many treats per patient?",
 				"success": "Three each - every patient gets a fair share!",
 				"hint1": "Try handing out treats one at a time to each patient."}
@@ -183,7 +183,7 @@ const NPCS_TEMPLATE := [
 				"setup": "I planted 4 flower pots, with 3 flowers in each. How many flowers is that in total?",
 				"success": "Twelve flowers - my garden's never looked prettier!",
 				"hint1": "Try adding 3 four times."},
-			{"phase": 4, "mode": "share", "answer": 4, "grid": [4, 4], "groups": 4,
+			{"phase": 4, "mode": "share", "answer": 4, "grid": [4, 4], "groups": 4, "group_names": ["Neighbor 1", "Neighbor 2", "Neighbor 3", "Neighbor 4"],
 				"setup": "I picked 16 flowers and want to make equal bouquets for my 4 neighbors. How many flowers in each bouquet?",
 				"success": "Four flowers each - every bouquet just as lovely.",
 				"hint1": "Try handing out flowers one at a time to each neighbor's bunch."}
@@ -211,7 +211,7 @@ const NPCS_TEMPLATE := [
 				"setup": "Each fence section needs 4 nails, and I'm building 3 sections today. How many nails do I need in total?",
 				"success": "Twelve nails - exactly enough, nothing wasted!",
 				"hint1": "Try adding 4 three times."},
-			{"phase": 4, "mode": "share", "answer": 3, "grid": [5, 3], "groups": 5,
+			{"phase": 4, "mode": "share", "answer": 3, "grid": [5, 3], "groups": 5, "group_names": ["Post 1", "Post 2", "Post 3", "Post 4", "Post 5"],
 				"setup": "I have 15 nails and need to split them evenly across 5 fence posts. How many nails per post?",
 				"success": "Three per post - the fence is going to be so sturdy!",
 				"hint1": "Try handing out nails one at a time to each post."}
@@ -221,7 +221,7 @@ const NPCS_TEMPLATE := [
 		"id": "old-mac",
 		"display_name": "Old Mac",
 		"sprite_path": "res://assets/characters/world1/old-mac-idle.png",
-		"tile": Vector2i(15, 19),
+		"tile": Vector2i(14, 19),
 		"building": "",
 		"item": "key",
 		"container": "keyring basket",
@@ -239,7 +239,7 @@ const NPCS_TEMPLATE := [
 				"setup": "The gate has 4 hinges, and each one needs 3 screws. How many screws do I need in total?",
 				"success": "Twelve screws - the gate's going to swing perfectly!",
 				"hint1": "Try adding 3 four times."},
-			{"phase": 4, "mode": "share", "answer": 5, "grid": [4, 5], "groups": 4, "final": true,
+			{"phase": 4, "mode": "share", "answer": 5, "grid": [4, 5], "groups": 4, "group_names": ["Hinge 1", "Hinge 2", "Hinge 3", "Hinge 4"], "final": true,
 				"setup": "I have 20 screws and want to split them evenly across the gate's 4 hinges for spares. How many screws per hinge?",
 				"success": "Five spares per hinge - this gate isn't going anywhere for a long while! Welcome to Downtown.",
 				"hint1": "Try handing out screws one at a time to each hinge."}

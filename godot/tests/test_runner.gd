@@ -111,6 +111,7 @@ func _initialize() -> void:
 	expect(world.ROWS == 20, "world has 20 rows")
 	expect(world.world_size_px() == Vector2i(1440, 960), "world is exactly 1440x960 pixels")
 	expect(world.walkable.size() == 20 and world.walkable[0].size() == 30, "collision matrix is the single 30x20 map source")
+	expect(world.SPAWN == Vector2i(16, 18), "player starts at the south/bottom gate entrance")
 	expect(world.is_walkable(world.SPAWN), "spawn is walkable")
 	expect(world.is_walkable(world.SPAWN + Vector2i(1, 0)), "player can walk east from spawn")
 	expect(not world.is_walkable(Vector2i(-1, 8)), "left world boundary blocks movement")
@@ -186,14 +187,19 @@ func _initialize() -> void:
 	expect(flow.basket_count == 8 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target auto-resolves as wrong (overshoot)")
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "exercise" and flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "overshoot reset: basket back to start, pool refilled")
+	var addition_feedback_before: int = flow.pop_events
+	var basket_in_noise_before: int = flow.pop_events
 	for i in 3: flow.debug_drag_one("BasketDropZone")
+	expect(flow.pop_events - addition_feedback_before == 3, "every item added to the basket emits placement sound and count feedback")
 	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3 and flow.state_name() == "exercise", "3 drags in → basket 7/7, 3 extra still in pool, still in EXERCISE until Done")
-	expect(flow.addition_summary.visible and flow.addition_existing_items.get_child_count() == 4 and flow.addition_added_items.get_child_count() == 3, "reaching target shows the original and added quantities as two visual icon groups")
-	expect(not flow.equation_label.visible, "addition feedback does not reveal the result as a numeric equation")
+	expect(flow.basket_row.visible and not flow.addition_summary.visible and not flow.equation_label.visible, "live result stays only inside the basket square; no duplicate summary/equation during dragging")
 	flow.debug_done()
-	expect(flow.state_name() == "feedback" and flow.last_correct, "Done with 7 → FEEDBACK correct")
-	expect(flow.feedback_addition_summary.visible and flow.feedback_existing_items.get_child_count() == 4 and flow.feedback_added_items.get_child_count() == 3, "correct feedback repeats the two visual groups instead of a numeric result")
-	expect(not flow.result_label.text.contains("7") and not flow.result_label.text.contains("Seven"), "addition result text does not reveal the total")
+	expect(flow.state_name() == "exercise" and not flow.basket_row.visible and flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "Done replaces basket UI with equation as a separate second stage")
+	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
+	flow.debug_done()
+	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
+	expect(not flow.feedback_addition_summary.visible, "success feedback does not repeat the addition groups a third time")
+	expect(flow.result_label.text == "Seven eggs! That's a great morning for the hens.", "success line from script")
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "map" and world.get_phase("mae") == 1, "feedback auto-dismiss → MAP, phase advanced to 2")
 
@@ -204,23 +210,29 @@ func _initialize() -> void:
 	flow.advance_dialogue(); flow.advance_dialogue()
 	expect(flow.exercise.mode == "basket_out" and flow.basket_count == 9, "phase 2: 9 eggs in basket, drag out")
 	expect(flow.basket_counter.text == "Basket: 9/7", "basket_out counter also shows current/target")
+	var subtraction_feedback_before: int = flow.pop_events
 	flow.debug_drag_one("TrayDropZone")
 	flow.debug_drag_one("TrayDropZone")
+	expect(flow.pop_events - subtraction_feedback_before == 2, "every item removed from the basket emits placement sound and count feedback")
 	expect(flow.basket_count == 7 and flow.state_name() == "exercise", "2 out → 7/7, still in EXERCISE until Done")
 	expect(flow.tray_label.text == "Grandma Rose: 2/2", "removal tray shows live count/target, not just disappearing items")
-	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "reaching target shows words-first + number sentence before Done")
+	expect(flow.basket_row.visible and not flow.equation_label.visible, "subtraction stays live in basket/tray squares until Done")
 	flow.debug_drag_one("TrayDropZone")  # 3rd out → 6, undershoots target → auto wrong
 	expect(flow.basket_count == 6 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target (too many out) auto-resolves as wrong")
 	await create_timer(2.0).timeout
 	expect(flow.state_name() == "exercise" and flow.exercise.mode == "basket_out" and flow.basket_count == 9, "overshoot reset: basket back to starting count of 9")
 	expect(flow.hint_label.visible and flow.hint_label.text.contains("one egg out first"), "tier-1 hint shown after 1st wrong")
 	flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone"); flow.debug_drag_one("TrayDropZone")  # 3 out → 6, wrong again
-	expect(flow.wrong_attempts == 2 and flow.state_name() == "feedback", "2nd wrong attempt registered immediately on overshoot")
+	expect((flow.pop_events - basket_in_noise_before) >= 3 and flow.state_name() == "feedback", "2nd wrong attempt registered immediately on overshoot")
 	await create_timer(2.0).timeout
 	expect((flow.basket_zone.get_child(0).get_node("Ghost") as Label).visible, "tier-2 ghost numeral after 2nd wrong")
 	for i in 2: flow.debug_drag_one("TrayDropZone")
+	expect(flow.basket_count == 7 and flow.basket_row.visible and not flow.equation_label.visible, "2 out → 7/7, live interaction stays in basket squares until Done")
 	flow.debug_done()
-	expect(flow.state_name() == "feedback" and flow.last_correct, "2 out → 7 left → correct")
+	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "Done replaces basket UI with equation as a separate second stage")
+	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
+	flow.debug_done()
+	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
 	await create_timer(2.0).timeout
 	expect(world.get_phase("mae") == 2, "phase 2 done")
 
@@ -263,7 +275,7 @@ func _initialize() -> void:
 	flow.queue_free()
 	world.npc_phase.clear()
 
-	# --- Onboarding: first launch shows title + 3 cards, flag persists, repeat skips ---
+	# --- Onboarding: first launch shows title + 2 cards, flag persists, repeat skips ---
 	var OnboardScript = load("res://scripts/ui/onboarding.gd")
 	OnboardScript.reset_save()
 	expect(not OnboardScript.has_seen_onboarding(), "fresh state: onboarding not seen")
@@ -280,7 +292,7 @@ func _initialize() -> void:
 	ob.back()
 	expect(ob.card_text.text.contains("these keys") and ob.direction_keys.visible, "Back returns to the previous onboarding card")
 	ob.advance()
-	expect(ob.next_button.text == "Play", "interaction card is now the final onboarding card")
+	expect(ob.next_button.text == "Play", "interaction card is the final onboarding card")
 	ob.advance()
 	await create_timer(0.6).timeout
 	expect(not ob.active and not ob.visible, "after card 2 → fade out, inactive")

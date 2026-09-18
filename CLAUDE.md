@@ -1,43 +1,74 @@
-# Townville implementation handoff
+# Townville Godot POC — implementation notes
 
-This is the actual implemented local prototype, not the unavailable historical CLAUDE.md.
+Development guide for the Godot 4.x prototype of Townville (World 1: Farm).
 
 ## Commands
-- `npm run web`: Expo web at port **8082**. Never confuse with the unrelated project serving 8081.
-- `npm test`; `npm run typecheck`; `npm run test:e2e`.
-- `npm run build`: static web `dist/`; `npx expo export --platform all`: also iOS/Android bundles.
-- `TOWNVILLE_URL=http://127.0.0.1:8083 npm run test:e2e`: verify a separately served production export.
+
+- `./scripts/deploy-web.sh` — export to web, verify, serve locally, and probe
+- `GODOT --headless --path godot --script godot/tests/test_runner.gd` — run headless tests
 
 ## Invariants
-- React Native/Expo architecture. Keep platform pointer/gesture adapters separate, domain rules pure.
-- **Layered architecture (enforced by tests — see `tests/`):**
-  - `src/config.ts` — ALL game constants (TILE_SIZE, grid, lives, scoring). Never redefine locally.
-  - `src/core.ts` — pure save/scoring/collision rules. No React, no I/O.
-  - `src/engine/gameFlow.ts` — pure interaction state machine (idle→dialogue→quest→result). No React, no I/O. ALL interaction transitions go through `reduce()`.
-  - `src/content/registry.ts` — the ONLY wiring point for NPC dialogues/quests. Adding content = 1 import + 1 CONTENT entry; App.tsx never imports dialogue/quest files directly.
-  - `src/state/buildingStates.ts` — building visuals derive from the save (`computeBuildingStates`); gates COMPLETE only when ALL world NPCs finish. Never hardcode states.
-  - `src/engine/collision.ts` — `effectiveWalkableMap(world, save)` = base map + closed-gate footprint + Billy's fence. The ONLY save-dependent collision; gate footprints are skipped in the static pass.
-  - `src/engine/fence.ts` — Billy's fence gap tiles (14,26)/(17,26): 0 phases open, 1-2 → 1 decorative post, 3+ → both tiles blocked.
-  - `App.tsx` — thin shell: rendering, keyboard, animation, persistence. Dispatches FlowEvents; never implements game rules inline.
-- 40×30 grid, 48px tiles (`src/config.ts`). Movement blocks via `effectiveWalkableMap` (base walkableMap includes building footprints; gates/fence resolved at runtime). Camera follows player with clamped interpolation.
-- Sprite scale contract: ALL sprite PNGs trimmed (canvas == content); characters 1.4 tiles, buildings 2.6, gates 2.2; ProtagonistSprite uses a static NATIVE_DIMS table (checked by tests/sprites.test.ts) — update it when replacing player art. Walk clock derives frame from wall time (continuous gait).
-- World 1 map NPCs use their current PixelLab `world1/*-idle.png` sprites; World 2 keeps dedicated `characters/map-icons/*-map.png` sprites. Dialogue portraits use world-specific sets.
-- Scoring: exactly 100 once per `npcId:phase`; errors NEVER deduct score/streak; 3rd error on a point costs 1 life; session = 5 events; maxAttempts=3 then failure dialogue → retry with fresh attempts.
-- Save key `townville.save.v1`, schema `version:1`. Do not silently change the schema. Unknown/malformed saves recover safely.
-- Audio must remain gesture-gated, mute-persistent and background-paused. No microphone permission is requested.
-- Do not add timers, pressure mechanics, monetization, child identity collection or invented integration claims.
-- Existing WAVs and IDEA.md must remain intact. See `assets/manifest.json` for asset replacement points.
-- React Native Web: use `crossShadow()` from `src/utils/shadow.ts` (never raw `shadow*` props), `Animated` for animations (never CSS `animation`), and never `Image.resolveAssetSource` (web-safe fallback in `useAspectScaledSize`).
-- **Before committing mechanics changes: `npm test` must stay green (34 tests lock core rules, flow transitions, content integrity, sprite dimensions, building states/collision).**
 
-## Files
-`src/core.ts` domain + save codec; `src/engine/` gameFlow + collision + fence + audio; `src/state/buildingStates.ts` save→visual derivation; `src/content/registry.ts` content wiring; `src/config.ts` constants; `App.tsx` shell/orchestration; `tests/` contract tests; `e2e/smoke.spec.ts` boot + movement (legacy prototype specs parked in `e2e/legacy/`).
+- **Dialogue:** only one panel visible at a time. `set_state()` hides all panels before showing the new one.
+- **CanvasLayer separation:** HUD (layer 0), dialogue (layer 10+), building labels as children of Node2D (world-space, not screen-space).
+- **Dialogue panel:** bottom-anchored, max-width 640px, fixed size.
+- **NPC curriculum:** all 8 World 1 NPCs with addition exercises (2.OA.A.1).
+- **Grid:** 30x20, TILE_SIZE=48. Walkable path network + building footprints.
+
+## Key files
+
+- `godot/scripts/game.gd` — game controller: build world, HUD, dialogue, quest UI, input
+- `godot/scripts/world_data.gd` — NPCs, buildings, walkable matrix, props
+- `godot/scripts/map_renderer.gd` — tilemap rendering, props, decals
+- `godot/scripts/player.gd` — player controller + camera
+- `godot/scripts/player_movement.gd` — movement + collision
+- `godot/scripts/ui/interaction_flow.gd` — NPC interaction flow
+- `godot/scenes/main.tscn` — main scene
+
+## NPCs (World 1)
+
+All in `godot/scripts/world_data.gd`, constant `NPCS`:
+
+| id | display_name | tile | skill |
+|---|---|---|---|
+| mae | Mae | (4,4) | Addition |
+| chester | Chester | (14,4) | Addition |
+| farmer-joe | Farmer Joe | (24,4) | Addition |
+| lily | Lily | (4,7) | Addition |
+| vera | Dr. Vera | (24,7) | Addition |
+| grandma-rose | Grandma Rose | (25,14) | Addition |
+| billy | Billy | (15,10) | Addition |
+| old-mac | Old Mac | (15,19) | Addition (gatekeeper) |
+
+## Buildings (World 1)
+
+In `godot/scripts/world_data.gd`, constant `BUILDINGS`:
+
+| id | label | footprint | scale |
+|---|---|---|---|
+| henhouse | HENHOUSE | (3,2) 2x2 | 1.0 |
+| stable | STABLE | (13,2) 2x2 | 1.5 |
+| barn | BARN | (23,2) 2x2 | 2.0 |
+| coop | COOP | (3,8) 2x2 | 1.0 |
+| clinic | CLINIC | (23,8) 2x2 | 1.5 |
+| garden | GARDEN | (26,14) 2x2 | 1.0 |
+
+## Walkable path network
+
+30x20 matrix in `world_data.gd:_build_walkable_matrix()`. Paths:
+- Horizontal spine + branch clearings
+- Central vertical trunk
+- Garden connector
+- South yards for Coop, Clinic, and Garden
 
 ## Follow-up priorities
-1. Replace placeholder art without changing collision anchors. Obtain final NPC/curriculum specification before broadening content.
-2. Native device QA for PanResponder, audio and screen reader interaction. Native exports alone are not device validation.
-3. Modal focus trapping and full accessibility audit.
-4. Plan a compatible Expo dependency/security upgrade: npm audit reports 16 remaining advisory entries. Do not force-upgrade without rerunning all builds/tests.
-5. Design repeat sessions independently from permanent city progress, with explicit save migration.
 
-Use real RED→GREEN vertical slices. Read README's testing-provenance caveat: the first broad UI red used an occupied port and cannot be counted as target-app TDD evidence.
+1. Multiplication and division for all 8 NPCs (exercises 3 and 4)
+2. Farm → Downtown transition after Old Mac
+3. Exercise scripts for pillar verification
+4. Godot web export verification (scripts/deploy-web.sh)
+
+## Before committing script changes
+
+- Verify GDScript syntax with the file open in Godot editor
+- Test web export with `./scripts/deploy-web.sh --no-probe`
