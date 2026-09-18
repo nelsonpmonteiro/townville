@@ -64,6 +64,7 @@ var basket_counter: Label
 var tray_zone: PanelContainer
 var tray_items: HBoxContainer
 var tray_label: Label
+var equation_label: Label          # words-first + number sentence, shown on reaching target
 var done_btn: Button               # basket modes: child submits when finished
 var text_row: VBoxContainer        # text layout root
 var answer_input: LineEdit
@@ -309,6 +310,16 @@ func _build_exercise() -> void:
 	tray_label = tz_v.get_node("Title") as Label
 	tray_items = tz_v.get_node("Items") as HBoxContainer
 
+	equation_label = Label.new()
+	equation_label.name = "EquationLabel"
+	equation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	equation_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equation_label.add_theme_font_size_override("font_size", 18)
+	equation_label.add_theme_color_override("font_color", Color("#ffd75a"))
+	equation_label.custom_minimum_size = Vector2(720, 0)
+	equation_label.visible = false
+	v.add_child(equation_label)
+
 	done_btn = Button.new()
 	done_btn.name = "DoneButton"
 	done_btn.text = "Done!"
@@ -388,6 +399,8 @@ func _open_exercise() -> void:
 	prompt_label.text = exercise.setup
 	hint_label.visible = false
 	hint_label.text = ""
+	equation_label.visible = false
+	equation_label.text = ""
 	_clear(basket_items); _clear(source_items); _clear(tray_items); _clear(icon_grid)
 	icon_grid.visible = false
 	(basket_zone.get_child(0).get_node("Ghost") as Label).visible = false
@@ -401,7 +414,6 @@ func _open_exercise() -> void:
 		"basket_in":
 			tray_zone.visible = false
 			source_items.get_parent().get_parent().visible = true
-			source_title.text = POOL_LABELS.get(npc.item, "Supply")
 			for i in exercise.a:
 				basket_items.add_child(_make_item(icon, false))
 			basket_count = exercise.a
@@ -414,7 +426,6 @@ func _open_exercise() -> void:
 		"basket_out":
 			tray_zone.visible = true
 			source_items.get_parent().get_parent().visible = false
-			tray_label.text = exercise.get("tray", "Out")
 			for i in exercise.start:
 				basket_items.add_child(_make_item(icon, true))
 			basket_count = exercise.start
@@ -428,6 +439,42 @@ func _open_exercise() -> void:
 func _update_basket_counter() -> void:
 	var target: int = int(exercise.get("answer", basket_count))
 	basket_counter.text = "%s: %d/%d" % [npc.get("container", "Basket").capitalize(), basket_count, target]
+	var mode: String = exercise.get("mode", "")
+	if mode == "basket_in":
+		# Source (Nest) counts DOWN as items leave it — half the operation
+		# was previously invisible once dragged.
+		source_title.text = "%s: %d" % [POOL_LABELS.get(npc.item, "Supply"), source_items.get_child_count()]
+	elif mode == "basket_out":
+		# Removal tray counts UP toward the amount that's meant to leave,
+		# instead of items just vanishing with nothing tracking where they went.
+		var removed: int = int(exercise.get("start", basket_count)) - basket_count
+		var remove_target: int = int(exercise.get("remove", removed))
+		tray_label.text = "%s: %d/%d" % [exercise.get("tray", "Out"), removed, remove_target]
+	if basket_count == target:
+		_show_equation()
+
+func _show_equation() -> void:
+	var mode: String = exercise.get("mode", "")
+	var words := ""
+	var symbols := ""
+	if mode == "basket_in":
+		var start: int = int(exercise.a)
+		var added: int = int(exercise.b)
+		words = "%s had %d %s.\n%s added %d more." % [npc.display_name, start, _item_plural(), npc.display_name, added]
+		symbols = "%d + %d = %d" % [start, added, int(exercise.answer)]
+	elif mode == "basket_out":
+		var start: int = int(exercise.start)
+		var removed: int = int(exercise.get("remove", start - int(exercise.answer)))
+		words = "%s had %d %s.\n%s gave %d away." % [npc.display_name, start, _item_plural(), npc.display_name, removed]
+		symbols = "%d - %d = %d" % [start, removed, int(exercise.answer)]
+	if symbols.is_empty():
+		return
+	equation_label.text = words + "\n" + symbols
+	equation_label.visible = true
+
+func _item_plural() -> String:
+	var item: String = npc.get("item", "items")
+	return item if item.ends_with("s") else item + "s"
 
 func _make_item(icon_path: String, draggable: bool) -> Control:
 	var item := TextureRect.new()

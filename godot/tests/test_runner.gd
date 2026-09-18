@@ -150,7 +150,7 @@ func _initialize() -> void:
 	expect(not flow.dialogue_screen.visible and flow.exercise_screen.visible, "dialogue hidden, exercise visible (no overlap)")
 	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "basket pre-filled 4, pool has 6 draggable eggs (target 3 + 3 extra, so clicking isn't just 'clear the pool')")
 	expect(flow.basket_counter.text == "Basket: 4/7", "basket counter shows current/target")
-	expect(flow.source_title.text == "Nest", "pool label is themed, not 'New items'")
+	expect(flow.source_title.text == "Nest: 6", "pool label is themed with live count, not 'New items'")
 	# wrong drop target does nothing
 	flow.debug_drag_one("TrayDropZone")
 	expect(flow.basket_count == 4, "dropping outside the basket is ignored")
@@ -162,6 +162,7 @@ func _initialize() -> void:
 	expect(flow.state_name() == "exercise" and flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "overshoot reset: basket back to start, pool refilled")
 	for i in 3: flow.debug_drag_one("BasketDropZone")
 	expect(flow.basket_count == 7 and flow.source_items.get_child_count() == 3 and flow.state_name() == "exercise", "3 drags in → basket 7/7, 3 extra still in pool, still in EXERCISE until Done")
+	expect(flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "reaching target shows words-first + number sentence before Done")
 	flow.debug_done()
 	expect(flow.state_name() == "feedback" and flow.last_correct, "Done with 7 → FEEDBACK correct")
 	expect(flow.result_label.text == "Seven eggs! That's a great morning for the hens.", "success line from script")
@@ -178,6 +179,8 @@ func _initialize() -> void:
 	flow.debug_drag_one("TrayDropZone")
 	flow.debug_drag_one("TrayDropZone")
 	expect(flow.basket_count == 7 and flow.state_name() == "exercise", "2 out → 7/7, still in EXERCISE until Done")
+	expect(flow.tray_label.text == "Grandma Rose: 2/2", "removal tray shows live count/target, not just disappearing items")
+	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "reaching target shows words-first + number sentence before Done")
 	flow.debug_drag_one("TrayDropZone")  # 3rd out → 6, undershoots target → auto wrong
 	expect(flow.basket_count == 6 and flow.state_name() == "feedback" and not flow.last_correct, "dragging past target (too many out) auto-resolves as wrong")
 	await create_timer(2.0).timeout
