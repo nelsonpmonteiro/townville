@@ -4,7 +4,7 @@ class_name WorldData
 const TILE_SIZE := 48
 const COLS := 30
 const ROWS := 20
-const SPAWN := Vector2i(16, 18)  # south/bottom gate entrance
+const SPAWN := Vector2i(15, 19)  # west-adjacent to Old Mac's gate tile
 
 var id: String = "world1"
 
@@ -306,7 +306,7 @@ const EDITOR_WALKABLE := [
 	"#..........#..................",
 	"#.................######......",
 	"#.................###########.",
-	"################.#############",
+	"###############..#############",
 ]
 
 var walkable: Array[Array] = []

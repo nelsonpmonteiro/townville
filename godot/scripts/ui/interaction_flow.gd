@@ -703,6 +703,7 @@ func _show_equation() -> void:
 	# abstract equation as a separate second stage — never show both at once.
 	basket_row.visible = false
 	addition_summary.visible = false
+	hint_label.visible = false
 	equation_label.text = words + "\n" + symbols
 	equation_label.visible = true
 	done_btn.text = "Continue"

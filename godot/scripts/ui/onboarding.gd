@@ -10,6 +10,23 @@ const CARDS := [
 	["[ E ]", "Walk up to a friend and press E to talk!"],
 ]
 
+## Bordered button style — matches InteractionFlow's buttons so every button
+## in the game reads as clickable UI, not flat text.
+static func _button_style(bg: Color, border: Color = Color("#c9a36b")) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.set_content_margin_all(8)
+	return sb
+
+static func _apply_button_style(btn: Button) -> void:
+	btn.add_theme_stylebox_override("normal", _button_style(Color("#3a2a1a")))
+	btn.add_theme_stylebox_override("hover", _button_style(Color("#4a3624"), Color("#ffd75a")))
+	btn.add_theme_stylebox_override("pressed", _button_style(Color("#241a10"), Color("#ffd75a")))
+	btn.add_theme_stylebox_override("focus", _button_style(Color("#3a2a1a"), Color("#ffd75a")))
+
 signal finished
 
 var step := -1          # -1 title, 0..2 cards, 3 done
@@ -125,11 +142,13 @@ func _ready() -> void:
 	back_button = Button.new()
 	back_button.text = "Back"
 	back_button.custom_minimum_size = Vector2(120, 42)
+	_apply_button_style(back_button)
 	back_button.pressed.connect(back)
 	controls.add_child(back_button)
 	next_button = Button.new()
 	next_button.text = "Next"
 	next_button.custom_minimum_size = Vector2(120, 42)
+	_apply_button_style(next_button)
 	next_button.pressed.connect(advance)
 	controls.add_child(next_button)
 

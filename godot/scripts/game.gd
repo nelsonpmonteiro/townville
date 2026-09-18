@@ -213,7 +213,10 @@ func add_npcs() -> void:
 
 		var container := Node2D.new()
 		container.name = "NPCGroup_" + npc.id
-		container.z_index = 0
+		# Old Mac stands right at the gate the player spawns beside; he needs
+		# to participate in Y-sort (like the clinic building) so the player
+		# walking north past him draws BEHIND his sprite, not always in front.
+		container.z_index = 20 if npc.id == "old-mac" else 0
 		container.position = npc_pos
 		container.set_meta("npc_id", npc.id)
 		container.set_meta("tile_x", npc.tile.x)

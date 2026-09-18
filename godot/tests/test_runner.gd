@@ -111,7 +111,7 @@ func _initialize() -> void:
 	expect(world.ROWS == 20, "world has 20 rows")
 	expect(world.world_size_px() == Vector2i(1440, 960), "world is exactly 1440x960 pixels")
 	expect(world.walkable.size() == 20 and world.walkable[0].size() == 30, "collision matrix is the single 30x20 map source")
-	expect(world.SPAWN == Vector2i(16, 18), "player starts at the south/bottom gate entrance")
+	expect(world.SPAWN == Vector2i(15, 19), "player starts west-adjacent to Old Mac's gate")
 	expect(world.is_walkable(world.SPAWN), "spawn is walkable")
 	expect(world.is_walkable(world.SPAWN + Vector2i(0, -1)), "player can walk north from spawn (toward farm)")
 	expect(not world.is_walkable(Vector2i(-1, 8)), "left world boundary blocks movement")
