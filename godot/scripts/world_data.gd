@@ -25,7 +25,7 @@ const NPCS_TEMPLATE := [
 		"id": "mae",
 		"display_name": "Mae",
 		"sprite_path": "res://assets/characters/world1/mae-idle.png",
-		"tile": Vector2i(5, 3),
+		"tile": Vector2i(9, 5),
 		"building": "henhouse",
 		"item": "egg",
 		"container": "basket",
@@ -53,7 +53,7 @@ const NPCS_TEMPLATE := [
 		"id": "chester",
 		"display_name": "Chester",
 		"sprite_path": "res://assets/characters/world1/chester-idle.png",
-		"tile": Vector2i(15, 3),
+		"tile": Vector2i(14, 4),
 		"building": "stable",
 		"item": "carrot",
 		"container": "feed basket",
@@ -81,7 +81,7 @@ const NPCS_TEMPLATE := [
 		"id": "farmer-joe",
 		"display_name": "Farmer Joe",
 		"sprite_path": "res://assets/characters/world1/farmer-joe-idle.png",
-		"tile": Vector2i(25, 3),
+		"tile": Vector2i(24, 4),
 		"building": "barn",
 		"item": "hay bale",
 		"container": "cart",
@@ -109,7 +109,7 @@ const NPCS_TEMPLATE := [
 		"id": "lily",
 		"display_name": "Lily",
 		"sprite_path": "res://assets/characters/world1/lily-idle.png",
-		"tile": Vector2i(5, 9),
+		"tile": Vector2i(2, 10),
 		"building": "coop",
 		"item": "chick",
 		"container": "coop basket",
@@ -137,7 +137,7 @@ const NPCS_TEMPLATE := [
 		"id": "vera",
 		"display_name": "Dr. Vera",
 		"sprite_path": "res://assets/characters/world1/vera-idle.png",
-		"tile": Vector2i(25, 9),
+		"tile": Vector2i(25, 10),
 		"building": "clinic",
 		"item": "bandage",
 		"container": "medical basket",
@@ -165,7 +165,7 @@ const NPCS_TEMPLATE := [
 		"id": "grandma-rose",
 		"display_name": "Grandma Rose",
 		"sprite_path": "res://assets/characters/world1/grandma-rose-idle.png",
-		"tile": Vector2i(26, 15),
+		"tile": Vector2i(25, 14),
 		"building": "garden",
 		"item": "tomato",
 		"container": "basket",
@@ -249,16 +249,39 @@ const NPCS_TEMPLATE := [
 
 # Building footprints — layout from the latest user spec (30x20 grid, exact
 # col/row per building). Sprites unchanged (current PixelLab pixel art).
-# Buildings — EXACT-map-data.json. Render rule: scale so height == render_h * 48
-# (aspect preserved), center horizontally in the footprint, bottom-align to the
-# footprint's bottom edge. Footprint tiles are blocked.
+# Buildings — exactly as exported from the in-game Map Editor
+# (townville_map_export.json): the 4 originals at their edited positions plus
+# the 2 placed in the editor (second Garden, second Clinic).
 const BUILDINGS := [
-	{"id": "henhouse", "sprite": "res://assets/buildings/world1/building-henhouse.png", "footprintCol": 3, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "HENHOUSE", "render_h": 2.0, "flip_h": true},
-	{"id": "stable", "sprite": "res://assets/buildings/world1/building-stable.png", "footprintCol": 13, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "STABLE", "render_h": 2.6, "flip_h": false},
-	{"id": "barn", "sprite": "res://assets/buildings/world1/building-barn.png", "footprintCol": 23, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "BARN", "render_h": 3.2, "flip_h": false},
-	{"id": "coop", "sprite": "res://assets/buildings/world1/building-coop.png", "footprintCol": 3, "footprintRow": 8, "footprintW": 2, "footprintH": 2, "label": "COOP", "render_h": 2.0, "flip_h": true},
-	{"id": "clinic", "sprite": "res://assets/buildings/world1/building-animal-clinic.png", "footprintCol": 23, "footprintRow": 8, "footprintW": 2, "footprintH": 2, "label": "CLINIC", "render_h": 2.6, "flip_h": false},
-	{"id": "garden", "sprite": "res://assets/buildings/world1/building-garden.png", "footprintCol": 26, "footprintRow": 14, "footprintW": 2, "footprintH": 2, "label": "GARDEN", "render_h": 1.6, "flip_h": false, "no_dirt": true},
+	{"id": "garden", "sprite": "res://assets/buildings/world1/building-garden.png", "footprintCol": 27, "footprintRow": 13, "footprintW": 2, "footprintH": 2, "label": "GARDEN", "scale": 1.0, "flip_h": false},
+	{"id": "clinic", "sprite": "res://assets/buildings/world1/building-animal-clinic.png", "footprintCol": 25, "footprintRow": 7, "footprintW": 2, "footprintH": 2, "label": "CLINIC", "scale": 1.5, "flip_h": false},
+	{"id": "henhouse", "sprite": "res://assets/buildings/world1/building-henhouse.png", "footprintCol": 8, "footprintRow": 3, "footprintW": 2, "footprintH": 2, "label": "HENHOUSE", "scale": 1.0, "flip_h": true},
+	{"id": "stable", "sprite": "res://assets/buildings/world1/building-stable.png", "footprintCol": 13, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "STABLE", "scale": 1.5, "flip_h": false},
+	{"id": "barn", "sprite": "res://assets/buildings/world1/building-barn.png", "footprintCol": 23, "footprintRow": 2, "footprintW": 2, "footprintH": 2, "label": "BARN", "scale": 2.0, "flip_h": false},
+	{"id": "coop", "sprite": "res://assets/buildings/world1/building-coop.png", "footprintCol": 2, "footprintRow": 7, "footprintW": 2, "footprintH": 2, "label": "COOP", "scale": 1.0, "flip_h": true},
+]
+
+const EDITOR_GRID := [
+	"##############################",
+	"##############################",
+	"#############..########..#####",
+	"#############..########..#####",
+	"##############.########...####",
+	"#..#...#######.####..........#",
+	"##....#....#.##....######.####",
+	"##...##.#######..#############",
+	"##...#.########..#############",
+	"##...##########..########.####",
+	"##....#########..####.....####",
+	"###############..####.########",
+	"###############..####.########",
+	"###############..####.########",
+	"###############............###",
+	"###############.............##",
+	"###############..########...##",
+	"###############..#############",
+	"###############..#############",
+	"###############..#############",
 ]
 
 var walkable: Array[Array] = []
@@ -285,16 +308,11 @@ func _build_walkable_matrix() -> void:
 		prow.fill(false)
 		path_mask.append(prow)
 
-	# Path network — EXACT-map-data.json: row-5 spine, col-15/16 trunk, the
-	# connectorPatches_dirtPath tiles, garden walkway. Nothing else.
-	_paint_walkable(Rect2i(1, 5, 28, 1))          # spine
-	_paint_walkable(Rect2i(15, 6, 2, 14))         # vertical trunk to the south gate
-	_paint_walkable(Rect2i(3, 4, 2, 1))           # Henhouse → spine
-	_paint_walkable(Rect2i(13, 4, 2, 1))          # Stable → spine
-	_paint_walkable(Rect2i(23, 4, 2, 1))          # Barn → spine
-	_paint_walkable(Rect2i(3, 6, 2, 2))           # spine → Coop
-	_paint_walkable(Rect2i(23, 6, 2, 2))          # spine → Clinic
-	_paint_walkable(Rect2i(16, 14, 11, 2))        # trunk → Garden door
+	# Dirt/path network painted in the in-game Map Editor and exported to
+	# townville_map_export.json — applied literally, row by row ('.' = dirt).
+	for y in ROWS:
+		for x in COLS:
+			walkable[y][x] = EDITOR_GRID[y][x] == "."
 
 	# Visual path mask mirrors the walkable network before entities carve holes in it,
 	# so buildings/props/NPCs still stand on dirt instead of leaving a grass gap.
@@ -315,7 +333,7 @@ func _build_walkable_matrix() -> void:
 			for c in range(b.footprintCol, b.footprintCol + b.footprintW):
 				if _in_bounds(Vector2i(c, r)):
 					walkable[r][c] = false
-					path_mask[r][c] = not b.get("no_dirt", false)  # Garden sits on plain grass
+					path_mask[r][c] = true
 
 	# Solid decorative props block movement (fountain, well, tree, stone, bench, mailbox, gate, fence)
 	const SOLID_PROP_IDS := ["fountain", "well", "tree", "stone", "bench", "mailbox", "farm-gate", "fence-left", "fence-right"]
@@ -392,88 +410,59 @@ func get_adjacent_npc_quest(tile: Vector2i) -> Dictionary:
 
 # --- Prop definitions per world ---
 
-# World1 decorative props — repositioned for the new 30x20 layout, every
-# tile within Chebyshev distance<=1 of the path network or a building
-# footprint (the validated placement rule), clustered near the POI it
-# belongs to. Sprites unchanged (current PixelLab pixel art).
+# World 1 props — exactly the 50 placed in the in-game Map Editor
+# (townville_map_export.json). Edit them in the editor, not here.
 const WORLD1_PROPS := [
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(7, 4)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(20, 6)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(28, 6)},
-	# Henhouse (Mae) cluster
-	{"id": "flower-pot", "display_name": "Flower Pot", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(5, 4)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(5, 5)},
-	# Stable (Chester) cluster
-	{"id": "lamppost", "display_name": "Lamppost", "sprite_path": "res://assets/scenery/world1/scenery-lamppost.png", "tile": Vector2i(17, 4)},
-	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(17, 5)},
-	# Barn (Joe) cluster
-	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(25, 4)},
-	{"id": "flower-yellow", "display_name": "Yellow Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(26, 4)},
-	# Coop (Lily) cluster
-	{"id": "well", "display_name": "Well", "sprite_path": "res://assets/scenery/world1/scenery-well.png", "tile": Vector2i(3, 5)},
-	{"id": "bench", "display_name": "Bench", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(5, 6)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(5, 7)},
-	# Clinic (Vera) cluster
-	{"id": "fountain", "display_name": "Fountain", "sprite_path": "res://assets/scenery/world1/scenery-fountain.png", "tile": Vector2i(22, 7)},
-	{"id": "flower-pot", "display_name": "Flower Pot", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(26, 6)},
-	# Garden (Rose) cluster
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(24, 14)},
-	{"id": "flower-yellow", "display_name": "Yellow Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(24, 15)},
-	# Below: added via the in-game Map Editor (townville_map_export.json).
-	# Original export placed 45/50 of these more than 1 tile from the path
-	# network (open, unreachable-looking grass) — repositioned here to the
-	# nearest free tile within Chebyshev<=1 of the real path/building
-	# network before committing, per the established placement rule.
-	{"id": "flower-pot", "display_name": "Flower Pot", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(24, 11)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(17, 10)},
-	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(18, 13)},
-	{"id": "bench", "display_name": "Bench", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(19, 4)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(17, 7)},
-	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(21, 8)},
-	{"id": "well", "display_name": "Well", "sprite_path": "res://assets/scenery/world1/scenery-well.png", "tile": Vector2i(15, 2)},
+	{"id": "flower-pot", "display_name": "Flower Pot", "sprite_path": "res://assets/scenery/world1/scenery-flower-pot.png", "tile": Vector2i(24, 12)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(18, 11)},
+	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(19, 12)},
+	{"id": "bench", "display_name": "Bench", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(20, 3)},
+	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(18, 8)},
+	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(20, 8)},
+	{"id": "well", "display_name": "Well", "sprite_path": "res://assets/scenery/world1/scenery-well.png", "tile": Vector2i(17, 2)},
 	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(5, 1)},
 	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(2, 1)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(2, 3)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(1, 3)},
 	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(4, 3)},
 	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(3, 2)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(5, 2)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(5, 3)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(12, 1)},
-	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(2, 2)},
-	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(7, 6)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(6, 2)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(7, 1)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(10, 1)},
+	{"id": "tree", "display_name": "Tree", "sprite_path": "res://assets/scenery/world1/scenery-tree.png", "tile": Vector2i(0, 1)},
+	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(9, 8)},
 	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(11, 4)},
-	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(5, 7)},
-	{"id": "bench", "display_name": "Bench", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(14, 11)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(14, 7)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(8, 6)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(5, 10)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(5, 11)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(14, 9)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(14, 8)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(15, 8)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(14, 6)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(5, 9)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(4, 11)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(6, 7)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(4, 6)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(6, 6)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(14, 10)},
-	{"id": "fountain", "display_name": "Fountain", "sprite_path": "res://assets/scenery/world1/scenery-fountain.png", "tile": Vector2i(14, 13)},
-	{"id": "lamppost", "display_name": "Lamppost", "sprite_path": "res://assets/scenery/world1/scenery-lamppost.png", "tile": Vector2i(14, 14)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(26, 17)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(25, 17)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(24, 17)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(20, 16)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(17, 16)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(17, 18)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(27, 17)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(26, 9)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(27, 8)},
-	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(27, 6)},
-	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(27, 9)},
-	{"id": "flower-yellow", "display_name": "Yellow Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(16, 15)},
-	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(19, 16)},
-	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(9, 6)},
+	{"id": "mailbox", "display_name": "Mailbox", "sprite_path": "res://assets/scenery/world1/scenery-mailbox.png", "tile": Vector2i(7, 9)},
+	{"id": "bench", "display_name": "Bench", "sprite_path": "res://assets/scenery/world1/scenery-bench.png", "tile": Vector2i(12, 13)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(13, 8)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(11, 9)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(8, 13)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(9, 15)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(10, 13)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(11, 12)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(13, 10)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(11, 11)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(7, 11)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(7, 13)},
+	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(9, 10)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(9, 11)},
+	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(8, 9)},
+	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(13, 11)},
+	{"id": "fountain", "display_name": "Fountain", "sprite_path": "res://assets/scenery/world1/scenery-fountain.png", "tile": Vector2i(11, 16)},
+	{"id": "lamppost", "display_name": "Lamppost", "sprite_path": "res://assets/scenery/world1/scenery-lamppost.png", "tile": Vector2i(13, 15)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(26, 19)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(25, 18)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(24, 18)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(21, 17)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(18, 17)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(18, 19)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(28, 18)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(27, 10)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(28, 8)},
+	{"id": "bush", "display_name": "Bush", "sprite_path": "res://assets/scenery/world1/scenery-bush.png", "tile": Vector2i(29, 8)},
+	{"id": "flower-red", "display_name": "Red Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-red.png", "tile": Vector2i(28, 10)},
+	{"id": "flower-yellow", "display_name": "Yellow Flower", "sprite_path": "res://assets/scenery/world1/scenery-flower-yellow.png", "tile": Vector2i(19, 18)},
+	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(22, 18)},
+	{"id": "stone", "display_name": "Stone", "sprite_path": "res://assets/scenery/world1/scenery-stone.png", "tile": Vector2i(10, 7)},
 ]
 
 # Fine-detail clutter — repositioned for the new 30x20 layout, each entry

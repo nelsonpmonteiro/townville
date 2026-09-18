@@ -57,6 +57,7 @@ func _publish_js_state() -> void:
 		"flow": flow.debug_state() if flow else {},
 		"phases": world.npc_phase if world else {},
 		"npcs": _npc_tiles(),
+		"walkable": _walkable_rows(),
 		"onboarding": onboarding.debug_state() if onboarding else {},
 		"seen_onboarding": OnboardingScript.has_seen_onboarding(),
 	}
@@ -337,6 +338,16 @@ func _on_phase_completed(npc_id: String, _phase: int) -> void:
 func _on_world_completed() -> void:
 	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown…"
 	dialogue_label.visible = true
+
+func _walkable_rows() -> Array:
+	var rows := []
+	if world:
+		for y in world.ROWS:
+			var line := ""
+			for x in world.COLS:
+				line += "." if world.walkable[y][x] else "#"
+			rows.append(line)
+	return rows
 
 func _npc_tiles() -> Dictionary:
 	var d := {}

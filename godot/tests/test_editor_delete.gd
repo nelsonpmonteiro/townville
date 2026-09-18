@@ -30,7 +30,7 @@ func _initialize() -> void:
 	# 2. delete a pre-existing building (stable) and an existing NPC, save
 	var n_before = ed.entities.size()
 	ed._remove_entity_at(Vector2i(13, 2))   # stable footprint
-	ed._remove_entity_at(Vector2i(15, 3))   # chester standing tile
+	ed._remove_entity_at(Vector2i(14, 4))   # chester standing tile
 	expect(ed.entities.size() == n_before - 2, "existing building + npc removed from editor list")
 	ed.save_map(path)
 	d = JSON.parse_string(FileAccess.get_file_as_string(path))

@@ -561,7 +561,7 @@ func _build_ui() -> void:
 	vbox.add_child(action_hbox)
 
 	var save_btn = Button.new()
-	save_btn.text = "Save"
+	save_btn.text = "Save + Download JSON"
 	save_btn.pressed.connect(func(): save_map("user://map.json"))
 	action_hbox.add_child(save_btn)
 
@@ -575,10 +575,10 @@ func _build_ui() -> void:
 	clear_btn.pressed.connect(clear_map)
 	action_hbox.add_child(clear_btn)
 
-	var export_btn = Button.new()
-	export_btn.text = "Export JSON"
-	export_btn.pressed.connect(export_map_download)
-	vbox.add_child(export_btn)
+	var import_btn = Button.new()
+	import_btn.text = "Load JSON file"
+	import_btn.pressed.connect(import_map_from_file)
+	vbox.add_child(import_btn)
 
 	status_label = Label.new()
 	status_label.text = "Left-click: place/select | Right-click: delete | Drag: move (select tool)"
@@ -658,11 +658,11 @@ func _update_tool_highlight() -> void:
 			btn.add_theme_color_override("font_color", Color.WHITE)
 			btn.modulate = Color.WHITE
 
-func save_map(path: String) -> void:
-	# New items placed through the editor (props/new buildings/npcs) are
-	# saved as full entities; the original world_data.gd buildings/npcs
-	# ("*_existing") are only saved as position OVERRIDES if they were
-	# actually moved — re-adding them as new entities would duplicate them.
+# ONE map format (v2) for everything: the browser save (user://map.json), the
+# downloaded townville_map_export.json and Load JSON. Includes editor-placed
+# entities, moved/deleted originals and the full terrain — so whatever you
+# move or delete is in the file, always.
+func serialize_map() -> Dictionary:
 	var ent_data = []
 	var moved_existing = []
 	for e in entities:
@@ -680,12 +680,20 @@ func save_map(path: String) -> void:
 		"path_mask": world.path_mask if world else [],
 		"walkable": world.walkable if world else [],
 	}
+	return data
+
+# Save = write the browser save AND download the same JSON. There is no
+# separate "export" step to forget anymore.
+func save_map(path: String) -> void:
+	var data := serialize_map()
+	var text := JSON.stringify(data, "  ")
 	var f = FileAccess.open(path, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify(data, "  "))
+		f.store_string(text)
 		f.close()
-		if status_label:
-			status_label.text = "Saved %d new item(s), %d deleted, terrain to %s" % [ent_data.size(), deleted_existing.size(), path]
+	_download_json(text)
+	if status_label:
+		status_label.text = "Saved %d new, %d moved, %d deleted + terrain → also downloaded townville_map_export.json" % [data.entities.size(), data.moved_existing.size(), deleted_existing.size()]
 
 # Reapplies a previously saved map: new props/buildings/npcs placed through
 # the editor, plus any terrain/collision edits (path_mask/walkable). Safe to
@@ -739,6 +747,10 @@ func load_map(path: String) -> void:
 			if entities[i].type in ["building_existing", "npc_existing"] and entities[i].id in deleted_existing:
 				entities.remove_at(i)
 	if d.has("moved_existing"):
+		for m in d.moved_existing:
+			for e in entities:
+				if e.type == m.type and e.id == m.id:
+					e.x = int(m.x); e.y = int(m.y)
 		# Applied directly against world.NPCS / the real building containers
 		# in the scene tree — NOT against `entities`, because load_map runs
 		# at boot before the editor UI (and _register_existing_entities)
@@ -779,11 +791,9 @@ func _toggle_panel(toggle_btn: Button) -> void:
 	toggle_btn.text = "<" if panel_open else ">"
 
 func export_map_download() -> void:
-	var ent_data = []
-	for e in entities:
-		ent_data.append({"id": e.id, "type": e.type, "x": e.x, "y": e.y})
-	var data = {"version": 1, "cols": COLS, "rows": ROWS, "grid": grid, "entities": ent_data, "deleted_existing": deleted_existing}
-	var json_text = JSON.stringify(data, "  ")
+	_download_json(JSON.stringify(serialize_map(), "  "))
+
+func _download_json(json_text: String) -> void:
 	if OS.has_feature("web") and JavaScriptBridge:
 		var js_code = """
 			(function(text){
@@ -796,10 +806,39 @@ func export_map_download() -> void:
 			})(%s)
 		""" % JSON.stringify(json_text)
 		JavaScriptBridge.eval(js_code, true)
-		status_label.text = "Exported: check your browser Downloads folder."
 	else:
-		var f = FileAccess.open("res://../artifacts/townville_map_export.json", FileAccess.WRITE)
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://artifacts"))
+		var f = FileAccess.open("res://artifacts/townville_map_export.json", FileAccess.WRITE)
 		if f:
 			f.store_string(json_text)
 			f.close()
-			status_label.text = "Exported to godot/artifacts/townville_map_export.json"
+
+# Load JSON: pick a townville_map_export.json from disk (web file picker) and
+# apply it exactly like the browser save.
+func import_map_from_file() -> void:
+	if not (OS.has_feature("web") and JavaScriptBridge):
+		load_map("res://artifacts/townville_map_export.json")
+		return
+	JavaScriptBridge.eval("""
+		(function(){
+			window.__townville_import = null;
+			var i = document.createElement('input'); i.type = 'file'; i.accept = '.json,application/json';
+			i.onchange = function(){ var f = i.files[0]; if(!f) return; var r = new FileReader();
+				r.onload = function(){ window.__townville_import = r.result; }; r.readAsText(f); };
+			i.click();
+		})()
+	""", true)
+	_poll_import()
+
+func _poll_import() -> void:
+	for i in 600:  # up to ~60 s for the user to pick a file
+		await get_tree().create_timer(0.1).timeout
+		var txt = JavaScriptBridge.eval("(function(){var t=window.__townville_import; window.__townville_import=null; return t;})()", true)
+		if txt is String and not txt.is_empty():
+			var tmp := "user://_import.json"
+			var f = FileAccess.open(tmp, FileAccess.WRITE)
+			f.store_string(txt); f.close()
+			load_map(tmp)
+			save_map("user://map.json")  # imported file becomes the browser save too
+			if status_label: status_label.text = "Imported JSON and saved."
+			return
