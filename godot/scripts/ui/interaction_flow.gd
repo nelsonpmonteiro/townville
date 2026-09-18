@@ -9,7 +9,8 @@ extends CanvasLayer
 ## Exercise modes (from TOWNVILLE-w1-exercise-script.md):
 ##   basket_in   phase 1  drag N items INTO the basket           (addition)
 ##   basket_out  phase 2  drag N items OUT of the basket to tray (subtraction)
-##   text        phase 3/4 numeric LineEdit                      (mult / div)
+##   array       phase 3  fill a rows x columns visual matrix     (multiplication)
+##   share       phase 4  deal every item into equal groups       (division)
 ##
 ## Hints: tier 1 after the 1st wrong answer (text line), tier 2 after the 2nd
 ## (ghost outline / ghost numeral / icon grid). Wrong answers return to the
@@ -71,6 +72,19 @@ var answer_input: LineEdit
 var submit_btn: Button
 var icon_grid: GridContainer
 
+# Physical multiplication/division layout, styled inside the existing panel.
+var visual_row: VBoxContainer
+var visual_source_title: Label
+var visual_source_panel: PanelContainer
+var visual_source_items: HFlowContainer
+var visual_zones: HBoxContainer
+var visual_cells: Array = []
+var share_zones: Array = []
+var share_titles: Array = []
+var pop_player: AudioStreamPlayer
+var pop_events := 0
+var bump_events := 0
+
 var feedback_screen: Control
 var result_label: Label
 var result_icon: Label
@@ -92,6 +106,7 @@ func _ready() -> void:
 	_build_dialogue()
 	_build_exercise()
 	_build_feedback()
+	_build_pop_audio()
 	set_state(State.MAP)
 
 # =====================================================================
@@ -212,6 +227,14 @@ func _show_line(text: String) -> void:
 func _on_dialogue_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		advance_dialogue()
+
+func cancel_dialogue() -> void:
+	if state != State.DIALOGUE:
+		return
+	if _tween:
+		_tween.kill()
+	is_typing = false
+	set_state(State.MAP)
 
 func advance_dialogue() -> void:
 	if state != State.DIALOGUE:
@@ -364,6 +387,36 @@ func _build_exercise() -> void:
 	submit_btn.pressed.connect(_on_submit)
 	input_h.add_child(submit_btn)
 
+	# ---- visual multiplication/division layout ----
+	visual_row = VBoxContainer.new()
+	visual_row.name = "VisualMathRow"
+	visual_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	visual_row.add_theme_constant_override("separation", 8)
+	visual_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(visual_row)
+
+	visual_source_title = Label.new()
+	visual_source_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	visual_source_title.add_theme_font_size_override("font_size", 16)
+	visual_row.add_child(visual_source_title)
+
+	visual_source_panel = PanelContainer.new()
+	visual_source_panel.custom_minimum_size = Vector2(700, 64)
+	visual_source_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
+	visual_row.add_child(visual_source_panel)
+	visual_source_items = HFlowContainer.new()
+	visual_source_items.name = "VisualSourceItems"
+	visual_source_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	visual_source_items.add_theme_constant_override("h_separation", 4)
+	visual_source_items.add_theme_constant_override("v_separation", 4)
+	visual_source_panel.add_child(visual_source_items)
+
+	visual_zones = HBoxContainer.new()
+	visual_zones.name = "VisualZones"
+	visual_zones.alignment = BoxContainer.ALIGNMENT_CENTER
+	visual_zones.add_theme_constant_override("separation", 8)
+	visual_row.add_child(visual_zones)
+
 func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	var zone := PanelContainer.new()
 	zone.name = zone_name
@@ -394,6 +447,85 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	zone.flow = self
 	return zone
 
+func _make_array_cell(index: int) -> PanelContainer:
+	var cell := PanelContainer.new()
+	cell.name = "ArrayCell_%d" % index
+	cell.custom_minimum_size = Vector2(48, 48)
+	cell.add_theme_stylebox_override("panel", _panel_style(Color("#6b4a2b"), Color("#c9a36b")))
+	var center := CenterContainer.new()
+	center.name = "Items"
+	cell.add_child(center)
+	cell.set_script(DropZoneScript)
+	cell.flow = self
+	return cell
+
+func _make_share_zone(index: int) -> PanelContainer:
+	var zone := PanelContainer.new()
+	zone.name = "ShareZone_%d" % index
+	zone.custom_minimum_size = Vector2(125, 125)
+	zone.add_theme_stylebox_override("panel", _panel_style(Color("#6b4a2b"), Color("#a77a4b")))
+	var column := VBoxContainer.new()
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	zone.add_child(column)
+	var title := Label.new()
+	title.name = "Title"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 15)
+	column.add_child(title)
+	var items := HFlowContainer.new()
+	items.name = "Items"
+	items.alignment = FlowContainer.ALIGNMENT_CENTER
+	items.custom_minimum_size = Vector2(95, 70)
+	items.add_theme_constant_override("h_separation", 2)
+	items.add_theme_constant_override("v_separation", 2)
+	column.add_child(items)
+	zone.set_meta("items", items)
+	zone.set_script(DropZoneScript)
+	zone.flow = self
+	share_titles.append(title)
+	return zone
+
+func _clear_visual() -> void:
+	_clear(visual_source_items)
+	_clear(visual_zones)
+	visual_cells.clear()
+	share_zones.clear()
+	share_titles.clear()
+
+func _open_array(icon: String) -> void:
+	var dimensions: Array = exercise.get("grid", [1, 1])
+	var rows: int = int(dimensions[0])
+	var columns: int = int(dimensions[1])
+	visual_source_title.visible = true
+	visual_source_panel.visible = true
+	visual_source_title.text = "%s to place: %d" % [POOL_LABELS.get(npc.item, "Items"), rows * columns]
+	for i in rows * columns:
+		visual_source_items.add_child(_make_item(icon, true, 32))
+	var grid := GridContainer.new()
+	grid.columns = columns
+	grid.add_theme_constant_override("h_separation", 5)
+	grid.add_theme_constant_override("v_separation", 5)
+	visual_zones.add_child(grid)
+	for i in rows * columns:
+		var cell := _make_array_cell(i)
+		visual_cells.append(cell)
+		grid.add_child(cell)
+
+func _open_share(icon: String) -> void:
+	var groups: int = int(exercise.get("groups", 1))
+	var per_group: int = int(exercise.get("answer", 0))
+	var total: int = groups * per_group
+	visual_source_title.visible = true
+	visual_source_panel.visible = true
+	visual_source_title.text = "To share: %d" % total
+	for i in total:
+		visual_source_items.add_child(_make_item(icon, true, 32))
+	for i in groups:
+		var zone := _make_share_zone(i)
+		share_zones.append(zone)
+		visual_zones.add_child(zone)
+	_update_share_status(false)
+
 func _open_exercise() -> void:
 	set_state(State.EXERCISE)
 	prompt_label.text = exercise.setup
@@ -402,13 +534,15 @@ func _open_exercise() -> void:
 	equation_label.visible = false
 	equation_label.text = ""
 	_clear(basket_items); _clear(source_items); _clear(tray_items); _clear(icon_grid)
+	_clear_visual()
 	icon_grid.visible = false
 	(basket_zone.get_child(0).get_node("Ghost") as Label).visible = false
 	basket_count = 0
 	var mode: String = exercise.mode
-	basket_row.visible = mode != "text"
+	basket_row.visible = mode in ["basket_in", "basket_out"]
 	done_btn.visible = mode != "text"
 	text_row.visible = mode == "text"
+	visual_row.visible = mode in ["array", "share"]
 	var icon: String = ITEM_ICONS.get(npc.item, "")
 	match mode:
 		"basket_in":
@@ -435,6 +569,10 @@ func _open_exercise() -> void:
 			answer_input.editable = true
 			submit_btn.disabled = false
 			answer_input.grab_focus()
+		"array":
+			_open_array(icon)
+		"share":
+			_open_share(icon)
 
 func _update_basket_counter() -> void:
 	var target: int = int(exercise.get("answer", basket_count))
@@ -476,10 +614,10 @@ func _item_plural() -> String:
 	var item: String = npc.get("item", "items")
 	return item if item.ends_with("s") else item + "s"
 
-func _make_item(icon_path: String, draggable: bool) -> Control:
+func _make_item(icon_path: String, draggable: bool, item_size: int = 40) -> Control:
 	var item := TextureRect.new()
 	item.texture = load(icon_path) as Texture2D
-	item.custom_minimum_size = Vector2(40, 40)
+	item.custom_minimum_size = Vector2(item_size, item_size)
 	item.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	item.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	item.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -493,6 +631,43 @@ func drop_into(zone_name: String, source: Control) -> void:
 	if state != State.EXERCISE:
 		return
 	var mode: String = exercise.mode
+	if mode == "array" and zone_name.begins_with("ArrayCell_"):
+		var index := int(zone_name.trim_prefix("ArrayCell_"))
+		if index < 0 or index >= visual_cells.size() or source.get_parent() != visual_source_items:
+			return
+		var cell: PanelContainer = visual_cells[index]
+		var target: Control = cell.get_child(0)
+		if target.get_child_count() > 0:
+			return
+		source.reparent(target)
+		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		source.set_script(null)
+		_emit_placement_feedback(cell, visual_cells.size() - visual_source_items.get_child_count())
+		visual_source_title.text = "%s to place: %d" % [POOL_LABELS.get(npc.item, "Items"), visual_source_items.get_child_count()]
+		if visual_source_items.get_child_count() == 0:
+			visual_source_title.visible = false
+			visual_source_panel.visible = false
+			var dimensions: Array = exercise.get("grid", [1, 1])
+			var rows := int(dimensions[0])
+			var columns := int(dimensions[1])
+			equation_label.text = "%d groups of %d = %d\n%d x %d = %d, and %d x %d = %d too" % [rows, columns, int(exercise.answer), rows, columns, int(exercise.answer), columns, rows, int(exercise.answer)]
+			equation_label.visible = true
+		return
+	if mode == "share" and zone_name.begins_with("ShareZone_"):
+		var index := int(zone_name.trim_prefix("ShareZone_"))
+		if index < 0 or index >= share_zones.size():
+			return
+		var zone: PanelContainer = share_zones[index]
+		var target: Control = zone.get_meta("items") as Control
+		if source == null or source.get_parent() == target:
+			return
+		if source.get_parent() != visual_source_items and not _is_share_items_container(source.get_parent()):
+			return
+		source.reparent(target)
+		hint_label.visible = false
+		_emit_placement_feedback(zone, target.get_child_count())
+		_update_share_status(false)
+		return
 	if mode == "basket_in" and zone_name == "BasketDropZone" and source.get_parent() == source_items:
 		source.get_parent().remove_child(source)
 		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -512,11 +687,71 @@ func drop_into(zone_name: String, source: Control) -> void:
 		if basket_count < int(exercise.answer):
 			_resolve(false)
 
-## Basket phases: the child presses Done when they think the basket is right.
-## (Auto-checking on every drop would make a wrong answer impossible and the
-## scripted hint tiers unreachable.)
+func _is_share_items_container(node: Node) -> bool:
+	for zone in share_zones:
+		if zone.get_meta("items") == node:
+			return true
+	return false
+
+func _update_share_status(highlight_imbalance: bool) -> bool:
+	var expected: int = int(exercise.get("answer", 0))
+	var balanced := visual_source_items.get_child_count() == 0
+	visual_source_title.text = "To share: %d" % visual_source_items.get_child_count()
+	for i in share_zones.size():
+		var items: Control = share_zones[i].get_meta("items") as Control
+		var count := items.get_child_count()
+		var wrong := count != expected
+		balanced = balanced and not wrong
+		share_titles[i].text = "Group %d: %d%s" % [i + 1, count, " ?" if highlight_imbalance and wrong else ""]
+		share_titles[i].add_theme_color_override("font_color", Color("#ffb0a5") if highlight_imbalance and wrong else Color("#f5e9cf"))
+	if balanced:
+		visual_source_title.visible = false
+		visual_source_panel.visible = false
+		var groups := share_zones.size()
+		var total := groups * expected
+		equation_label.text = "%d items shared equally\n%d / %d = %d each" % [total, total, groups, expected]
+		equation_label.visible = true
+	else:
+		equation_label.visible = false
+	return balanced
+
+func _emit_placement_feedback(zone: Control, count: int) -> void:
+	pop_events += 1
+	bump_events += 1
+	if pop_player:
+		pop_player.play()
+	var number := Label.new()
+	number.text = str(count)
+	number.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	number.z_index = 20
+	number.add_theme_font_size_override("font_size", 20)
+	number.add_theme_color_override("font_color", Color("#ffd75a"))
+	var starts_above := zone.name.begins_with("ShareZone_")
+	number.position = Vector2(zone.size.x * 0.5 - 6, -20 if starts_above else 4)
+	zone.add_child(number)
+	var tween := number.create_tween().set_parallel(true)
+	tween.tween_property(number, "position:y", -42.0 if starts_above else -18.0, 0.45)
+	tween.tween_property(number, "modulate:a", 0.0, 0.45)
+	tween.chain().tween_callback(number.queue_free)
+
+## The child presses Done when the physical quantity looks right.
 func _on_done() -> void:
 	if state != State.EXERCISE or exercise.mode == "text":
+		return
+	if exercise.mode == "array":
+		if visual_source_items.get_child_count() > 0:
+			hint_label.text = "Keep filling the rows. Every space needs one item."
+			hint_label.visible = true
+			return
+		_resolve(true)
+		return
+	if exercise.mode == "share":
+		if not _update_share_status(true):
+			wrong_attempts += 1
+			hint_label.text = "Not equal yet. Move items until every group has the same amount."
+			hint_label.visible = true
+			return
+		_resolve(true)
 		return
 	_resolve(basket_count == int(exercise.answer))
 
@@ -536,6 +771,25 @@ func _on_submit() -> void:
 	if t.is_empty():
 		return
 	_resolve(int(t) == int(exercise.answer))
+
+func _build_pop_audio() -> void:
+	pop_player = AudioStreamPlayer.new()
+	pop_player.name = "PlacementPop"
+	add_child(pop_player)
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = 22050
+	wav.stereo = false
+	var samples := int(wav.mix_rate * 0.075)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	for i in samples:
+		var fade := 1.0 - float(i) / float(samples)
+		var frequency := 520.0 + 360.0 * float(i) / float(samples)
+		var value := int(sin(TAU * frequency * float(i) / float(wav.mix_rate)) * 7000.0 * fade)
+		data.encode_s16(i * 2, value)
+	wav.data = data
+	pop_player.stream = wav
 
 # =====================================================================
 # Feedback
@@ -638,6 +892,9 @@ func debug_state() -> Dictionary:
 		"basket_count": basket_count,
 		"target": int(exercise.get("answer", basket_count)),
 		"source_left": source_items.get_child_count() if source_items else 0,
+		"visual_source_left": visual_source_items.get_child_count() if visual_source_items else 0,
+		"visual_cells": visual_cells.size(),
+		"share_groups": share_zones.size(),
 		"tray_count": tray_items.get_child_count() if tray_items else 0,
 		"wrong_attempts": wrong_attempts,
 		"hint_visible": hint_label.visible if hint_label else false,
@@ -654,7 +911,12 @@ func debug_state() -> Dictionary:
 ## Programmatic drag for tests: moves one draggable from its source area into
 ## the target zone exactly as a real drop would.
 func debug_drag_one(target_zone: String) -> bool:
-	var from: HBoxContainer = source_items if exercise.get("mode", "") == "basket_in" else basket_items
+	var mode: String = exercise.get("mode", "")
+	var from: Control
+	if mode in ["array", "share"]:
+		from = visual_source_items
+	else:
+		from = source_items if mode == "basket_in" else basket_items
 	for ch in from.get_children():
 		if ch.get_script() == DragItemScript:
 			drop_into(target_zone, ch)

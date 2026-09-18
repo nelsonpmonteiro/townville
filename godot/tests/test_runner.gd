@@ -138,7 +138,7 @@ func _initialize() -> void:
 			continue
 		for i in 4:
 			var e: Dictionary = ex[i]
-			var want_mode: String = ["basket_in", "basket_out", "text", "text"][i]
+			var want_mode: String = ["basket_in", "basket_out", "array", "share"][i]
 			if e.mode != want_mode or int(e.answer) != expected[npc.id][i] or e.phase != i + 1:
 				all_ok = false
 			if e.mode == "basket_in" and int(e.a) + int(e.b) != int(e.answer):
@@ -147,7 +147,7 @@ func _initialize() -> void:
 				all_ok = false
 			if e.setup.is_empty() or e.success.is_empty() or e.hint1.is_empty():
 				all_ok = false
-	expect(all_ok, "every NPC has 4 exercises (in/out/text/text) with the scripted answers")
+	expect(all_ok, "every NPC has 4 exercises (in/out/array/share) with the scripted answers")
 	expect(world.get_phase("mae") == 0 and world.get_current_exercise(world.NPCS[0]).phase == 1, "NPC starts at phase 1")
 	world.advance_phase("mae")
 	expect(world.get_current_exercise(world.NPCS[0]).phase == 2, "advance_phase moves to phase 2")
@@ -166,6 +166,9 @@ func _initialize() -> void:
 	flow.start(mae)
 	expect(flow.state_name() == "dialogue" and flow.is_locked(), "E next to NPC → DIALOGUE, movement locked")
 	expect(flow.dialogue_screen.visible and not flow.exercise_screen.visible and not flow.feedback_screen.visible, "only DialogueScreen visible")
+	flow.cancel_dialogue()
+	expect(flow.state_name() == "map" and not flow.is_locked(), "Escape/cancel closes dialogue and returns to MAP")
+	flow.start(mae)
 	flow.advance_dialogue()  # skip typewriter
 	expect(not flow.is_typing and flow.dialogue_text.visible_ratio == 1.0, "tap while typing → full text")
 	flow.advance_dialogue()  # → exercise
@@ -219,26 +222,38 @@ func _initialize() -> void:
 	await create_timer(2.0).timeout
 	expect(world.get_phase("mae") == 2, "phase 2 done")
 
-	# phase 3 text with numeric filter + wrong then right
+	# phase 3 multiplication: build the array physically, no typed answer
 	flow.start(mae)
 	flow.advance_dialogue(); flow.advance_dialogue()
-	expect(flow.exercise.mode == "text" and flow.text_row.visible and not flow.basket_row.visible, "phase 3 → text input layout")
-	flow.answer_input.text = "1a2"
-	flow._digits_only("1a2")
-	expect(flow.answer_input.text == "12", "non-digits stripped from input")
-	flow.debug_submit("11")
+	expect(flow.exercise.mode == "array" and flow.visual_row.visible and not flow.text_row.visible, "phase 3 uses the visual array layout")
+	expect(flow.visual_cells.size() == 12 and flow.visual_source_items.get_child_count() == 12, "3x4 array starts empty with 12 draggable items")
+	flow.debug_done()
+	expect(flow.state_name() == "exercise" and flow.hint_label.visible, "incomplete array gives a gentle hint without leaving the exercise")
+	var feedback_before: int = flow.pop_events
+	for i in 12:
+		flow.debug_drag_one("ArrayCell_%d" % i)
+	expect(flow.pop_events - feedback_before == 12 and flow.bump_events >= 12, "each placed item emits gentle sound and rising-count feedback")
+	expect(flow.visual_source_items.get_child_count() == 0 and flow.equation_label.text.contains("3 x 4 = 12"), "completed 3x4 array reveals the repeated-groups equation")
+	flow.debug_done()
+	expect(flow.state_name() == "feedback" and flow.last_correct, "completed multiplication array is correct")
 	await create_timer(2.0).timeout
-	expect(flow.state_name() == "exercise" and flow.hint_label.text.contains("4 + 4 + 4"), "wrong text answer → tier-1 hint")
-	flow.debug_submit("10")
-	await create_timer(2.0).timeout
-	expect(flow.icon_grid.visible and flow.icon_grid.get_child_count() == 12 and flow.icon_grid.columns == 4, "2nd wrong → 3×4 icon grid")
-	flow.debug_submit("12")
-	await create_timer(2.0).timeout
-	expect(world.get_phase("mae") == 3 and flow.state_name() == "map", "phase 3 correct → phase 4 unlocked")
+	expect(world.get_phase("mae") == 3 and flow.state_name() == "map", "phase 3 visual multiplication unlocks phase 4")
+
+	# phase 4 division: deal items one by one into equal groups
 	flow.start(mae); flow.advance_dialogue(); flow.advance_dialogue()
-	flow.debug_submit("3")
+	expect(flow.exercise.mode == "share" and flow.share_zones.size() == 4, "phase 4 shows one drop zone per equal group")
+	expect(flow.visual_source_items.get_child_count() == 12, "division starts with the full collection available to share")
+	flow.debug_drag_one("ShareZone_0"); flow.debug_drag_one("ShareZone_0")
+	flow.debug_done()
+	expect(flow.state_name() == "exercise" and flow.hint_label.visible and flow.share_titles[0].text.contains("?"), "unequal sharing stays editable and marks the imbalance without Game Over")
+	for group_index in [1, 2, 3]:
+		for i in 3:
+			flow.debug_drag_one("ShareZone_%d" % group_index)
+	flow.debug_drag_one("ShareZone_0")
+	expect(flow.equation_label.text.contains("12 / 4 = 3"), "equal groups reveal the division equation")
+	flow.debug_done()
 	await create_timer(2.0).timeout
-	expect(world.is_npc_complete("mae"), "phase 4 correct → Mae complete (4/4)")
+	expect(world.is_npc_complete("mae"), "visual division completes Mae phase 4")
 	flow.start(mae)
 	expect(flow.dialogue_text.text.begins_with("Thanks for all your help"), "completed NPC shows thank-you line")
 	flow.advance_dialogue(); flow.advance_dialogue()
@@ -256,9 +271,13 @@ func _initialize() -> void:
 	ob.start()
 	expect(ob.active and ob.title_box.visible and not ob.card_box.visible, "title screen first")
 	ob.advance()
-	expect(ob.card_box.visible and ob.card_text.text.contains("arrow keys"), "card 1 = movement")
+	expect(ob.card_box.visible and ob.card_text.text.contains("these keys") and ob.direction_keys.visible and not ob.card_icon.visible, "card 1 uses a visual directional-key diagram")
+	expect(ob.back_button.visible and ob.next_button.visible, "onboarding exposes Back and Next navigation")
 	ob.advance()
 	expect(ob.card_text.text.contains("press E"), "card 2 = interaction")
+	ob.back()
+	expect(ob.step == 0 and ob.direction_keys.visible, "Back returns to the previous onboarding card")
+	ob.advance()
 	ob.advance()
 	expect(ob.card_text.text.contains("unlock the whole farm"), "card 3 = goal")
 	ob.advance()

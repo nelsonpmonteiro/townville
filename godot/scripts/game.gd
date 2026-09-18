@@ -74,11 +74,20 @@ func _run_probe_cmd(cmd: String) -> void:
 			# publish screen rects of the drag targets so the probe can do REAL mouse drags
 			var r := {}
 			if flow and flow.state == flow.State.EXERCISE:
-				var src: HBoxContainer = flow.source_items if flow.exercise.mode == "basket_in" else flow.basket_items
+				var mode: String = flow.exercise.mode
+				var src: Control
+				if mode in ["array", "share"]:
+					src = flow.visual_source_items
+				else:
+					src = flow.source_items if mode == "basket_in" else flow.basket_items
 				var i := 0
 				for ch in src.get_children():
 					if ch.get_script() == flow.DragItemScript:
 						r["item%d" % i] = _rect(ch); i += 1
+				for cell_index in flow.visual_cells.size():
+					r["array%d" % cell_index] = _rect(flow.visual_cells[cell_index])
+				for zone_index in flow.share_zones.size():
+					r["share%d" % zone_index] = _rect(flow.share_zones[zone_index])
 				r["basket"] = _rect(flow.basket_zone)
 				r["tray"] = _rect(flow.tray_zone)
 				r["done"] = _rect(flow.done_btn)
@@ -399,6 +408,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if onboarding and onboarding.active:
 		return
 	if not (event.pressed and not event.echo):
+		return
+	if event.keycode == KEY_ESCAPE and flow.state == flow.State.DIALOGUE:
+		flow.cancel_dialogue()
+		get_viewport().set_input_as_handled()
 		return
 	var is_interact: bool = event.keycode == KEY_E or event.keycode == KEY_SPACE or event.keycode == KEY_ENTER
 	if flow.state == flow.State.DIALOGUE and is_interact:

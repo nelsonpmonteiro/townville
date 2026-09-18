@@ -1,11 +1,12 @@
 extends CanvasLayer
-## Onboarding — Title → 3 How-to-Play cards → fade → map.
-## Shown only on first launch (flag in user://save_data.cfg). Any key / tap advances.
+## Onboarding - Title -> 3 How-to-Play cards -> fade -> map.
+## Enter/Space/Right advances; Left/Backspace returns; taps use the visible controls.
 ## Runs as an overlay over the already-built world so the farm art is the title background.
 
 const SAVE_PATH := "user://save_data.cfg"
+const DirectionKeysScript := preload("res://scripts/ui/direction_keys.gd")
 const CARDS := [
-	["UP  LEFT  DOWN  RIGHT", "Use the arrow keys to walk around Townville!"],
+	["", "Use these keys to walk around Townville!"],
 	["[ E ]", "Walk up to a friend and press E to talk!"],
 	["LOCKED  ->  OPEN", "Help everyone solve their problems to unlock the whole farm!"],
 ]
@@ -21,8 +22,11 @@ var dim: ColorRect
 var title_box: VBoxContainer
 var card_box: VBoxContainer
 var card_icon: Label
+var direction_keys: Control
 var card_text: Label
 var card_dots: Label
+var back_button: Button
+var next_button: Button
 var tap_label: Label
 var _pulse: Tween
 
@@ -76,7 +80,7 @@ func _ready() -> void:
 	var spacer := Control.new(); spacer.custom_minimum_size = Vector2(0, 40)
 	title_box.add_child(spacer)
 	tap_label = Label.new()
-	tap_label.text = "Tap or press any key to start"
+	tap_label.text = "Tap, Enter, or Space to start"
 	tap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tap_label.add_theme_font_size_override("font_size", 24)
 	tap_label.add_theme_color_override("font_color", Color.WHITE)
@@ -99,6 +103,11 @@ func _ready() -> void:
 	card_icon.add_theme_font_size_override("font_size", 56)
 	card_icon.add_theme_color_override("font_color", Color("#ffd75a"))
 	v.add_child(card_icon)
+	var direction_holder := CenterContainer.new()
+	v.add_child(direction_holder)
+	direction_keys = Control.new()
+	direction_keys.set_script(DirectionKeysScript)
+	direction_holder.add_child(direction_keys)
 	card_text = Label.new()
 	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -110,6 +119,20 @@ func _ready() -> void:
 	card_dots.add_theme_font_size_override("font_size", 18)
 	card_dots.add_theme_color_override("font_color", Color("#a0c0ff"))
 	v.add_child(card_dots)
+	var controls := HBoxContainer.new()
+	controls.alignment = BoxContainer.ALIGNMENT_CENTER
+	controls.add_theme_constant_override("separation", 16)
+	v.add_child(controls)
+	back_button = Button.new()
+	back_button.text = "Back"
+	back_button.custom_minimum_size = Vector2(120, 42)
+	back_button.pressed.connect(back)
+	controls.add_child(back_button)
+	next_button = Button.new()
+	next_button.text = "Next"
+	next_button.custom_minimum_size = Vector2(120, 42)
+	next_button.pressed.connect(advance)
+	controls.add_child(next_button)
 
 	visible = false
 
@@ -138,11 +161,15 @@ func _show() -> void:
 		_pulse.tween_property(tap_label, "modulate:a", 1.0, 0.7)
 	elif step < CARDS.size():
 		card_icon.text = CARDS[step][0]
+		card_icon.visible = step != 0
+		direction_keys.visible = step == 0
 		card_text.text = CARDS[step][1]
+		back_button.visible = true
+		next_button.text = "Play" if step == CARDS.size() - 1 else "Next"
 		var dots := ""
 		for i in CARDS.size():
 			dots += ("*" if i == step else "-") + "  "
-		card_dots.text = dots + "    tap to continue"
+		card_dots.text = dots
 
 func advance() -> void:
 	if not active or _busy:
@@ -152,6 +179,12 @@ func advance() -> void:
 		_finish()
 	else:
 		_show()
+
+func back() -> void:
+	if not active or _busy or step <= -1:
+		return
+	step -= 1
+	_show()
 
 func _finish() -> void:
 	_busy = true
@@ -167,26 +200,17 @@ func _finish() -> void:
 	finished.emit()
 
 func _on_gui_input(ev: InputEvent) -> void:
-	_maybe_advance(ev)
+	if (ev is InputEventMouseButton and ev.pressed) or (ev is InputEventScreenTouch and ev.pressed):
+		advance()
+		get_viewport().set_input_as_handled()
 
-# Any key OR any tap/click anywhere advances. _input (not _unhandled_input) so
-# the click is caught regardless of which Control is under the cursor.
 func _input(ev: InputEvent) -> void:
-	if not active:
+	if not active or not (ev is InputEventKey) or not ev.pressed or ev.echo:
 		return
-	_maybe_advance(ev)
-
-func _maybe_advance(ev: InputEvent) -> void:
-	if not active:
-		return
-	var hit := false
-	if ev is InputEventKey and ev.pressed and not ev.echo:
-		hit = true
-	elif ev is InputEventMouseButton and ev.pressed:
-		hit = true
-	elif ev is InputEventScreenTouch and ev.pressed:
-		hit = true
-	if hit:
+	if ev.keycode in [KEY_LEFT, KEY_BACKSPACE]:
+		back()
+		get_viewport().set_input_as_handled()
+	elif ev.keycode in [KEY_RIGHT, KEY_ENTER, KEY_SPACE]:
 		advance()
 		get_viewport().set_input_as_handled()
 

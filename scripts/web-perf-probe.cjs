@@ -1,7 +1,7 @@
 // Real-browser acceptance probe for the Godot web export at localhost:8090.
 // Verifies: FPS, movement, grid hidden, F1, and the full NPC loop with REAL
-// mouse drag-and-drop (Mae phase 1 basket_in, phase 2 basket_out) plus the
-// text-input phase 3 with hint tiers. Engine state comes from the JS bridge
+// mouse drag-and-drop across all four Mae phases: basket add/remove,
+// multiplication arrays, and fair-sharing division. Engine state comes from the JS bridge
 // in game.gd (window.__townville_state / __townville_cmd / __townville_rects).
 const { chromium } = require('playwright');
 
@@ -94,16 +94,19 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await page.screenshot({ path: '/tmp/tv-onboard-title.png' });
   const t0 = s.tile.slice();
   await hold(page, 'ArrowRight', 500); s = await state(page);
-  check('movement blocked under onboarding (key consumed as "advance")', s.tile[0] === t0[0] && s.tile[1] === t0[1] && s.onboarding.step === 0);
-  check('card 1 movement', /arrow keys/.test(s.onboarding.card_text));
+  check('movement blocked under onboarding (Right advances)', s.tile[0] === t0[0] && s.tile[1] === t0[1] && s.onboarding.step === 0);
+  check('card 1 visual movement prompt', /these keys/.test(s.onboarding.card_text));
   await page.screenshot({ path: '/tmp/tv-onboard-card1.png' });
-  await page.mouse.click(480, 320); await sleep(250); s = await state(page);
-  check('tap → card 2 interaction', /press E/.test(s.onboarding.card_text));
+  await page.keyboard.press('ArrowLeft'); await sleep(250); s = await state(page);
+  check('Left goes back to title', s.onboarding.title_visible && s.onboarding.step === -1);
+  await page.keyboard.press('ArrowRight'); await sleep(250);
+  await page.keyboard.press('ArrowRight'); await sleep(250); s = await state(page);
+  check('Right → card 2 interaction', /press E/.test(s.onboarding.card_text));
   await page.screenshot({ path: '/tmp/tv-onboard-card2.png' });
   await page.keyboard.press('Space'); await sleep(250); s = await state(page);
-  check('any key → card 3 goal', /unlock the whole farm/.test(s.onboarding.card_text));
+  check('Space → card 3 goal', /unlock the whole farm/.test(s.onboarding.card_text));
   await page.screenshot({ path: '/tmp/tv-onboard-card3.png' });
-  await page.mouse.click(480, 320); await sleep(900); s = await state(page);
+  await page.keyboard.press('Enter'); await sleep(900); s = await state(page);
   check('card 3 tap → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
   await hold(page, 'ArrowRight', 400); s = await state(page);
   check('player at spawn moves after onboarding', s.tile[0] > t0[0], `${t0}→${s.tile}`);
@@ -144,6 +147,10 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await page.keyboard.press('KeyE'); await sleep(300);
   s = await waitState(page, s => s.flow.state === 'dialogue', 3000, 'dialogue');
   check('E → DIALOGUE (typewriter running)', s.flow.is_typing === true || s.flow.dialogue_text.length > 0);
+  await page.keyboard.press('Escape'); await sleep(250); s = await state(page);
+  check('Escape closes dialogue', s.flow.state === 'map');
+  await page.keyboard.press('KeyE'); await sleep(300);
+  s = await waitState(page, s => s.flow.state === 'dialogue', 3000, 'dialogue reopened');
   await page.screenshot({ path: '/tmp/tv-dialogue.png' });
   const tileBefore = s.tile.slice();
   await hold(page, 'ArrowRight', 500);
@@ -200,32 +207,52 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   s = await waitState(page, s => s.flow.state === 'map', 4000);
   check('phase 3 unlocked', s.phases[npcName] === 2);
 
-  // ---------- Phase 3: text, typed via real keyboard, 2 wrong → grid hint ----------
+  // ---------- Phase 3: multiplication array, filled with real drags ----------
   await page.keyboard.press('KeyE'); await sleep(300);
   await waitState(page, s => s.flow.state === 'dialogue', 3000);
   await page.keyboard.press('KeyE'); await sleep(150); await page.keyboard.press('KeyE');
   s = await waitState(page, s => s.flow.state === 'exercise', 3000, 'phase3');
-  check('phase 3 → text mode', s.flow.mode === 'text');
-  rr = await rects(page); await clickRect(page, rr.input);
-  await page.keyboard.type('9a9'); await page.keyboard.press('Enter');   // 99: wrong for every NPC
+  check('phase 3 → visual array mode', s.flow.mode === 'array' && s.flow.visual_cells > 0);
+  const arrayCount = s.flow.visual_cells;
+  for (let i = 0; i < arrayCount; i++) {
+    rr = await rects(page);
+    await realDrag(page, rr.item0, rr[`array${i}`]);
+  }
+  s = await state(page);
+  check('REAL drags fill every multiplication cell', s.flow.visual_source_left === 0);
+  await page.screenshot({ path: '/tmp/tv-ex-array.png' });
+  rr = await rects(page); await clickRect(page, rr.done);
   s = await waitState(page, s => s.flow.state === 'feedback', 3000);
-  check('typed "9a9" → filtered to 99 → wrong', s.flow.last_correct === false);
-  s = await waitState(page, s => s.flow.state === 'exercise', 4000);
-  check('tier-1 hint shown', s.flow.hint_visible && s.flow.hint_text.length > 5, s.flow.hint_text);
-  rr = await rects(page); await clickRect(page, rr.input);
-  await page.keyboard.type('98'); await page.keyboard.press('Enter');
-  await waitState(page, s => s.flow.state === 'feedback', 3000);
-  s = await waitState(page, s => s.flow.state === 'exercise', 4000);
-  check('tier-2 icon grid', s.flow.icon_grid_visible && s.flow.icon_grid_count > 0);
-  await page.screenshot({ path: '/tmp/tv-ex-text-grid.png' });
-  // answer = rows*cols of the hint grid (multiplication phase)
-  const ans = String(s.flow.icon_grid_count);
-  rr = await rects(page); await clickRect(page, rr.input);
-  await page.keyboard.type(ans); rr = await rects(page); await clickRect(page, rr.submit);
-  s = await waitState(page, s => s.flow.state === 'feedback', 3000);
-  check(`${ans} → correct`, s.flow.last_correct === true, s.flow.result_text);
+  check('completed array → correct', s.flow.last_correct === true, s.flow.result_text);
   s = await waitState(page, s => s.flow.state === 'map', 4000);
-  check('phase 4 unlocked, back on map, movement free', s.phases[npcName] === 3 && s.flow.state === 'map');
+  check('phase 4 unlocked', s.phases[npcName] === 3);
+
+  // ---------- Phase 4: fair sharing, no punitive failure ----------
+  await page.keyboard.press('KeyE'); await sleep(300);
+  await waitState(page, s => s.flow.state === 'dialogue', 3000);
+  await page.keyboard.press('KeyE'); await sleep(150); await page.keyboard.press('KeyE');
+  s = await waitState(page, s => s.flow.state === 'exercise', 3000, 'phase4');
+  check('phase 4 → visual share mode', s.flow.mode === 'share' && s.flow.share_groups > 1);
+  const groups = s.flow.share_groups;
+  const perGroup = s.flow.target;
+  rr = await rects(page); await realDrag(page, rr.item0, rr.share0);
+  rr = await rects(page); await clickRect(page, rr.done); await sleep(250); s = await state(page);
+  check('unequal share stays editable with a hint', s.flow.state === 'exercise' && s.flow.hint_visible);
+  for (let group = 0; group < groups; group++) {
+    const already = group === 0 ? 1 : 0;
+    for (let n = already; n < perGroup; n++) {
+      rr = await rects(page);
+      await realDrag(page, rr.item0, rr[`share${group}`]);
+    }
+  }
+  s = await state(page);
+  check('REAL drags distribute the full collection equally', s.flow.visual_source_left === 0);
+  await page.screenshot({ path: '/tmp/tv-ex-share.png' });
+  rr = await rects(page); await clickRect(page, rr.done);
+  s = await waitState(page, s => s.flow.state === 'feedback', 3000);
+  check('equal sharing → correct', s.flow.last_correct === true, s.flow.result_text);
+  s = await waitState(page, s => s.flow.state === 'map', 4000);
+  check('NPC completed, back on map, movement free', s.phases[npcName] === 4 && s.flow.state === 'map');
   {
     const nb = [['ArrowRight',1,0],['ArrowLeft',-1,0],['ArrowDown',0,1],['ArrowUp',0,-1]].find(([,dx,dy]) => (s.walkable[s.tile[1]+dy]||'')[s.tile[0]+dx] === '.');
     await hold(page, nb[0], 400);
