@@ -107,10 +107,9 @@ func build_world() -> void:
 		return
 	built = true
 	world = WorldDataScript.new()
-	# Depth: buildings, NPCs and the player share z=10 and are Y-sorted by
-	# their ground anchor (building = footprint bottom, characters = tile
-	# center). Walking on the tile ABOVE a building puts the player behind
-	# its roof; walking below puts them in front. Ground/props stay below.
+	# Depth policy: the player is always above NPCs and every building except
+	# the clinic. Only the clinic shares the player's layer, so Y sorting can
+	# place the player behind its roof when approaching from above.
 	y_sort_enabled = true
 
 	var map = MapRendererScript.new()
@@ -123,7 +122,7 @@ func build_world() -> void:
 	add_npcs()
 	player = PlayerScript.new()
 	player.name = "Player"
-	player.z_index = 10
+	player.z_index = 20
 	add_child(player)
 	player.setup(world)
 	add_hud()
@@ -159,7 +158,7 @@ func add_buildings() -> void:
 
 		var container := Node2D.new()
 		container.name = "BuildingGroup_" + b.id
-		container.z_index = 10
+		container.z_index = 20 if b.id == "clinic" else 0
 		container.position = Vector2(fp_center.x, fp_bottom)
 		container.set_meta("building_id", b.id)
 		container.set_meta("footprint_col", b.footprintCol)
@@ -173,7 +172,7 @@ func add_buildings() -> void:
 		if shadow.texture != null:
 			shadow.position = Vector2(6, -6)
 			shadow.scale = Vector2(b.footprintW, b.footprintH) * (0.9 + building_scale * 0.35)
-			shadow.z_index = 4
+			shadow.z_index = -1
 			shadow.modulate.a = 0.4
 			container.add_child(shadow)
 
@@ -182,7 +181,7 @@ func add_buildings() -> void:
 		sprite.texture = texture
 		sprite.scale = Vector2(building_scale * (-1.0 if flip_h else 1.0), building_scale)
 		sprite.position = Vector2(0, -scaled_height / 2.0)
-		sprite.z_index = 5
+		sprite.z_index = 0
 		container.add_child(sprite)
 		var label := Label.new()
 		label.text = b.label
@@ -192,7 +191,7 @@ func add_buildings() -> void:
 		label.add_theme_color_override("font_shadow_color", Color.BLACK)
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 1)
-		label.z_index = 6
+		label.z_index = 1
 		container.add_child(label)
 
 func add_npcs() -> void:
@@ -201,7 +200,7 @@ func add_npcs() -> void:
 
 		var container := Node2D.new()
 		container.name = "NPCGroup_" + npc.id
-		container.z_index = 10
+		container.z_index = 0
 		container.position = npc_pos
 		container.set_meta("npc_id", npc.id)
 		container.set_meta("tile_x", npc.tile.x)
@@ -213,7 +212,7 @@ func add_npcs() -> void:
 		if shadow.texture != null:
 			shadow.position = Vector2(4, 14)
 			shadow.scale = Vector2.ONE * 1.2
-			shadow.z_index = 14
+			shadow.z_index = -1
 			shadow.modulate.a = 0.4
 			container.add_child(shadow)
 
@@ -228,7 +227,7 @@ func add_npcs() -> void:
 		sprite.scale = Vector2.ONE * npc_scale
 		var npc_h: float = (sprite.texture.get_height() * npc_scale) if sprite.texture != null else world.TILE_SIZE * 1.4
 		sprite.position = Vector2(0, world.TILE_SIZE * 0.5 - npc_h / 2.0)
-		sprite.z_index = 15
+		sprite.z_index = 0
 		container.add_child(sprite)
 		var name_label := Label.new()
 		name_label.text = npc.display_name
@@ -237,7 +236,7 @@ func add_npcs() -> void:
 		name_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 		name_label.add_theme_constant_override("shadow_offset_x", 1)
 		name_label.add_theme_constant_override("shadow_offset_y", 1)
-		name_label.z_index = 16
+		name_label.z_index = 1
 		container.add_child(name_label)
 
 func add_hud() -> void:
