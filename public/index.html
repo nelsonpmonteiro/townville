@@ -92,7 +92,23 @@ body {
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
-
+<script>
+// Force-remove any stale Service Worker + Cache Storage from earlier
+// deploys. Godot's web export can leave a SW registered that serves an
+// old cached index.html/js/wasm forever, surviving normal browser
+// "clear cache" (which doesn't always touch SW registrations / the
+// Cache Storage API). This guarantees every visit gets the live build.
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.getRegistrations().then(function(regs) {
+		regs.forEach(function(reg) { reg.unregister(); });
+	});
+}
+if ('caches' in window) {
+	caches.keys().then(function(names) {
+		names.forEach(function(name) { caches.delete(name); });
+	});
+}
+</script>
 	</head>
 	<body>
 		<canvas id="canvas">
