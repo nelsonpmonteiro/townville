@@ -292,8 +292,11 @@ func _initialize() -> void:
 	# Hint button (phases 1-2): opt-in only, tracked per exercise.
 	flow.start(mae)
 	flow.advance_dialogue(); flow.advance_dialogue()
-	expect(flow.exercise.mode == "array", "phase 3 is multiplication (array) — hint button hidden for this mode")
-	expect(not flow.hint_btn.visible, "hint button only shows for basket phases 1-2")
+	expect(flow.exercise.mode == "array", "phase 3 is multiplication (array)")
+	# The array pool's item count IS the answer, so it is offered as a hint
+	# rather than printed above the pool by default.
+	expect(flow.hint_btn.visible, "array offers a hint button too")
+	expect(not flow.visual_source_title.visible, "array pool count stays hidden until the child asks")
 	# Temporarily rewind to phase 1 just to exercise the hint button on a
 	# basket exercise, then restore phase 2 (Mae's real progress at this
 	# point in the suite) so the phase 3/4 tests below continue correctly.

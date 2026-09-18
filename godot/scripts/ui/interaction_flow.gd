@@ -760,7 +760,7 @@ func _open_exercise() -> void:
 	var mode: String = exercise.mode
 	basket_row.visible = mode in ["basket_in", "basket_out"]
 	done_btn.visible = mode != "text"
-	hint_btn.visible = mode in ["basket_in", "basket_out"]
+	hint_btn.visible = mode in ["basket_in", "basket_out", "array"]
 	hint_btn.disabled = false
 	text_row.visible = mode == "text"
 	visual_row.visible = mode in ["array", "share"]
@@ -1206,12 +1206,18 @@ func _apply_hints() -> void:
 				pass
 
 func _on_hint_requested() -> void:
-	if state != State.EXERCISE or exercise.mode not in ["basket_in", "basket_out"]:
+	if state != State.EXERCISE or exercise.mode not in ["basket_in", "basket_out", "array"]:
 		return
 	hints_used_this_exercise += 1
 	hint_btn.disabled = true
 	hint_label.text = "Hint: " + exercise.get("hint1", "")
 	hint_label.visible = true
+	if exercise.mode == "array":
+		# The pool count is the answer, so it is a HINT, not a default label:
+		# revealed only when the child asks, same rule as the numbered items.
+		visual_source_title.text = "%s to place: %d" % [POOL_LABELS.get(npc.item, "Items"), visual_source_items.get_child_count()]
+		visual_source_title.visible = true
+		return
 	# Numbering the pictured items ("1, 2, 3...") is a temporary counting
 	# aid shown ONLY on request — never by default — per §8 of the redesign
 	# spec. It labels every item currently in play across pool/basket/tray
