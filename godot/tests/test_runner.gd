@@ -229,6 +229,7 @@ func _initialize() -> void:
 	expect(flow.basket_count == 4 and flow.source_items.get_child_count() == 6, "basket pre-filled 4, pool has 6 draggable eggs (3 needed + 3 extra, so dragging everything overshoots)")
 	expect(flow.basket_counter.text == "Basket", "basket label is plain, no live count")
 	expect(flow.source_title.text == "Nest", "pool label is themed and plain, no live count — child must count the pictures")
+	expect(flow.source_panel.find_child("ItemsScroll", true, false) == null and flow.basket_zone.find_child("ItemsScroll", true, false) == null and flow.basket_items.get_parent() == flow.basket_zone.get_child(0), "basket/source item rows expand their panels directly — no internal scroll containers")
 	# wrong drop target does nothing
 	flow.debug_drag_one("TrayDropZone")
 	expect(flow.basket_count == 4, "dropping outside the basket is ignored")

@@ -374,7 +374,6 @@ func _build_exercise() -> void:
 	var src_panel := PanelContainer.new()
 	src_panel.name = "SourceDropZone"
 	src_panel.custom_minimum_size = Vector2(230, 140)
-	src_panel.clip_contents = true
 	src_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
 	src_box.add_child(src_panel)
 	source_panel = src_panel
@@ -384,29 +383,27 @@ func _build_exercise() -> void:
 	# to be able to freely add/remove and reconsider before pressing Done.
 	src_panel.set_script(DropZoneScript)
 	src_panel.flow = self
-	var src_scroll := ScrollContainer.new()
-	src_scroll.name = "ItemsScroll"
-	src_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	src_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	src_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	src_panel.add_child(src_scroll)
+	# Let the HFlowContainer determine the panel's height. Items wrap into new
+	# rows and the source box grows with them; no internal scrolling/clipping.
 	source_items = HFlowContainer.new()
 	source_items.name = "SourceItems"
 	source_items.alignment = FlowContainer.ALIGNMENT_CENTER
 	source_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	src_scroll.add_child(source_items)
+	source_items.add_theme_constant_override("h_separation", 4)
+	source_items.add_theme_constant_override("v_separation", 4)
+	src_panel.add_child(source_items)
 
 	basket_zone = _make_drop_zone("BasketDropZone", Color("#6b4a2b"))
 	basket_row.add_child(basket_zone)
 	var bz_v := basket_zone.get_child(0) as VBoxContainer
 	basket_counter = bz_v.get_node("Title") as Label
-	basket_items = bz_v.get_node("ItemsScroll/Items") as HFlowContainer
+	basket_items = bz_v.get_node("Items") as HFlowContainer
 
 	tray_zone = _make_drop_zone("TrayDropZone", Color("#3b5a6b"))
 	basket_row.add_child(tray_zone)
 	var tz_v := tray_zone.get_child(0) as VBoxContainer
 	tray_label = tz_v.get_node("Title") as Label
-	tray_items = tz_v.get_node("ItemsScroll/Items") as HFlowContainer
+	tray_items = tz_v.get_node("Items") as HFlowContainer
 
 	equation_label = Label.new()
 	equation_label.name = "EquationLabel"
@@ -567,7 +564,6 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	var zone := PanelContainer.new()
 	zone.name = zone_name
 	zone.custom_minimum_size = Vector2(230, 170)
-	zone.clip_contents = true
 	zone.add_theme_stylebox_override("panel", _panel_style(tint, tint.lightened(0.35)))
 	var v := VBoxContainer.new()
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -577,22 +573,17 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 18)
 	v.add_child(title)
-	# The items row is wrapped in a fixed-size ScrollContainer so the square
-	# itself never resizes as items are dragged in — it looks the same at
-	# 0 items and at 20 (items wrap to new rows and scroll internally
-	# instead of growing the panel/pushing the Done button around).
-	var items_scroll := ScrollContainer.new()
-	items_scroll.name = "ItemsScroll"
-	items_scroll.custom_minimum_size = Vector2(0, 100)
-	items_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	items_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	items_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(items_scroll)
+	# Keep the zone width stable, but let its height follow the wrapped item
+	# rows. This shows every item at once and expands the outer exercise panel
+	# instead of hiding rows behind an internal scrollbar.
 	var items := HFlowContainer.new()
 	items.name = "Items"
 	items.alignment = FlowContainer.ALIGNMENT_CENTER
+	items.custom_minimum_size = Vector2(0, 100)
 	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	items_scroll.add_child(items)
+	items.add_theme_constant_override("h_separation", 4)
+	items.add_theme_constant_override("v_separation", 4)
+	v.add_child(items)
 	var ghost := Label.new()
 	ghost.name = "Ghost"
 	ghost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
