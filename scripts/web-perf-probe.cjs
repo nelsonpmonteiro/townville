@@ -87,19 +87,25 @@ async function stepAnyOpenDirection(page) {
   await hold(page, open[0], 500);
   return { before: s.tile, after: (await state(page)).tile, key: open[0] };
 }
-// Basket phases are two-stage by design: Done confirms the count and swaps the
-// basket for the equation, then Continue resolves into feedback. Click through
-// both so callers can just say "finish this exercise".
+// Basket phases are two-stage by design: Done swaps the basket for the success
+// screen (congrats + NPC line + equation), then Continue closes it straight to
+// the map — a CORRECT basket answer never opens the feedback panel. A wrong
+// answer still goes to feedback. Returns what the success screen showed so
+// callers can assert on it.
 async function clickDone(page) {
   let rr = await rects(page);
   await clickRect(page, rr.done);
   await sleep(250);
-  const s = await state(page);
+  let s = await state(page);
+  const success = { shown: false, equation: '' };
   if (s.flow.state === 'exercise' && s.flow.equation_visible) {
+    success.shown = true;
+    success.equation = s.flow.equation_text || '';
     rr = await rects(page);
     await clickRect(page, rr.done);   // "Continue"
-    await sleep(200);
+    await sleep(250);
   }
+  return success;
 }
 
 (async () => {
@@ -201,12 +207,18 @@ async function clickDone(page) {
   }
   s = await state(page);
   check(`${ex1.b} REAL mouse drags into basket -> ${s.flow.target}`, s.flow.basket_count === s.flow.target, `basket=${s.flow.basket_count} target=${s.flow.target} left=${s.flow.source_left}`);
-  await clickDone(page);
-  s = await waitState(page, s => s.flow.state === 'feedback', 3000, 'feedback');
-  check('Done → FEEDBACK correct', s.flow.last_correct === true, s.flow.result_text);
-  await page.screenshot({ path: '/tmp/tv-feedback.png' });
+  {
+    // Correct answer = ONE screen. Grab it before Continue dismisses it.
+    let rr2 = await rects(page); await clickRect(page, rr2.done); await sleep(300);
+    s = await state(page);
+    check('Done → single success screen (congrats + equation), no feedback panel',
+      s.flow.state === 'exercise' && s.flow.equation_visible === true,
+      `state=${s.flow.state} equation=${s.flow.equation_visible}`);
+    await page.screenshot({ path: '/tmp/tv-success-screen.png' });
+    rr2 = await rects(page); await clickRect(page, rr2.done); await sleep(300);
+  }
   s = await waitState(page, s => s.flow.state === 'map', 4000, 'back to map');
-  check('feedback auto-dismiss → MAP, phase 2 unlocked', s.phases[npcName] === 1, `phases=${JSON.stringify(s.phases)}`);
+  check('Continue → MAP directly, phase 2 unlocked', s.phases[npcName] === 1 && s.flow.last_correct === true, `phases=${JSON.stringify(s.phases)}`);
 
   // ---------- Phase 2: basket_out, wrong first (hint tier 1), then right ----------
   await page.keyboard.press('KeyE'); await sleep(300);
@@ -226,13 +238,18 @@ async function clickDone(page) {
   let ok2 = false;
   for (let n = 2; n <= 6 && !ok2; n++) {
     for (let k = (await state(page)).flow.tray_count; k < n; k++) { rr = await rects(page); await realDrag(page, rr.item0, rr.tray); }
-    await clickDone(page);
-    s = await waitState(page, s => s.flow.state === 'feedback', 3000);
-    ok2 = s.flow.last_correct === true;
-    if (!ok2) await waitState(page, s => s.flow.state === 'exercise', 4000);
+    const res = await clickDone(page);
+    if (res.shown) {                       // success screen -> already correct
+      ok2 = true;
+      await waitState(page, s => s.flow.state === 'map', 4000);
+    } else {
+      s = await waitState(page, s => s.flow.state === 'feedback', 3000);
+      ok2 = s.flow.last_correct === true;
+      if (!ok2) await waitState(page, s => s.flow.state === 'exercise', 4000);
+    }
   }
   check('REAL drags out until correct', ok2);
-  s = await waitState(page, s => s.flow.state === 'map', 4000);
+  s = await state(page);
   check('phase 3 unlocked', s.phases[npcName] === 2);
 
   // ---------- Phase 3: multiplication array, filled with real drags ----------

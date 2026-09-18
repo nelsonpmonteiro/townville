@@ -57,6 +57,9 @@ var advance_hint: Label
 
 var exercise_screen: Control
 var prompt_label: Label
+var success_icon: TextureRect
+var success_title: Label
+var success_message: Label
 var hint_label: Label
 var basket_row: HBoxContainer      # basket_in/out layout root
 var source_title: Label
@@ -346,6 +349,33 @@ func _build_exercise() -> void:
 	prompt_label.add_theme_font_size_override("font_size", 20)
 	prompt_label.custom_minimum_size = Vector2(720, 0)
 	v.add_child(prompt_label)
+
+	# Success block, shown IN PLACE of the exercise once the child gets it
+	# right: the celebration and the equation live on the SAME screen, so a
+	# correct answer is one moment, not two consecutive panels.
+	success_icon = TextureRect.new()
+	success_icon.custom_minimum_size = Vector2(72, 72)
+	success_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	success_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	success_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	success_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	success_icon.visible = false
+	v.add_child(success_icon)
+
+	success_title = Label.new()
+	success_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	success_title.add_theme_font_size_override("font_size", 30)
+	success_title.add_theme_color_override("font_color", Color("#ffd75a"))
+	success_title.visible = false
+	v.add_child(success_title)
+
+	success_message = Label.new()
+	success_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	success_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	success_message.add_theme_font_size_override("font_size", 20)
+	success_message.custom_minimum_size = Vector2(720, 0)
+	success_message.visible = false
+	v.add_child(success_message)
 
 	hint_label = Label.new()
 	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -704,6 +734,10 @@ func _open_share(icon: String) -> void:
 func _open_exercise() -> void:
 	set_state(State.EXERCISE)
 	prompt_label.text = exercise.setup
+	prompt_label.visible = true
+	success_icon.visible = false
+	success_title.visible = false
+	success_message.visible = false
 	hint_label.visible = false
 	hint_label.text = ""
 	equation_label.visible = false
@@ -788,13 +822,22 @@ func _show_equation() -> void:
 		symbols = "%d - %d = %d" % [start, removed, int(exercise.answer)]
 	if symbols.is_empty():
 		return
-	# The live operation happens ONLY inside the basket/tray squares. Once the
-	# child confirms the target with Done, replace that interaction with the
-	# abstract equation as a separate second stage — never show both at once.
+	# ONE success screen, not two. The live manipulation is replaced by the
+	# celebration (happy face + "Congrats!" + the NPC's success line) together
+	# with the equation that explains what they just did. Continue then goes
+	# straight back to the map — there is no second feedback panel.
 	basket_row.visible = false
 	addition_summary.visible = false
 	hint_label.visible = false
 	hint_btn.visible = false
+	prompt_label.visible = false
+	if ResourceLoader.exists(HAPPY_FACE):
+		success_icon.texture = load(HAPPY_FACE) as Texture2D
+	success_icon.visible = true
+	success_title.text = "Congrats!"
+	success_title.visible = true
+	success_message.text = exercise.get("success", "")
+	success_message.visible = not success_message.text.is_empty()
 	equation_label.text = words + "\n" + symbols
 	equation_label.visible = true
 	done_btn.text = "Continue"
@@ -977,12 +1020,11 @@ func _on_done() -> void:
 			return
 		_resolve(true)
 		return
-	# Basket phases are deliberately two-stage:
-	# 1) live manipulation/counting inside the basket square;
-	# 2) after Done confirms the target, replace it with the equation.
-	# Continue then advances to the normal success feedback.
+	# Basket phases celebrate inline: Done swaps the exercise for the success
+	# screen (congrats + equation), and Continue closes it straight to the map
+	# without a second panel.
 	if equation_label.visible:
-		_resolve(true)
+		_complete_exercise()
 		return
 	if basket_count != int(exercise.answer):
 		_resolve(false)
@@ -1095,6 +1137,18 @@ func _build_feedback() -> void:
 	feedback_added_items.custom_minimum_size = Vector2(220, 34)
 	feedback_added_items.alignment = FlowContainer.ALIGNMENT_CENTER
 	added_group.add_child(feedback_added_items)
+
+## Finish a correct exercise WITHOUT the extra feedback panel — used when the
+## celebration was already shown inline (basket phases, see _show_equation).
+## Everything here mirrors the correct branch of _resolve, minus the screen.
+func _complete_exercise() -> void:
+	last_correct = true
+	var done_phase: int = exercise.phase
+	world.advance_phase(npc.id)
+	phase_completed.emit(npc.id, done_phase)
+	set_state(State.MAP)
+	if exercise.get("final", false):
+		world_completed.emit()
 
 func _resolve(correct: bool) -> void:
 	last_correct = correct

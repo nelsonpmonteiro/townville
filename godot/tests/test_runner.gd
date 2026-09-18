@@ -254,14 +254,16 @@ func _initialize() -> void:
 	expect(flow.state_name() == "exercise", "still in EXERCISE until Done — no auto-resolve on reaching the target either")
 	expect(flow.basket_row.visible and not flow.addition_summary.visible and not flow.equation_label.visible, "no numeric summary/equation shown while still dragging")
 	flow.debug_done()
-	expect(flow.state_name() == "exercise" and not flow.basket_row.visible and flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "Done at the correct count reveals the equation as a second stage")
-	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
+	# ONE success screen: congratulation, the NPC's line and the equation
+	# together, replacing the exercise instead of queueing a second panel.
+	expect(flow.state_name() == "exercise" and not flow.basket_row.visible and flow.equation_label.visible and flow.equation_label.text.contains("4 + 3 = 7"), "Done at the correct count reveals the success screen with the equation")
+	expect(flow.success_title.visible and flow.success_title.text.contains("Congrats"), "success screen congratulates the child")
+	expect(flow.success_message.text == "Seven eggs! That's a great morning for the hens.", "success line from script, on that same screen")
+	expect(not flow.feedback_screen.visible, "no separate feedback panel for a correct answer")
+	expect(flow.done_btn.text == "Continue", "success screen uses Continue, not another Done")
 	flow.debug_done()
-	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
-	expect(not flow.feedback_addition_summary.visible, "success feedback does not repeat the addition groups a third time")
-	expect(flow.result_label.text == "Seven eggs! That's a great morning for the hens.", "success line from script")
-	await create_timer(2.0).timeout
-	expect(flow.state_name() == "map" and world.get_phase("mae") == 1, "feedback auto-dismiss → MAP, phase advanced to 2")
+	expect(flow.state_name() == "map" and flow.last_correct, "Continue closes the success screen straight to the MAP")
+	expect(world.get_phase("mae") == 1, "phase advanced to 2")
 
 	# phase 2 basket_out: same free-drag, submit-to-validate mechanic, reversed.
 	flow.start(mae)
@@ -280,11 +282,11 @@ func _initialize() -> void:
 	flow.debug_drag_one_from(flow.tray_items, "BasketDropZone")  # drag one back from tray to basket (undo)
 	expect(flow.basket_count == 7 and flow.tray_items.get_child_count() == 2, "dragging a tray item back to the basket undoes one removal")
 	flow.debug_done()
-	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "Done at the correct count reveals the equation as a second stage")
-	expect(flow.done_btn.text == "Continue", "equation stage uses Continue, not another Done")
+	expect(flow.equation_label.visible and flow.equation_label.text.contains("9 - 2 = 7"), "Done at the correct count reveals the success screen with the equation")
+	expect(flow.success_title.visible and flow.success_message.text == "Seven left to sell - perfect!", "subtraction celebrates on that same screen")
+	expect(flow.done_btn.text == "Continue", "success screen uses Continue, not another Done")
 	flow.debug_done()
-	expect(flow.state_name() == "feedback" and flow.last_correct, "Continue after equation → FEEDBACK correct")
-	await create_timer(2.0).timeout
+	expect(flow.state_name() == "map" and flow.last_correct, "Continue closes the success screen straight to the MAP")
 	expect(world.get_phase("mae") == 2, "phase 2 done")
 
 	# Hint button (phases 1-2): opt-in only, tracked per exercise.

@@ -17,7 +17,7 @@ echo "== 1. headless suites"
 # the first match, and suites that still print Godot's "ObjectDB instances were
 # leaked" warnings AFTER "ALL TESTS PASSED" then die with SIGPIPE (141), which
 # `set -o pipefail` turns into a bogus FAILED for a suite that actually passed.
-for t in tests/test_runner.gd tests/test_editor_delete.gd tests/test_editor_move.gd tests/test_depth_order.gd tests/test_audio.gd tests/test_restart.gd tests/test_ending.gd; do
+for t in tests/test_runner.gd tests/test_editor_delete.gd tests/test_editor_move.gd tests/test_depth_order.gd tests/test_audio.gd tests/test_restart.gd tests/test_ending.gd tests/test_success_screen.gd; do
   out="$("$GODOT" --headless --path "$ROOT/godot" --script "$t" 2>&1 || true)"
   if grep -qE "ALL TESTS PASSED" <<<"$out"; then
     echo "   $t OK"
