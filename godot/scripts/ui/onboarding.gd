@@ -40,7 +40,6 @@ var card_box: VBoxContainer
 var card_icon: Label
 var direction_keys: Control
 var card_text: Label
-var card_dots: Label
 var back_button: Button
 var next_button: Button
 var tap_label: Label
@@ -135,11 +134,6 @@ func _ready() -> void:
 	card_text.custom_minimum_size = Vector2(430, 0)
 	card_text.add_theme_font_size_override("font_size", 20)
 	v.add_child(card_text)
-	card_dots = Label.new()
-	card_dots.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_dots.add_theme_font_size_override("font_size", 16)
-	card_dots.add_theme_color_override("font_color", Color("#a0c0ff"))
-	v.add_child(card_dots)
 	var controls := HBoxContainer.new()
 	controls.alignment = BoxContainer.ALIGNMENT_CENTER
 	controls.add_theme_constant_override("separation", 14)
@@ -189,10 +183,6 @@ func _show() -> void:
 		card_text.text = CARDS[step][1]
 		back_button.visible = true
 		next_button.text = "Play" if step == CARDS.size() - 1 else "Next"
-		var dots := ""
-		for i in CARDS.size():
-			dots += ("*" if i == step else "-") + "  "
-		card_dots.text = dots
 
 func advance() -> void:
 	if not active or _busy:
