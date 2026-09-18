@@ -16,6 +16,9 @@ var active_building = "henhouse"
 var active_prop = "tree"
 var dragged_entity = null
 var drag_offset = Vector2.ZERO
+# Desktop/headless export destination. Tests override this with user:// so
+# they never overwrite the authoritative editor snapshot committed in artifacts/.
+var native_export_path := "res://artifacts/townville_map_export.json"
 
 var npc_images = {}
 var building_images = {}
@@ -807,8 +810,8 @@ func _download_json(json_text: String) -> void:
 		""" % JSON.stringify(json_text)
 		JavaScriptBridge.eval(js_code, true)
 	else:
-		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://artifacts"))
-		var f = FileAccess.open("res://artifacts/townville_map_export.json", FileAccess.WRITE)
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(native_export_path.get_base_dir()))
+		var f = FileAccess.open(native_export_path, FileAccess.WRITE)
 		if f:
 			f.store_string(json_text)
 			f.close()
@@ -817,7 +820,7 @@ func _download_json(json_text: String) -> void:
 # apply it exactly like the browser save.
 func import_map_from_file() -> void:
 	if not (OS.has_feature("web") and JavaScriptBridge):
-		load_map("res://artifacts/townville_map_export.json")
+		load_map(native_export_path)
 		return
 	JavaScriptBridge.eval("""
 		(function(){

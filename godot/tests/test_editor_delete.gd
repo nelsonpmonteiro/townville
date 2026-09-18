@@ -13,6 +13,8 @@ func _initialize() -> void:
 	root.add_child(game)
 	await process_frame
 	var ed = game.map_editor
+	var download_path := "user://_test_download.json"
+	ed.native_export_path = download_path
 	ed.toggle()  # registers existing entities
 	await process_frame
 
@@ -69,5 +71,6 @@ func _initialize() -> void:
 	expect(game2.world.is_walkable(Vector2i(13, 2)) == true, "deleted building's footprint is walkable again after restart")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://map.json"))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(download_path))
 	print("ALL TESTS PASSED" if fails == 0 else "TEST FAILURES: %d" % fails)
 	quit(0 if fails == 0 else 1)

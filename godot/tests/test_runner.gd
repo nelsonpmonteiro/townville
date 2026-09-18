@@ -84,6 +84,29 @@ func _initialize() -> void:
 
 	var WorldData = load(implementation)
 	var world = WorldData.new()
+
+	# The committed editor export is authoritative. Compare both 30x20 layers
+	# cell-by-cell against the raw constants, before runtime NPC/building
+	# footprint blocking is applied.
+	var snapshot_text := FileAccess.get_file_as_string("res://artifacts/townville_map_export.json")
+	var snapshot = JSON.parse_string(snapshot_text)
+	var snapshot_exact := snapshot is Dictionary
+	if snapshot_exact:
+		snapshot_exact = snapshot.get("rows", 0) == world.ROWS and snapshot.get("cols", 0) == world.COLS
+	if snapshot_exact:
+		var dirt: Array = snapshot.get("path_mask", [])
+		var collision: Array = snapshot.get("walkable", [])
+		snapshot_exact = dirt.size() == world.ROWS and collision.size() == world.ROWS
+		if snapshot_exact:
+			for y in world.ROWS:
+				if dirt[y].size() != world.COLS or collision[y].size() != world.COLS:
+					snapshot_exact = false
+					break
+				for x in world.COLS:
+					if bool(dirt[y][x]) != (world.EDITOR_DIRT[y][x] == ".") or bool(collision[y][x]) != (world.EDITOR_WALKABLE[y][x] == "."):
+						snapshot_exact = false
+						break
+	expect(snapshot_exact, "runtime terrain and collision match the authoritative editor JSON tile-for-tile")
 	expect(world.COLS == 30, "world has 30 columns")
 	expect(world.ROWS == 20, "world has 20 rows")
 	expect(world.world_size_px() == Vector2i(1440, 960), "world is exactly 1440x960 pixels")

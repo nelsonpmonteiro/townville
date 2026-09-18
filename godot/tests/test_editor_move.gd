@@ -17,6 +17,8 @@ func _initialize() -> void:
 	root.add_child(game)
 	await process_frame
 	var ed = game.map_editor
+	var test_export_path := "user://test_townville_map_export.json"
+	ed.native_export_path = test_export_path
 	var orig: Vector2i = mae_in(game.world.NPCS).tile
 	var target := orig + Vector2i(2, 1)
 
@@ -38,7 +40,7 @@ func _initialize() -> void:
 	# Save → writes user://map.json AND the downloaded JSON (same bytes)
 	ed.save_map("user://map.json")
 	var saved := FileAccess.get_file_as_string("user://map.json")
-	var downloaded := FileAccess.get_file_as_string("res://artifacts/townville_map_export.json")
+	var downloaded := FileAccess.get_file_as_string(test_export_path)
 	expect(saved == downloaded and saved.length() > 100, "Save writes browser save AND downloads the SAME json")
 	var d = JSON.parse_string(saved)
 	var mm = mae_in(d.get("moved_existing", []))
@@ -47,7 +49,7 @@ func _initialize() -> void:
 
 	# Import that JSON into a DIFFERENT fresh game (what I do when you send it)
 	var g3 = packed.instantiate(); root.add_child(g3); await process_frame
-	g3.map_editor.load_map("res://artifacts/townville_map_export.json")
+	g3.map_editor.load_map(test_export_path)
 	await process_frame
 	expect(mae_in(g3.world.NPCS).tile == target, "importing the downloaded JSON puts Mae at NEW tile")
 	g3.queue_free(); await process_frame
@@ -60,5 +62,6 @@ func _initialize() -> void:
 	var e2 = mae_in(g2.map_editor.entities)
 	expect(e2.x == target.x and e2.y == target.y, "after restart, editor registers Mae at NEW tile → Export would be right")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://map.json"))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(test_export_path))
 	print("ALL TESTS PASSED" if fails == 0 else "TEST FAILURES: %d" % fails)
 	quit(0 if fails == 0 else 1)
