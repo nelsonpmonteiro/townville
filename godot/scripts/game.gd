@@ -12,6 +12,10 @@ var player
 var prompt_label: Label
 var dialogue_label: Label
 var fps_label: Label
+var fps_visible := false
+var info_button: TextureButton
+var info_panel: PanelContainer
+var info_panel_open := false
 var built := false
 var map_editor: Node2D
 var map_renderer_node: Node2D
@@ -253,28 +257,14 @@ func add_hud() -> void:
 	layer.name = "HUD"
 	add_child(layer)
 	hud_layer = layer
-	var instructions := Label.new()
-	instructions.position = Vector2(18, 16)
-	instructions.text = "Move: WASD / Arrows  |  Interact: E or Space"
-	instructions.add_theme_font_size_override("font_size", 18)
-	instructions.add_theme_color_override("font_color", Color.WHITE)
-	instructions.add_theme_color_override("font_shadow_color", Color.BLACK)
-	instructions.add_theme_constant_override("shadow_offset_x", 2)
-	instructions.add_theme_constant_override("shadow_offset_y", 2)
-	layer.add_child(instructions)
-	var objective := Label.new()
-	objective.name = "ObjectiveLabel"
-	objective.position = Vector2(18, 44)
-	objective.text = "Goal: Help people on the farm with their problems to continue your journey."
-	objective.add_theme_font_size_override("font_size", 16)
-	objective.add_theme_color_override("font_color", Color("#fff2a8"))
-	objective.add_theme_color_override("font_shadow_color", Color.BLACK)
-	objective.add_theme_constant_override("shadow_offset_x", 2)
-	objective.add_theme_constant_override("shadow_offset_y", 2)
-	layer.add_child(objective)
 	fps_label = Label.new()
-	fps_label.position = Vector2(18, 68)
+	fps_label.name = "FpsLabel"
+	fps_label.position = Vector2(18, 16)
 	fps_label.add_theme_color_override("font_color", Color("#d8ffd0"))
+	fps_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	fps_label.add_theme_constant_override("shadow_offset_x", 2)
+	fps_label.add_theme_constant_override("shadow_offset_y", 2)
+	fps_label.visible = false
 	layer.add_child(fps_label)
 	prompt_label = Label.new()
 	prompt_label.position = Vector2(350, 470)
@@ -297,6 +287,73 @@ func add_hud() -> void:
 	dialogue_label.add_theme_constant_override("shadow_offset_y", 2)
 	dialogue_label.visible = false
 	layer.add_child(dialogue_label)
+	_build_info_tooltip(layer)
+
+## Bottom-right "?" icon button that opens/closes a tooltip panel with the
+## movement/interact instructions and the journey goal — replaces the two
+## always-on labels that used to sit in the top-left permanently.
+func _build_info_tooltip(layer: CanvasLayer) -> void:
+	info_button = TextureButton.new()
+	info_button.name = "InfoTooltipButton"
+	var icon_path := "res://assets/ui/info-tooltip.png"
+	if ResourceLoader.exists(icon_path):
+		var tex := load(icon_path) as Texture2D
+		info_button.texture_normal = tex
+		info_button.ignore_texture_size = true
+		info_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	info_button.custom_minimum_size = Vector2(48, 48)
+	info_button.anchor_left = 1.0; info_button.anchor_right = 1.0
+	info_button.anchor_top = 1.0; info_button.anchor_bottom = 1.0
+	info_button.offset_left = -64; info_button.offset_right = -16
+	info_button.offset_top = -64; info_button.offset_bottom = -16
+	info_button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	info_button.pressed.connect(_toggle_info_panel)
+	layer.add_child(info_button)
+
+	info_panel = PanelContainer.new()
+	info_panel.name = "InfoTooltipPanel"
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#1e1a16f2")
+	sb.border_color = Color("#c9a36b")
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(10)
+	sb.set_content_margin_all(16)
+	info_panel.add_theme_stylebox_override("panel", sb)
+	info_panel.custom_minimum_size = Vector2(360, 0)
+	info_panel.anchor_left = 1.0; info_panel.anchor_right = 1.0
+	info_panel.anchor_top = 1.0; info_panel.anchor_bottom = 1.0
+	info_panel.offset_left = -392; info_panel.offset_right = -16
+	info_panel.offset_top = -172; info_panel.offset_bottom = -76
+	info_panel.visible = false
+	layer.add_child(info_panel)
+
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	info_panel.add_child(v)
+
+	var instructions := Label.new()
+	instructions.text = "Move: WASD / Arrows  |  Interact: E or Space"
+	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	instructions.add_theme_font_size_override("font_size", 16)
+	instructions.add_theme_color_override("font_color", Color.WHITE)
+	v.add_child(instructions)
+
+	var objective := Label.new()
+	objective.name = "ObjectiveLabel"
+	objective.text = "Goal: Help people on the farm with their problems to continue your journey."
+	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	objective.add_theme_font_size_override("font_size", 15)
+	objective.add_theme_color_override("font_color", Color("#fff2a8"))
+	v.add_child(objective)
+
+func _toggle_info_panel() -> void:
+	info_panel_open = not info_panel_open
+	info_panel.visible = info_panel_open
+
+func _toggle_fps() -> void:
+	fps_visible = not fps_visible
+	fps_label.visible = fps_visible
+
 
 func add_interaction_flow() -> void:
 	flow = InteractionFlowScript.new()
@@ -391,7 +448,8 @@ func _process(_delta: float) -> void:
 	if player == null:
 		return
 	_publish_js_state()
-	fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	if fps_visible:
+		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
 	if is_input_locked():
 		prompt_label.text = ""
 		return
@@ -406,6 +464,10 @@ func _process(_delta: float) -> void:
 		prompt_label.text = ""
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if event.pressed and not event.echo and event.keycode == KEY_HOME:
+		_toggle_fps()
+		get_viewport().set_input_as_handled()
+		return
 	if event.pressed and not event.echo and event.keycode == KEY_F1:
 		if map_editor:
 			map_editor.toggle()
