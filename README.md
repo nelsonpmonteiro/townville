@@ -1,85 +1,131 @@
-# Townville — Godot Web Prototype
+# Townville — Farm (World 1)
 
-A 2D side-scrolling educational game prototype built in **Godot 4.x** with web export. This project focuses on World 1 (Farm) with 8 NPCs, each presenting math exercises (addition, subtraction, multiplication, division).
+An educational 2D game prototype for children (ages ~5–10) that teaches
+addition, subtraction, multiplication and division through drag-and-drop
+rather than typed answers. Built in **Godot 4** and exported to the web.
 
-## Run
+**Play it:** https://townville.vercel.app
+(mirror: https://nelsonpmonteiro.github.io/townville/)
 
-```sh
-cd /Users/nelsonmonteiro/Documents/Townville-Godot-POC
-# Open in Godot Editor:
-#   Godot.app → open project → godot/
-# Or export to web via CLI:
-GODOT=${GODOT:-/Users/nelsonmonteiro/Applications/Godot.app/Contents/MacOS/Godot}
-"$GODOT" --headless --path godot --export-release "Web" dist/index.html
-```
+## The teaching idea
 
-## Web Export
+Every exercise is manipulated, never typed. The child moves real objects and
+the quantity is something they build, not a number they read:
 
-```sh
-./scripts/deploy-web.sh          # build → dist/ → serve :8090 → probe
-./scripts/deploy-web.sh --no-probe  # build only
-```
-
-Production web files in `dist/`:
-- `index.html`, `index.js`, `index.wasm`, `index.pck`, `index.audio.worklet.js`
-
-## Play
-
-- Movement: WASD or arrows. Interact with NPCs: E or Space.
-- Each NPC has 4 math exercises (addition, subtraction, multiplication, division).
-- Response feedback: success (green) or error (red) with tier 1 and tier 2 hints.
-- NPC dialogue appears in a bottom-center panel (640px max-width), only one state visible at a time.
-
-## NPCs — World 1
-
-| NPC | Location | Skill |
+| Phase | Operation | Mechanic |
 | --- | --- | --- |
-| Mae | Henhouse (4,4) | Addition 2.OA.A.1 |
-| Chester | Stable (14,4) | Addition 2.OA.A.1 |
-| Farmer Joe | Barn (24,4) | Addition 2.OA.A.1 |
-| Lily | Chicken Coop (4,7) | Addition 2.OA.A.1 |
-| Dr. Vera | Clinic (24,7) | Addition 2.OA.A.1 |
-| Grandma Rose | Garden (25,14) | Addition 2.OA.A.1 |
-| Billy | Fence (15,10) | Addition 2.OA.A.1 |
-| Old Mac | Farm Gate (15,19) | Addition 2.OA.A.1 — unlocks transition to Downtown |
+| 1 | Addition | Drag items **into** the basket until it holds the target |
+| 2 | Subtraction | Drag items **out** of the basket to a tray |
+| 3 | Multiplication | Fill a rows × columns grid — 4 rows of 5 *is* 20 |
+| 4 | Division | Deal every item into equal groups (fair sharing) |
 
-## Architecture
+Design rules that the tests enforce:
 
-- `godot/scripts/game.gd` — main controller: world build, HUD, dialogue, quest UI, input handling
-- `godot/scripts/world_data.gd` — world data: NPCs (8), buildings (6), walkable matrix, props, clutter
-- `godot/scripts/map_renderer.gd` — tilemap Wang autotiling, props, decals, clutter rendering
-- `godot/scripts/player.gd` — player controller with animated sprite and follow camera
-- `godot/scripts/player_movement.gd` — collision and movement logic
-- `godot/scripts/ui/interaction_flow.gd` — NPC interaction flow
-- `godot/scenes/main.tscn` — main scene (Node2D + game.gd script)
-- `godot/tests/` — headless tests (test_runner.gd, etc.)
+- **No numbers handed over.** Counts that would reveal the answer are hidden
+  behind an opt-in Hint button, never printed on screen by default.
+- **No punitive failure.** An unequal division stays editable with a nudge
+  instead of a game over; wrong answers return to the same exercise with a hint.
+- **One celebration per success.** A correct answer shows a single screen with
+  the congratulation, the character's line and the equation together.
+- **Real-time feedback.** Every item moved plays a "pop" and updates the scene.
 
-## Directory structure
+## World 1 — the farm
+
+Eight characters, each with the four phases above:
+
+| Character | Building | Item |
+| --- | --- | --- |
+| Mae | Henhouse | eggs |
+| Chester | Stable | carrots |
+| Farmer Joe | Barn | hay bales |
+| Lily | Chicken coop | chicks |
+| Dr. Vera | Clinic | bandages |
+| Grandma Rose | Garden | tomatoes |
+| Billy | Fence | nails |
+| Old Mac | Farm gate | keys — finishing him ends the demo |
+
+## Running it
+
+Requires Godot 4.x. Set `GODOT` if it is not on your `PATH`:
+
+```sh
+export GODOT=/Applications/Godot.app/Contents/MacOS/Godot   # adjust as needed
+
+# Play / edit: open the godot/ folder as a project in the Godot editor.
+
+# Full verification: headless suites → web export → static server → real browser
+./scripts/deploy-web.sh
+
+# Build only, no browser probe
+./scripts/deploy-web.sh --no-probe
+```
+
+`scripts/deploy-web.sh` is the single entry point: it runs the nine headless
+suites, exports to `dist/`, checks the MIME types a Godot web build needs, and
+drives a real Chromium through the whole game loop (onboarding → walking →
+dialogue → all four exercise types → volume → restart).
+
+## Tests
+
+```sh
+"$GODOT" --headless --path godot --script tests/test_runner.gd
+```
+
+| Suite | Covers |
+| --- | --- |
+| `test_runner.gd` | Exercise flow, dialogue, map data, hints, scripted content |
+| `test_success_screen.gd` | A correct answer is one screen, not two |
+| `test_array_hint.gd` | The multiplication pool never gives away the answer |
+| `test_ending.gd` | End-of-demo message reuses the dialogue box; world stays live |
+| `test_audio.gd` | Music and SFX on independent buses and sliders |
+| `test_restart.gd` | Restart asks first; Cancel changes nothing |
+| `test_depth_order.gd` | Player draws in front of NPCs and buildings |
+| `test_editor_move.gd` / `test_editor_delete.gd` | Map edits survive save/reload |
+
+The browser probe lives in `scripts/web-perf-probe.cjs` and needs
+`npm install` (Playwright) before `deploy-web.sh` can run its last step.
+
+## Layout
 
 ```
 godot/
-├── scripts/          # gdscripts (game, world_data, map_renderer, player, etc.)
-├── scenes/           # Godot scenes (.tscn)
-├── tests/            # headless tests
-├── assets/           # imported assets (buildings, characters, scenery, terrain)
-├── artifacts/        # screenshots and debug artifacts
-└── .gitignore        # ignores temp exports and editor artifacts
+├── scripts/
+│   ├── game.gd              world build, HUD, input, JS bridge
+│   ├── world_data.gd        NPCs, buildings, exercises, walkable grid
+│   ├── map_renderer.gd      tilemap, props, decals
+│   ├── player.gd            player controller and camera
+│   ├── editor/              in-game map editor (F1)
+│   └── ui/                  dialogue, exercises, onboarding, volume, restart
+├── scenes/main.tscn         entry scene
+├── tests/                   headless suites
+├── assets/                  art, audio, item icons
+└── artifacts/               authoritative map export (see below)
+scripts/                     build, deploy and verification scripts
+public/                      published web build (Vercel serves this)
 ```
 
-## Verify
+### The map is data, not code
 
-```sh
-# Headless tests (Godot CLI)
-GODOT=/Users/nelsonmonteiro/Applications/Godot.app/Contents/MacOS/Godot
-"$GODOT" --headless --path godot --script godot/tests/test_runner.gd
-```
+`godot/artifacts/townville_map_export.json` is the authoritative map: ground
+painting, collision, and entity positions as exported from the in-game editor
+(**F1** in play mode). `test_runner.gd` compares all 600 painted cells and all
+600 collision cells against that file, so the map can be edited visually
+without anyone hand-editing the grid in source.
 
-## Current status
+## Debug shortcuts
 
-- [x] 8 NPCs with addition exercises (2.OA.A.1)
-- [x] Dialogue without overlap (state machine: hide all panels before show)
-- [x] Dialogue panel: bottom-center, 640px max-width
-- [x] HUD instructions fixed at top (CanvasLayer layer 0)
-- [x] 30x20 map with path network and building footprints
-- [ ] Multiplication and division (exercises 3 and 4 for each NPC)
-- [ ] Farm → Downtown transition after Old Mac
+| Key / URL | Effect |
+| --- | --- |
+| `F1` | Toggle the map editor and grid |
+| `Home` | Toggle the FPS counter |
+| `?reset=1` | Clear saved progress and replay the onboarding |
+| `?ending=1` | Jump straight to the end-of-demo screen |
+
+## Status
+
+Implemented: all four operations for all eight characters, onboarding,
+background music with separate music/SFX volume, restart confirmation, the
+in-game map editor, and the end-of-demo message.
+
+Not built: Downtown (World 2). Finishing Old Mac ends the demo and leaves the
+player free to roam and replay any character.
