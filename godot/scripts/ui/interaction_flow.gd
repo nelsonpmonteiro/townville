@@ -640,14 +640,17 @@ func _open_exercise() -> void:
 			prompt_label.text = "%s already has %d %s in the %s. The target is %d. Drag %s from the %s until the %s shows %d." % [npc.display_name, int(exercise.a), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), POOL_LABELS.get(npc.item, "supply").to_lower(), npc.get("container", "basket"), int(exercise.answer)]
 			tray_zone.visible = false
 			source_items.get_parent().get_parent().visible = true
+			# Pre-existing basket items are NOT draggable: if they were, a new
+			# drop landing on top of one (unavoidable as the basket fills up)
+			# resolves to that item as the drop target instead of the basket
+			# zone — drag_item.gd only accepts drops inside a share zone, so
+			# the drop is silently rejected right when the basket is nearly full.
 			for i in exercise.a:
 				basket_items.add_child(_make_item(icon, false))
-			basket_count = exercise.a
-			# Pool always has more draggable items than strictly needed (b) so
-			# the child must recognize the target, not just clear the screen.
 			var pool_size: int = int(exercise.b) + POOL_EXTRA
 			for i in pool_size:
 				source_items.add_child(_make_item(icon, true))
+			basket_count = exercise.a
 			_update_basket_counter()
 		"basket_out":
 			prompt_label.text = "%s has %d %s in the %s and needs to keep %d. Drag %s out until the %s shows %d." % [npc.display_name, int(exercise.start), _item_plural(), npc.get("container", "basket"), int(exercise.answer), _item_plural(), npc.get("container", "basket"), int(exercise.answer)]
