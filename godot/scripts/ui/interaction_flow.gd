@@ -272,16 +272,23 @@ func _build_exercise() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	exercise_screen.add_child(dim)
 
+	# CenterContainer shrink-wraps its child to the child's own minimum size
+	# and keeps it centered — the panel grows/shrinks with its content
+	# instead of sitting in a fixed 760x460 box that leaves empty space
+	# for short exercises (e.g. the text-input phases).
+	var center := CenterContainer.new()
+	center.name = "ExerciseCenter"
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	exercise_screen.add_child(center)
+
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(760, 0)
-	panel.anchor_left = 0.5; panel.anchor_right = 0.5
-	panel.anchor_top = 0.5; panel.anchor_bottom = 0.5
-	panel.offset_left = -380; panel.offset_right = 380
-	panel.offset_top = -230; panel.offset_bottom = 230
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _panel_style(Color("#1e1a16f2"), Color("#c9a36b")))
-	exercise_screen.add_child(panel)
+	center.add_child(panel)
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
@@ -322,9 +329,10 @@ func _build_exercise() -> void:
 	src_panel.custom_minimum_size = Vector2(230, 140)
 	src_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
 	src_box.add_child(src_panel)
-	source_items = HBoxContainer.new()
+	source_items = HFlowContainer.new()
 	source_items.name = "SourceItems"
-	source_items.alignment = BoxContainer.ALIGNMENT_CENTER
+	source_items.alignment = FlowContainer.ALIGNMENT_CENTER
+	source_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	src_panel.add_child(source_items)
 
 	basket_zone = _make_drop_zone("BasketDropZone", Color("#6b4a2b"))
@@ -483,10 +491,11 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 18)
 	v.add_child(title)
-	var items := HBoxContainer.new()
+	var items := HFlowContainer.new()
 	items.name = "Items"
-	items.alignment = BoxContainer.ALIGNMENT_CENTER
+	items.alignment = FlowContainer.ALIGNMENT_CENTER
 	items.custom_minimum_size = Vector2(0, 100)
+	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_child(items)
 	var ghost := Label.new()
 	ghost.name = "Ghost"
