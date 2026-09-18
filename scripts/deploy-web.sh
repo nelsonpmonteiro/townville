@@ -9,6 +9,11 @@ GODOT="${GODOT:-/Users/nelsonmonteiro/Applications/Godot.app/Contents/MacOS/Godo
 OUT=/tmp/townville-web
 PORT="${PORT:-8090}"
 
+echo "== 0. headless suites"
+for t in tests/test_runner.gd tests/test_editor_delete.gd; do
+  "$GODOT" --headless --path "$ROOT/godot" --script "$t" 2>&1 | grep -qE "ALL TESTS PASSED" && echo "   $t OK" || { echo "   $t FAILED"; exit 1; }
+done
+
 echo "== 1. export (preset 'Web': runnable, desktop VRAM only, no PWA, no GDExtension)"
 mkdir -p "$OUT"
 "$GODOT" --headless --path "$ROOT/godot" --export-release "Web" "$OUT/index.html" 2>&1 \

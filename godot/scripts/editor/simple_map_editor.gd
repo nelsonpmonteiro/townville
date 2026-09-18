@@ -113,6 +113,9 @@ func _register_existing_entities() -> void:
 	for child in game_root.get_children():
 		if not child.has_meta("building_id") and not child.has_meta("npc_id"):
 			continue
+		var existing_id: String = child.get_meta("building_id") if child.has_meta("building_id") else child.get_meta("npc_id")
+		if existing_id in deleted_existing:
+			continue
 		if child.has_meta("building_id"):
 			var col: int = child.get_meta("footprint_col")
 			var row: int = child.get_meta("footprint_row")
@@ -458,9 +461,31 @@ func _remove_entity_at(tile: Vector2i) -> void:
 		else:
 			hit = e.x == tile.x and e.y == tile.y
 		if hit:
+			if e.type in ["building_existing", "npc_existing"]:
+				_delete_existing(e)
 			e.node.queue_free()
 			entities.remove_at(i)
 			return
+
+# Pre-existing world_data.gd buildings/NPCs the user deleted in the editor.
+# Persisted so they stay deleted across save/load/restart.
+var deleted_existing: Array = []
+
+func _delete_existing(e: Dictionary) -> void:
+	if not (e.id in deleted_existing):
+		deleted_existing.append(e.id)
+	if e.type == "npc_existing" and world:
+		for i in range(world.NPCS.size() - 1, -1, -1):
+			if world.NPCS[i].id == e.id:
+				var t: Vector2i = world.NPCS[i].tile
+				if _wd_in_bounds(t):
+					world.walkable[t.y][t.x] = true
+				world.NPCS.remove_at(i)
+	elif e.type == "building_existing" and world:
+		for r in range(e.y, e.y + e.get("fh", 1)):
+			for c in range(e.x, e.x + e.get("fw", 1)):
+				if _wd_in_bounds(Vector2i(c, r)):
+					world.walkable[r][c] = true
 
 var panel_ref: PanelContainer
 var panel_open: bool = true
@@ -651,6 +676,7 @@ func save_map(path: String) -> void:
 		"rows": ROWS,
 		"entities": ent_data,
 		"moved_existing": moved_existing,
+		"deleted_existing": deleted_existing,
 		"path_mask": world.path_mask if world else [],
 		"walkable": world.walkable if world else [],
 	}
@@ -659,7 +685,7 @@ func save_map(path: String) -> void:
 		f.store_string(JSON.stringify(data, "  "))
 		f.close()
 		if status_label:
-			status_label.text = "Saved " + str(ent_data.size()) + " new item(s) + terrain to " + path
+			status_label.text = "Saved %d new item(s), %d deleted, terrain to %s" % [ent_data.size(), deleted_existing.size(), path]
 
 # Reapplies a previously saved map: new props/buildings/npcs placed through
 # the editor, plus any terrain/collision edits (path_mask/walkable). Safe to
@@ -695,6 +721,23 @@ func load_map(path: String) -> void:
 				entities.remove_at(i)
 		for ed in d.entities:
 			_add_entity(ed.type, ed.id, Vector2i(ed.x, ed.y))
+	if d.has("deleted_existing"):
+		for did in d.deleted_existing:
+			var b_node = get_parent().get_node_or_null("BuildingGroup_" + str(did))
+			if b_node:
+				var fc: int = b_node.get_meta("footprint_col", 0)
+				var fr: int = b_node.get_meta("footprint_row", 0)
+				_delete_existing({"id": did, "type": "building_existing", "x": fc, "y": fr, "fw": b_node.get_meta("footprint_w", 1), "fh": b_node.get_meta("footprint_h", 1)})
+				b_node.queue_free()
+			var n_node = get_parent().get_node_or_null("NPCGroup_" + str(did))
+			if n_node:
+				_delete_existing({"id": did, "type": "npc_existing"})
+				n_node.queue_free()
+			if not b_node and not n_node and not (did in deleted_existing):
+				deleted_existing.append(did)
+		for i in range(entities.size() - 1, -1, -1):
+			if entities[i].type in ["building_existing", "npc_existing"] and entities[i].id in deleted_existing:
+				entities.remove_at(i)
 	if d.has("moved_existing"):
 		# Applied directly against world.NPCS / the real building containers
 		# in the scene tree — NOT against `entities`, because load_map runs
@@ -739,7 +782,7 @@ func export_map_download() -> void:
 	var ent_data = []
 	for e in entities:
 		ent_data.append({"id": e.id, "type": e.type, "x": e.x, "y": e.y})
-	var data = {"version": 1, "cols": COLS, "rows": ROWS, "grid": grid, "entities": ent_data}
+	var data = {"version": 1, "cols": COLS, "rows": ROWS, "grid": grid, "entities": ent_data, "deleted_existing": deleted_existing}
 	var json_text = JSON.stringify(data, "  ")
 	if OS.has_feature("web") and JavaScriptBridge:
 		var js_code = """
