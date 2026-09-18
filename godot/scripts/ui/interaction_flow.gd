@@ -831,7 +831,16 @@ func _show_equation() -> void:
 	# celebration (happy face + "Congrats!" + the NPC's success line) together
 	# with the equation that explains what they just did. Continue then goes
 	# straight back to the map — there is no second feedback panel.
+	_show_success_screen(words + "\n" + symbols)
+
+## Shared success stage for EVERY exercise mode. It replaces whichever live
+## manipulation UI was active and remains until the child presses Continue.
+## Correct answers must never use the timed feedback overlay; that panel is
+## reserved for retrying a wrong answer.
+func _show_success_screen(summary: String) -> void:
 	basket_row.visible = false
+	text_row.visible = false
+	visual_row.visible = false
 	addition_summary.visible = false
 	hint_label.visible = false
 	hint_btn.visible = false
@@ -843,10 +852,22 @@ func _show_equation() -> void:
 	success_title.visible = true
 	success_message.text = exercise.get("success", "")
 	success_message.visible = not success_message.text.is_empty()
-	equation_label.text = words + "\n" + symbols
-	equation_label.visible = true
+	equation_label.text = summary
+	equation_label.visible = not summary.is_empty()
 	done_btn.text = "Continue"
 	done_btn.visible = true
+
+func _array_success_summary() -> String:
+	var dimensions: Array = exercise.get("grid", [1, 1])
+	var rows: int = int(dimensions[0])
+	var columns: int = int(dimensions[1])
+	return "%d rows with %d in each row\n%d x %d = %d" % [rows, columns, rows, columns, int(exercise.answer)]
+
+func _share_success_summary() -> String:
+	var groups: int = int(exercise.get("groups", 1))
+	var each: int = int(exercise.get("answer", 0))
+	var total: int = groups * each
+	return "%d %s shared equally among %d groups\n%d / %d = %d each" % [total, _item_plural(), groups, total, groups, each]
 
 func _show_addition_summary(existing: int, added: int) -> void:
 	_clear(addition_existing_items)
@@ -896,11 +917,6 @@ func drop_into(zone_name: String, source: Control) -> void:
 		if visual_source_items.get_child_count() == 0:
 			visual_source_title.visible = false
 			visual_source_panel.visible = false
-			var dimensions: Array = exercise.get("grid", [1, 1])
-			var rows := int(dimensions[0])
-			var columns := int(dimensions[1])
-			equation_label.text = "%d groups of %d = %d\n%d x %d = %d, and %d x %d = %d too" % [rows, columns, int(exercise.answer), rows, columns, int(exercise.answer), columns, rows, int(exercise.answer)]
-			equation_label.visible = true
 		return
 	if mode == "share" and zone_name.begins_with("ShareZone_"):
 		var index := int(zone_name.trim_prefix("ShareZone_"))
@@ -979,12 +995,9 @@ func _update_share_status(highlight_imbalance: bool) -> bool:
 	if balanced:
 		visual_source_title.visible = false
 		visual_source_panel.visible = false
-		var groups := share_zones.size()
-		var total := groups * expected
-		equation_label.text = "%d items shared equally\n%d / %d = %d each" % [total, total, groups, expected]
-		equation_label.visible = true
-	else:
-		equation_label.visible = false
+	# The equation belongs to the persistent success stage shown after Done,
+	# never to the still-editable manipulation screen.
+	equation_label.visible = false
 	return balanced
 
 func _emit_placement_feedback(zone: Control, count: int) -> void:
@@ -1008,14 +1021,21 @@ func _emit_placement_feedback(zone: Control, count: int) -> void:
 
 ## The child presses Done when the physical quantity looks right.
 func _on_done() -> void:
-	if state != State.EXERCISE or exercise.mode == "text":
+	if state != State.EXERCISE:
+		return
+	# Every correct mode uses the same persistent success screen. Its Continue
+	# button completes the phase directly; it never opens the timed overlay.
+	if success_title.visible:
+		_complete_exercise()
+		return
+	if exercise.mode == "text":
 		return
 	if exercise.mode == "array":
 		if visual_source_items.get_child_count() > 0:
 			hint_label.text = "Keep filling the rows. Every space needs one item."
 			hint_label.visible = true
 			return
-		_resolve(true)
+		_show_success_screen(_array_success_summary())
 		return
 	if exercise.mode == "share":
 		if not _update_share_status(true):
@@ -1023,13 +1043,7 @@ func _on_done() -> void:
 			hint_label.text = "Not equal yet. Move items until every group has the same amount."
 			hint_label.visible = true
 			return
-		_resolve(true)
-		return
-	# Basket phases celebrate inline: Done swaps the exercise for the success
-	# screen (congrats + equation), and Continue closes it straight to the map
-	# without a second panel.
-	if equation_label.visible:
-		_complete_exercise()
+		_show_success_screen(_share_success_summary())
 		return
 	if basket_count != int(exercise.answer):
 		_resolve(false)
@@ -1051,7 +1065,11 @@ func _on_submit() -> void:
 	var t := answer_input.text.strip_edges()
 	if t.is_empty():
 		return
-	_resolve(int(t) == int(exercise.answer))
+	var correct := int(t) == int(exercise.answer)
+	if correct:
+		_show_success_screen("Answer: %d" % int(exercise.answer))
+	else:
+		_resolve(false)
 
 func _build_pop_audio() -> void:
 	pop_player = AudioStreamPlayer.new()
@@ -1152,7 +1170,7 @@ func _complete_exercise() -> void:
 	world.advance_phase(npc.id)
 	phase_completed.emit(npc.id, done_phase)
 	set_state(State.MAP)
-	if exercise.get("final", false):
+	if exercise.get("final", false) and world.is_world_complete():
 		world_completed.emit()
 
 func _resolve(correct: bool) -> void:
@@ -1179,7 +1197,7 @@ func _resolve(correct: bool) -> void:
 		# would let set_state(MAP) immediately hide the ending dialogue that
 		# the listener just opened.
 		set_state(State.MAP)
-		if exercise.get("final", false):
+		if exercise.get("final", false) and world.is_world_complete():
 			world_completed.emit()
 	else:
 		_open_exercise()
@@ -1279,8 +1297,8 @@ func debug_state() -> Dictionary:
 		"is_typing": is_typing,
 		"result_text": result_label.text if result_label else "",
 		"last_correct": last_correct,
-		# Basket phases are two-stage: Done shows the equation, then Continue
-		# resolves. Exposed so the probe knows a second click is required.
+		# True only on the persistent success stage shared by every mode; the
+		# browser probe uses it to click Continue after the successful Done.
 		"equation_visible": equation_label.visible if equation_label else false,
 	}
 

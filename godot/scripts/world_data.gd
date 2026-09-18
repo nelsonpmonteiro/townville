@@ -399,6 +399,15 @@ func advance_phase(npc_id: String) -> void:
 func is_npc_complete(npc_id: String) -> bool:
 	return get_phase(npc_id) >= 4
 
+## The ending belongs to completing the whole farm, not merely Old Mac's
+## final exercise. A restart creates a fresh WorldData with this table empty,
+## so completion correctly starts over from zero.
+func is_world_complete() -> bool:
+	for npc in NPCS:
+		if not is_npc_complete(npc.id):
+			return false
+	return true
+
 func get_current_exercise(npc: Dictionary) -> Dictionary:
 	if npc.is_empty() or not npc.has("exercises"):
 		return {}

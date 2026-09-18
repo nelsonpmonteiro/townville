@@ -322,11 +322,12 @@ func _initialize() -> void:
 	for i in 12:
 		flow.debug_drag_one("ArrayCell_%d" % i)
 	expect(flow.pop_events - feedback_before == 12 and flow.bump_events >= 12, "each placed item emits gentle sound and rising-count feedback")
-	expect(flow.visual_source_items.get_child_count() == 0 and flow.equation_label.text.contains("3 x 4 = 12"), "completed 3x4 array reveals the repeated-groups equation")
+	expect(flow.visual_source_items.get_child_count() == 0 and not flow.equation_label.visible, "completed 3x4 array waits for Done before revealing success")
 	flow.debug_done()
-	expect(flow.state_name() == "feedback" and flow.last_correct, "completed multiplication array is correct")
-	await create_timer(2.0).timeout
-	expect(world.get_phase("mae") == 3 and flow.state_name() == "map", "phase 3 visual multiplication unlocks phase 4")
+	expect(flow.state_name() == "exercise" and flow.success_title.visible and flow.equation_label.text.contains("3 x 4 = 12"), "completed multiplication uses the persistent success screen")
+	expect(not flow.feedback_screen.visible and flow.done_btn.text == "Continue", "array success does not use the timed feedback overlay")
+	flow.debug_done()
+	expect(world.get_phase("mae") == 3 and flow.state_name() == "map", "Continue unlocks phase 4")
 
 	# phase 4 division: deal items one by one into equal groups
 	flow.start(mae); flow.advance_dialogue(); flow.advance_dialogue()
@@ -339,10 +340,12 @@ func _initialize() -> void:
 		for i in 3:
 			flow.debug_drag_one("ShareZone_%d" % group_index)
 	flow.debug_drag_one("ShareZone_0")
-	expect(flow.equation_label.text.contains("12 / 4 = 3"), "equal groups reveal the division equation")
+	expect(not flow.equation_label.visible, "equal groups wait for Done before revealing success")
 	flow.debug_done()
-	await create_timer(2.0).timeout
-	expect(world.is_npc_complete("mae"), "visual division completes Mae phase 4")
+	expect(flow.state_name() == "exercise" and flow.success_title.visible and flow.equation_label.text.contains("12 / 4 = 3"), "division uses the persistent success screen")
+	expect(not flow.feedback_screen.visible and flow.done_btn.text == "Continue", "division success does not use the timed feedback overlay")
+	flow.debug_done()
+	expect(world.is_npc_complete("mae"), "Continue completes Mae phase 4")
 	flow.start(mae)
 	expect(flow.dialogue_text.text.begins_with("Thanks for all your help"), "completed NPC shows thank-you line")
 	flow.advance_dialogue(); flow.advance_dialogue()

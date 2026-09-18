@@ -15,10 +15,14 @@ async function rafFps(page, secs) {
 const state = page => page.evaluate(() => window.__townville_state || null);
 const cmd = (page, c) => page.evaluate(c => { window.__townville_cmd = c; }, c);
 async function rects(page) {
-  await page.evaluate(() => { window.__townville_rects = null; });
-  await cmd(page, 'rects');
-  await sleep(250);
-  return page.evaluate(() => window.__townville_rects);
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await page.evaluate(() => { window.__townville_rects = null; });
+    await cmd(page, 'rects');
+    await sleep(180);
+    const value = await page.evaluate(() => window.__townville_rects);
+    if (value) return value;
+  }
+  throw new Error('rects bridge did not respond');
 }
 async function waitState(page, pred, ms = 6000, label = '') {
   const t0 = Date.now();
@@ -87,12 +91,11 @@ async function stepAnyOpenDirection(page) {
   await hold(page, open[0], 500);
   return { before: s.tile, after: (await state(page)).tile, key: open[0] };
 }
-// Basket phases are two-stage by design: Done swaps the basket for the success
-// screen (congrats + NPC line + equation), then Continue closes it straight to
-// the map — a CORRECT basket answer never opens the feedback panel. A wrong
-// answer still goes to feedback. Returns what the success screen showed so
-// callers can assert on it.
-async function clickDone(page) {
+// Every correct exercise is two-stage by design: Done swaps the live activity
+// for one persistent success screen (happy face + NPC line + equation), then
+// Continue closes it straight to the map. Correct answers never use the timed
+// feedback panel; wrong answers still do. Returns what the success screen showed.
+async function clickDone(page, successScreenshot = null) {
   let rr = await rects(page);
   await clickRect(page, rr.done);
   await sleep(250);
@@ -101,6 +104,7 @@ async function clickDone(page) {
   if (s.flow.state === 'exercise' && s.flow.equation_visible) {
     success.shown = true;
     success.equation = s.flow.equation_text || '';
+    if (successScreenshot) await page.screenshot({ path: successScreenshot });
     rr = await rects(page);
     await clickRect(page, rr.done);   // "Continue"
     await sleep(250);
@@ -263,12 +267,12 @@ async function clickDone(page) {
     rr = await rects(page);
     await realDrag(page, rr.item0, rr[`array${i}`]);
   }
+  await sleep(300); // allow the six-frame JS state bridge to publish the last drop
   s = await state(page);
   check('REAL drags fill every multiplication cell', s.flow.visual_source_left === 0);
   await page.screenshot({ path: '/tmp/tv-ex-array.png' });
-  rr = await rects(page); await clickRect(page, rr.done);
-  s = await waitState(page, s => s.flow.state === 'feedback', 3000);
-  check('completed array → correct', s.flow.last_correct === true, s.flow.result_text);
+  const arraySuccess = await clickDone(page, '/tmp/tv-success-array.png');
+  check('completed array → persistent success screen', arraySuccess.shown, arraySuccess.equation);
   s = await waitState(page, s => s.flow.state === 'map', 4000);
   check('phase 4 unlocked', s.phases[npcName] === 3);
 
@@ -293,9 +297,8 @@ async function clickDone(page) {
   s = await state(page);
   check('REAL drags distribute the full collection equally', s.flow.visual_source_left === 0);
   await page.screenshot({ path: '/tmp/tv-ex-share.png' });
-  rr = await rects(page); await clickRect(page, rr.done);
-  s = await waitState(page, s => s.flow.state === 'feedback', 3000);
-  check('equal sharing → correct', s.flow.last_correct === true, s.flow.result_text);
+  const shareSuccess = await clickDone(page, '/tmp/tv-success-share.png');
+  check('equal sharing → persistent success screen', shareSuccess.shown, shareSuccess.equation);
   s = await waitState(page, s => s.flow.state === 'map', 4000);
   check('NPC completed, back on map, movement free', s.phases[npcName] === 4 && s.flow.state === 'map');
   {
