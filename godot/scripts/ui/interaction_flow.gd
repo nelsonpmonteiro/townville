@@ -759,7 +759,8 @@ func drop_into(zone_name: String, source: Control) -> void:
 		_emit_placement_feedback(basket_zone, basket_count)
 		if basket_count > int(exercise.answer):
 			_resolve(false)
-		elif mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
+		return
+	if mode == "basket_out" and zone_name == "TrayDropZone" and source.get_parent() == basket_items:
 		source.get_parent().remove_child(source)
 		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		source.set_script(null)
@@ -769,6 +770,7 @@ func drop_into(zone_name: String, source: Control) -> void:
 		_emit_placement_feedback(tray_zone, int(exercise.get("start", basket_count)) - basket_count)
 		if basket_count < int(exercise.answer):
 			_resolve(false)
+		return
 
 func _is_share_items_container(node: Node) -> bool:
 	for zone in share_zones:
