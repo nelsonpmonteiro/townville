@@ -58,12 +58,12 @@ var prompt_label: Label
 var hint_label: Label
 var basket_row: HBoxContainer      # basket_in/out layout root
 var source_title: Label
-var source_items: HBoxContainer
+var source_items: HFlowContainer
 var basket_zone: PanelContainer
-var basket_items: HBoxContainer
+var basket_items: HFlowContainer
 var basket_counter: Label
 var tray_zone: PanelContainer
-var tray_items: HBoxContainer
+var tray_items: HFlowContainer
 var tray_label: Label
 var equation_label: Label          # number sentence for subtraction/multiplication/division
 var addition_summary: HBoxContainer # visual existing-items + added-items feedback
@@ -106,6 +106,23 @@ static func _panel_style(bg: Color, border: Color = Color("#3a2a1a")) -> StyleBo
 	sb.set_corner_radius_all(10)
 	sb.set_content_margin_all(16)
 	return sb
+
+## Bordered button style — every Button in the exercise/dialogue flow uses
+## this so buttons read as clickable UI, not flat text on a panel.
+static func _button_style(bg: Color, border: Color = Color("#c9a36b")) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.set_content_margin_all(8)
+	return sb
+
+static func _apply_button_style(btn: Button) -> void:
+	btn.add_theme_stylebox_override("normal", _button_style(Color("#3a2a1a")))
+	btn.add_theme_stylebox_override("hover", _button_style(Color("#4a3624"), Color("#ffd75a")))
+	btn.add_theme_stylebox_override("pressed", _button_style(Color("#241a10"), Color("#ffd75a")))
+	btn.add_theme_stylebox_override("focus", _button_style(Color("#3a2a1a"), Color("#ffd75a")))
 
 func _ready() -> void:
 	layer = 20
@@ -339,13 +356,13 @@ func _build_exercise() -> void:
 	basket_row.add_child(basket_zone)
 	var bz_v := basket_zone.get_child(0) as VBoxContainer
 	basket_counter = bz_v.get_node("Title") as Label
-	basket_items = bz_v.get_node("Items") as HBoxContainer
+	basket_items = bz_v.get_node("Items") as HFlowContainer
 
 	tray_zone = _make_drop_zone("TrayDropZone", Color("#3b5a6b"))
 	basket_row.add_child(tray_zone)
 	var tz_v := tray_zone.get_child(0) as VBoxContainer
 	tray_label = tz_v.get_node("Title") as Label
-	tray_items = tz_v.get_node("Items") as HBoxContainer
+	tray_items = tz_v.get_node("Items") as HFlowContainer
 
 	equation_label = Label.new()
 	equation_label.name = "EquationLabel"
@@ -410,6 +427,7 @@ func _build_exercise() -> void:
 	done_btn.custom_minimum_size = Vector2(140, 42)
 	done_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_btn.add_theme_font_size_override("font_size", 18)
+	_apply_button_style(done_btn)
 	done_btn.pressed.connect(_on_done)
 	v.add_child(done_btn)
 
@@ -445,6 +463,7 @@ func _build_exercise() -> void:
 	submit_btn.name = "SubmitButton"
 	submit_btn.text = "Submit"
 	submit_btn.custom_minimum_size = Vector2(100, 40)
+	_apply_button_style(submit_btn)
 	submit_btn.pressed.connect(_on_submit)
 	input_h.add_child(submit_btn)
 
