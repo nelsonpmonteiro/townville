@@ -36,8 +36,24 @@ func _ready() -> void:
 	build_world()
 	_install_js_bridge()
 	_maybe_start_onboarding()
+	_maybe_preview_ending()
 	if "--capture" in OS.get_cmdline_user_args():
 		capture_after_render.call_deferred()
+
+## Review shortcut: index.html?ending=1 (or --preview-ending on desktop) jumps
+## straight to the end-of-demo message without replaying all eight NPCs.
+func _maybe_preview_ending() -> void:
+	var preview := "--preview-ending" in OS.get_cmdline_user_args()
+	if OS.has_feature("web"):
+		var q = JavaScriptBridge.eval("/[?&]ending=1/.test(location.search)?1:0", true)
+		preview = preview or (q is float and q > 0) or (q is int and q > 0)
+	if not preview:
+		return
+	if onboarding and onboarding.active:
+		onboarding._finish()
+		await onboarding.finished
+	await get_tree().process_frame
+	flow.show_ending()
 
 # Web-only introspection hook used by scripts/web-perf-probe.cjs to verify the
 # game from a real browser (FPS, player tile, quest state, editor mode, grid).

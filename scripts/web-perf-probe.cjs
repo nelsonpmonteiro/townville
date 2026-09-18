@@ -76,6 +76,31 @@ function adjacentTile(rows, npc) {
   return null;
 }
 async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(ms); await page.keyboard.up(key); await sleep(120); }
+// Walk one step in whichever direction is actually open on THIS map. The spawn
+// sits in a one-tile alcove (Old Mac occupies the tile to the right, and NPC
+// tiles are non-walkable), so hardcoding ArrowRight tests the map, not the game.
+async function stepAnyOpenDirection(page) {
+  const s = await state(page);
+  const dirs = [['ArrowRight',1,0],['ArrowUp',0,-1],['ArrowLeft',-1,0],['ArrowDown',0,1]];
+  const open = dirs.find(([,dx,dy]) => (s.walkable[s.tile[1]+dy] || '')[s.tile[0]+dx] === '.');
+  if (!open) return { before: s.tile, after: s.tile, key: null };
+  await hold(page, open[0], 500);
+  return { before: s.tile, after: (await state(page)).tile, key: open[0] };
+}
+// Basket phases are two-stage by design: Done confirms the count and swaps the
+// basket for the equation, then Continue resolves into feedback. Click through
+// both so callers can just say "finish this exercise".
+async function clickDone(page) {
+  let rr = await rects(page);
+  await clickRect(page, rr.done);
+  await sleep(250);
+  const s = await state(page);
+  if (s.flow.state === 'exercise' && s.flow.equation_visible) {
+    rr = await rects(page);
+    await clickRect(page, rr.done);   // "Continue"
+    await sleep(200);
+  }
+}
 
 (async () => {
   const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -105,8 +130,12 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   await page.screenshot({ path: '/tmp/tv-onboard-card2.png' });
   await page.keyboard.press('Space'); await sleep(900); s = await state(page);
   check('final card → fade → map, flag saved', !s.onboarding.active && s.seen_onboarding && s.flow.state === 'map');
-  await hold(page, 'ArrowRight', 400); s = await state(page);
-  check('player at spawn moves after onboarding', s.tile[0] > t0[0], `${t0}→${s.tile}`);
+  {
+    const m = await stepAnyOpenDirection(page);
+    check('player at spawn moves after onboarding',
+      m.after[0] !== m.before[0] || m.after[1] !== m.before[1], `${m.key} ${m.before}→${m.after}`);
+  }
+  s = await state(page);
 
   // ---------- Repeat visit: no ?reset → straight to map ----------
   await page.goto('http://localhost:8090/index.html', { waitUntil: 'load' });
@@ -118,10 +147,12 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   s = await state(page);
   check('boot in MAP, grid hidden', s.flow.state === 'map' && !s.grid_visible, `tile=${s.tile}`);
   await page.$('canvas').then(c => c.click({ position: { x: 480, y: 320 } }));
-  const t0m = s.tile.slice();
-  await hold(page, 'ArrowRight', 400);
+  {
+    const m = await stepAnyOpenDirection(page);
+    check('arrow key moves player',
+      m.after[0] !== m.before[0] || m.after[1] !== m.before[1], `${m.key} ${m.before}→${m.after}`);
+  }
   s = await state(page);
-  check('ArrowRight moves player', s.tile[0] > t0m[0], `tile=${s.tile}`);
   R.fps_moving = +(await rafFps(page, 2)).toFixed(1);
 
   // Walk to Mae wherever the (user-edited) map put her: BFS on the live grid.
@@ -170,7 +201,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   }
   s = await state(page);
   check(`${ex1.b} REAL mouse drags into basket -> ${s.flow.target}`, s.flow.basket_count === s.flow.target, `basket=${s.flow.basket_count} target=${s.flow.target} left=${s.flow.source_left}`);
-  rr = await rects(page); await clickRect(page, rr.done);
+  await clickDone(page);
   s = await waitState(page, s => s.flow.state === 'feedback', 3000, 'feedback');
   check('Done → FEEDBACK correct', s.flow.last_correct === true, s.flow.result_text);
   await page.screenshot({ path: '/tmp/tv-feedback.png' });
@@ -185,7 +216,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   const ex2 = { start: s.flow.basket_count };
   check('phase 2 basket_out', s.flow.mode === 'basket_out' && ex2.start > 0, JSON.stringify(ex2));
   rr = await rects(page); await realDrag(page, rr.item0, rr.tray);          // 1 out (wrong for every NPC: remove >= 2)
-  rr = await rects(page); await clickRect(page, rr.done);
+  await clickDone(page);
   s = await waitState(page, s => s.flow.state === 'feedback', 3000);
   check('1 out → wrong feedback', s.flow.last_correct === false);
   s = await waitState(page, s => s.flow.state === 'exercise', 4000, 'retry');
@@ -195,7 +226,7 @@ async function hold(page, key, ms) { await page.keyboard.down(key); await sleep(
   let ok2 = false;
   for (let n = 2; n <= 6 && !ok2; n++) {
     for (let k = (await state(page)).flow.tray_count; k < n; k++) { rr = await rects(page); await realDrag(page, rr.item0, rr.tray); }
-    rr = await rects(page); await clickRect(page, rr.done);
+    await clickDone(page);
     s = await waitState(page, s => s.flow.state === 'feedback', 3000);
     ok2 = s.flow.last_correct === true;
     if (!ok2) await waitState(page, s => s.flow.state === 'exercise', 4000);

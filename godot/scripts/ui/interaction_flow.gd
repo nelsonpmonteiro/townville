@@ -1223,6 +1223,9 @@ func debug_state() -> Dictionary:
 		"is_typing": is_typing,
 		"result_text": result_label.text if result_label else "",
 		"last_correct": last_correct,
+		# Basket phases are two-stage: Done shows the equation, then Continue
+		# resolves. Exposed so the probe knows a second click is required.
+		"equation_visible": equation_label.visible if equation_label else false,
 	}
 
 ## Programmatic drag for tests: moves one draggable from its source area into
