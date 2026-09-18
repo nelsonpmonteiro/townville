@@ -45,6 +45,23 @@ func _ready() -> void:
 	_apply_levels()
 
 func _build_button() -> void:
+	# Semi-transparent circular backdrop so the speaker icon stays visible
+	# over any map tile behind it (grass, water, dark dirt).
+	var backdrop := Panel.new()
+	backdrop.name = "VolumeBackdrop"
+	var bg_sb := StyleBoxFlat.new()
+	bg_sb.bg_color = Color(0.12, 0.1, 0.08, 0.55)
+	bg_sb.border_color = Color("#c9a36b")
+	bg_sb.set_border_width_all(2)
+	bg_sb.set_corner_radius_all(22)
+	backdrop.add_theme_stylebox_override("panel", bg_sb)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.anchor_left = 1.0; backdrop.anchor_right = 1.0
+	backdrop.anchor_top = 1.0; backdrop.anchor_bottom = 1.0
+	backdrop.offset_left = -120; backdrop.offset_right = -76
+	backdrop.offset_top = -62; backdrop.offset_bottom = -18
+	add_child(backdrop)
+
 	button = TextureButton.new()
 	button.name = "VolumeButton"
 	if ResourceLoader.exists(ICON_PATH):

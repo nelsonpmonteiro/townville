@@ -350,6 +350,24 @@ func _build_audio() -> void:
 ## movement/interact instructions and the journey goal — replaces the two
 ## always-on labels that used to sit in the top-left permanently.
 func _build_info_tooltip(layer: CanvasLayer) -> void:
+	# Semi-transparent circular backdrop behind the icon so the PixelLab
+	# glyph (mostly light pixels) stays legible over any background tile
+	# (grass, water, dark dirt) instead of floating with no contrast.
+	var info_backdrop := Panel.new()
+	info_backdrop.name = "InfoTooltipBackdrop"
+	var info_bg_sb := StyleBoxFlat.new()
+	info_bg_sb.bg_color = Color(0.12, 0.1, 0.08, 0.55)
+	info_bg_sb.border_color = Color("#c9a36b")
+	info_bg_sb.set_border_width_all(2)
+	info_bg_sb.set_corner_radius_all(24)
+	info_backdrop.add_theme_stylebox_override("panel", info_bg_sb)
+	info_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info_backdrop.anchor_left = 1.0; info_backdrop.anchor_right = 1.0
+	info_backdrop.anchor_top = 1.0; info_backdrop.anchor_bottom = 1.0
+	info_backdrop.offset_left = -64; info_backdrop.offset_right = -16
+	info_backdrop.offset_top = -64; info_backdrop.offset_bottom = -16
+	layer.add_child(info_backdrop)
+
 	info_button = TextureButton.new()
 	info_button.name = "InfoTooltipButton"
 	var icon_path := "res://assets/ui/info-tooltip.png"
@@ -481,9 +499,13 @@ func _on_phase_completed(npc_id: String, _phase: int) -> void:
 			if sprite:
 				sprite.modulate = Color(1.05, 1.05, 0.9)
 
+## Old Mac's final phase is the end of what's built. Downtown is not wired in
+## for this build, so the farm-to-downtown transition is replaced by the
+## end-of-demo message — shown in the regular dialogue box, after which the
+## player stays free on the map to revisit any NPC.
 func _on_world_completed() -> void:
-	dialogue_label.text = "World 1 complete! The farm gate swings open toward Downtown..."
-	dialogue_label.visible = true
+	dialogue_label.visible = false
+	flow.show_ending()
 
 func _walkable_rows() -> Array:
 	var rows := []

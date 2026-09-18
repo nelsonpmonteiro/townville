@@ -54,6 +54,23 @@ func _ready() -> void:
 	_build_modal()
 
 func _build_button() -> void:
+	# Semi-transparent circular backdrop so the restart icon stays visible
+	# over any map tile behind it (grass, water, dark dirt).
+	var backdrop := Panel.new()
+	backdrop.name = "RestartBackdrop"
+	var bg_sb := StyleBoxFlat.new()
+	bg_sb.bg_color = Color(0.12, 0.1, 0.08, 0.55)
+	bg_sb.border_color = Color("#c9a36b")
+	bg_sb.set_border_width_all(2)
+	bg_sb.set_corner_radius_all(22)
+	backdrop.add_theme_stylebox_override("panel", bg_sb)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.anchor_left = 0.0; backdrop.anchor_right = 0.0
+	backdrop.anchor_top = 0.0; backdrop.anchor_bottom = 0.0
+	backdrop.offset_left = 16; backdrop.offset_right = 60
+	backdrop.offset_top = 14; backdrop.offset_bottom = 58
+	add_child(backdrop)
+
 	button = TextureButton.new()
 	button.name = "RestartButton"
 	if ResourceLoader.exists(ICON_PATH):
