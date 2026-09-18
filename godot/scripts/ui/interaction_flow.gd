@@ -350,6 +350,7 @@ func _build_exercise() -> void:
 	var src_panel := PanelContainer.new()
 	src_panel.name = "SourceDropZone"
 	src_panel.custom_minimum_size = Vector2(230, 140)
+	src_panel.clip_contents = true
 	src_panel.add_theme_stylebox_override("panel", _panel_style(Color("#2a3a22"), Color("#5c7a4a")))
 	src_box.add_child(src_panel)
 	source_panel = src_panel
@@ -359,23 +360,29 @@ func _build_exercise() -> void:
 	# to be able to freely add/remove and reconsider before pressing Done.
 	src_panel.set_script(DropZoneScript)
 	src_panel.flow = self
+	var src_scroll := ScrollContainer.new()
+	src_scroll.name = "ItemsScroll"
+	src_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	src_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	src_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	src_panel.add_child(src_scroll)
 	source_items = HFlowContainer.new()
 	source_items.name = "SourceItems"
 	source_items.alignment = FlowContainer.ALIGNMENT_CENTER
 	source_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	src_panel.add_child(source_items)
+	src_scroll.add_child(source_items)
 
 	basket_zone = _make_drop_zone("BasketDropZone", Color("#6b4a2b"))
 	basket_row.add_child(basket_zone)
 	var bz_v := basket_zone.get_child(0) as VBoxContainer
 	basket_counter = bz_v.get_node("Title") as Label
-	basket_items = bz_v.get_node("Items") as HFlowContainer
+	basket_items = bz_v.get_node("ItemsScroll/Items") as HFlowContainer
 
 	tray_zone = _make_drop_zone("TrayDropZone", Color("#3b5a6b"))
 	basket_row.add_child(tray_zone)
 	var tz_v := tray_zone.get_child(0) as VBoxContainer
 	tray_label = tz_v.get_node("Title") as Label
-	tray_items = tz_v.get_node("Items") as HFlowContainer
+	tray_items = tz_v.get_node("ItemsScroll/Items") as HFlowContainer
 
 	equation_label = Label.new()
 	equation_label.name = "EquationLabel"
@@ -536,6 +543,7 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	var zone := PanelContainer.new()
 	zone.name = zone_name
 	zone.custom_minimum_size = Vector2(230, 170)
+	zone.clip_contents = true
 	zone.add_theme_stylebox_override("panel", _panel_style(tint, tint.lightened(0.35)))
 	var v := VBoxContainer.new()
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -545,12 +553,22 @@ func _make_drop_zone(zone_name: String, tint: Color) -> PanelContainer:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 18)
 	v.add_child(title)
+	# The items row is wrapped in a fixed-size ScrollContainer so the square
+	# itself never resizes as items are dragged in — it looks the same at
+	# 0 items and at 20 (items wrap to new rows and scroll internally
+	# instead of growing the panel/pushing the Done button around).
+	var items_scroll := ScrollContainer.new()
+	items_scroll.name = "ItemsScroll"
+	items_scroll.custom_minimum_size = Vector2(0, 100)
+	items_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	items_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	items_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(items_scroll)
 	var items := HFlowContainer.new()
 	items.name = "Items"
 	items.alignment = FlowContainer.ALIGNMENT_CENTER
-	items.custom_minimum_size = Vector2(0, 100)
 	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(items)
+	items_scroll.add_child(items)
 	var ghost := Label.new()
 	ghost.name = "Ghost"
 	ghost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -623,15 +641,35 @@ func _open_array(icon: String) -> void:
 	visual_source_title.text = "%s to place: %d" % [POOL_LABELS.get(npc.item, "Items"), rows * columns]
 	for i in rows * columns:
 		visual_source_items.add_child(_make_item(icon, true, 32))
-	var grid := GridContainer.new()
-	grid.columns = columns
-	grid.add_theme_constant_override("h_separation", 5)
-	grid.add_theme_constant_override("v_separation", 5)
-	visual_zones.add_child(grid)
-	for i in rows * columns:
-		var cell := _make_array_cell(i)
-		visual_cells.append(cell)
-		grid.add_child(cell)
+	# Each row of the array is one "section"/"group" from the word problem
+	# (e.g. "3 sections, 4 nails each") — label it "Section N" (or the
+	# exercise's own row_label if provided) so the matrix reads as N
+	# separate groups stacked up, not one anonymous block of cells.
+	var row_label: String = exercise.get("row_label", "Section")
+	var rows_box := VBoxContainer.new()
+	rows_box.name = "ArrayRows"
+	rows_box.add_theme_constant_override("separation", 5)
+	visual_zones.add_child(rows_box)
+	for r in rows:
+		var row_h := HBoxContainer.new()
+		row_h.add_theme_constant_override("separation", 8)
+		rows_box.add_child(row_h)
+		var row_lbl := Label.new()
+		row_lbl.text = "%s %d" % [row_label, r + 1]
+		row_lbl.custom_minimum_size = Vector2(80, 0)
+		row_lbl.add_theme_font_size_override("font_size", 14)
+		row_lbl.add_theme_color_override("font_color", Color("#f5e9cf"))
+		row_h.add_child(row_lbl)
+		var grid := GridContainer.new()
+		grid.columns = columns
+		grid.add_theme_constant_override("h_separation", 5)
+		grid.add_theme_constant_override("v_separation", 5)
+		row_h.add_child(grid)
+		for c in columns:
+			var index := r * columns + c
+			var cell := _make_array_cell(index)
+			visual_cells.append(cell)
+			grid.add_child(cell)
 
 func _open_share(icon: String) -> void:
 	var groups: int = int(exercise.get("groups", 1))
