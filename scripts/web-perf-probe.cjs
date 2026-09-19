@@ -349,7 +349,11 @@ async function clickDone(page, successScreenshot = null) {
   s = await state(page);
   check('background music is playing', s.audio.music_playing === true);
   await clickRect(page, (await rects(page)).volume_button);
-  s = await state(page);
+  // The GDScript→JS state bridge publishes every few frames, so a bare read
+  // right after the click can still show the pre-click value. Wait for the
+  // toggle instead of asserting on a possibly-stale snapshot.
+  s = await waitState(page, s => s.audio.panel_open === false, 3000, 'volume panel close')
+    .catch(() => state(page));
   check('clicking the speaker again closes the panel', s.audio.panel_open === false);
 
   // ---------- F1 editor still works ----------
@@ -374,7 +378,10 @@ async function clickDone(page, successScreenshot = null) {
   // Cancel must leave the session exactly as it was.
   const phasesBefore = JSON.stringify(s.phases);
   await clickRect(page, rrs.restart_cancel);
-  s = await state(page);
+  // Same stale-bridge caveat as the volume panel: wait for the modal to report
+  // closed rather than reading one frame too early.
+  s = await waitState(page, s => s.restart_modal_open === false, 3000, 'restart modal close')
+    .catch(() => state(page));
   check('Cancel closes the modal and keeps progress',
     s.restart_modal_open === false && s.seen_onboarding === true &&
     JSON.stringify(s.phases) === phasesBefore);
